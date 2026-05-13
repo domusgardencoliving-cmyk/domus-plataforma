@@ -16033,10 +16033,32 @@
         const { data: lancData, error: lancErr } = await db.from('lancamentos').insert(lancamento).select().single();
         if (lancErr) throw lancErr;
 
-        // 2. Insert into notas_ocr
+        // 2. Subir o arquivo original no Storage (pra poder visualizar depois)
+        let arquivoUrl = null;
+        if (_ocrBase64 && _ocrArquivoNome) {
+          try {
+            // Converte base64 em blob
+            const byteChars = atob(_ocrBase64);
+            const byteNums = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+            const blob = new Blob([new Uint8Array(byteNums)], { type: _ocrMediaType });
+            const ext = _ocrArquivoNome.split('.').pop() || (_ocrMediaType === 'application/pdf' ? 'pdf' : 'jpg');
+            const fileName = 'notas-ocr/' + Date.now() + '_' + Math.random().toString(36).slice(2,8) + '.' + ext;
+            const { data: upData, error: upErr } = await db.storage.from('comprovantes').upload(fileName, blob, {
+              contentType: _ocrMediaType, upsert: false
+            });
+            if (!upErr && upData) {
+              const { data: pubData } = db.storage.from('comprovantes').getPublicUrl(fileName);
+              arquivoUrl = pubData?.publicUrl || null;
+            }
+          } catch (e) { console.warn('[ocr] upload arquivo falhou (segue sem):', e); }
+        }
+
+        // 3. Insert into notas_ocr
         const notaOcr = {
           arquivo_nome: _ocrArquivoNome,
           arquivo_tipo: _ocrMediaType.startsWith('image') ? 'image' : 'pdf',
+          arquivo_url: arquivoUrl,
           estabelecimento: estab,
           valor: valor,
           data_nota: dataNota,
@@ -16164,7 +16186,13 @@
               '<div><p class="text-xs text-domus-texto-suave">Tipo</p><p class="font-medium">' + (n.arquivo_tipo || '--') + '</p></div>' +
             '</div>' +
             (n.descricao_ia ? '<div class="bg-domus-azul/5 rounded-xl p-3 mb-4"><p class="text-xs text-domus-texto-suave mb-1">Descricao da IA:</p><p class="text-sm">' + n.descricao_ia + '</p></div>' : '') +
+            (n.arquivo_url ? (
+              n.arquivo_tipo === 'image'
+                ? '<div class="mb-4"><p class="text-xs text-domus-texto-suave mb-2">Nota original:</p><img src="' + n.arquivo_url + '" alt="Nota" class="w-full rounded-xl border border-domus-borda max-h-80 object-contain bg-white" /></div>'
+                : '<div class="mb-4"><p class="text-xs text-domus-texto-suave mb-2">Nota original (PDF):</p><a href="' + n.arquivo_url + '" target="_blank" rel="noopener" class="block w-full py-3 px-4 rounded-xl border border-domus-azul text-domus-azul text-sm text-center hover:bg-domus-azul/5 transition">📄 Abrir PDF em nova aba</a></div>'
+            ) : '<div class="mb-4 text-xs text-domus-texto-suave italic">Arquivo original não disponível (nota antiga ou upload falhou)</div>') +
             '<div class="flex gap-2 pt-4 border-t border-domus-borda">' +
+              (n.arquivo_url ? '<a href="' + n.arquivo_url + '" target="_blank" rel="noopener" class="flex-1 py-2 rounded-lg border border-domus-azul text-domus-azul text-sm text-center hover:bg-domus-azul/5 transition">📎 Baixar nota</a>' : '') +
               '<button onclick="ocrExcluirNota(\'' + n.id + '\', \'' + (n.lancamento_id || '') + '\')" class="flex-1 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition text-sm">🗑️ Excluir nota</button>' +
               '<button onclick="document.getElementById(\'ocr-detalhes-modal\').remove()" class="flex-1 py-2 rounded-lg bg-domus-azul text-white hover:bg-domus-azul-escuro transition text-sm">Fechar</button>' +
             '</div>' +
@@ -18133,53 +18161,4 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
               <label class="text-xs font-medium text-domus-texto uppercase">Observações</label>
               <textarea name="observacoes" rows="2" placeholder="Algo importante sobre essa reserva?" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm"></textarea>
             </div>
-            <button type="submit" class="w-full py-2.5 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition">Criar reserva</button>
-          </form>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    }
-
-    async function criarReservaManual(form) {
-      const dados = {
-        hospede_nome: form.hospede_nome.value.trim(),
-        hospede_documento: form.hospede_documento.value.trim() || null,
-        hospede_contato: form.hospede_contato.value.trim() || null,
-        quarto: form.quarto.value,
-        checkin: form.checkin.value,
-        checkout: form.checkout.value,
-        valor_total: parseFloat(form.valor_total.value) || 0,
-        plataforma: form.plataforma ? form.plataforma.value : 'Direto',
-        observacoes: form.observacoes ? form.observacoes.value.trim() : null,
-        status: 'confirmada',
-        cama: form.quarto.value
-      };
-      try {
-        const { error } = await db.from('reservas').insert(dados);
-        if (error) throw error;
-        alert('Reserva criada com sucesso!');
-        const m = document.querySelector('.fixed.inset-0.z-\\[60\\]');
-        if (m) m.remove();
-        if (typeof carregarPMS === 'function') carregarPMS();
-      } catch (err) {
-        console.error('Erro ao criar reserva:', err);
-        alert('Erro ao criar reserva: ' + (err.message || 'desconhecido'));
-      }
-    }
-
-  </script>
-
-  <!-- ==========================================
-       MODAL DE LOGIN ADMIN (DG Gestão / engrenagem)
-       Reconstituído após truncamento.
-       ========================================== -->
-  <div id="login-overlay" class="hidden fixed inset-0 z-[200] flex items-center justify-center" style="backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.55);">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 relative">
-      <button onclick="fecharLogin()" class="absolute top-4 right-4 text-domus-texto-suave hover:text-domus-texto text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition" aria-label="Fechar">&times;</button>
-
-      <div class="text-center mb-6">
-        <h2 class="font-serif text-2xl text-domus-azul-escuro">DG Gestão</h2>
-        <p class="text-sm text-domus-texto-suave mt-1">Acesso restrito</p>
-      </div>
-
-      <form onsubmit="event.preventDe
+            <button type="submit" class="w-full py-2.5 
