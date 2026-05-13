@@ -93,12 +93,7 @@ BEGIN
     v_atencao_count := v_atencao_count + 1;
   END IF;
 
-  -- (6) E-mail (se preenchido) tem que ser válido
-  IF v_r.hospede_email IS NOT NULL AND LENGTH(TRIM(v_r.hospede_email)) > 0
-     AND v_r.hospede_email !~* '^[^@\s]+@[^@\s]+\.[^@\s]+$' THEN
-    v_probs := v_probs || jsonb_build_object('campo','hospede_email','msg','E-mail com formato inválido','severidade','atencao');
-    v_atencao_count := v_atencao_count + 1;
-  END IF;
+  -- (6) [removido — tabela reservas não tem hospede_email separado]
 
   -- Status final
   IF v_critico_count > 0 THEN v_status := 'critico';
@@ -191,3 +186,4 @@ SELECT 'OK - IA validadora ativa' AS status,
                  WHERE COALESCE(status,'') != 'cancelada' GROUP BY validacao_status) sub
          )
        ) AS detalhes;
+                                                                                                                                                                                                                                                                                                                 
