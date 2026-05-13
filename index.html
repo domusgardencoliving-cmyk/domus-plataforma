@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Domus Garden — Coliving feminino e hostel em Vila Olimpia, Sao Paulo</title>
+  <title>Domus Garden — Coliving feminino e hostel em Vila Olímpia, São Paulo</title>
   <!-- Microsoft Clarity (analytics + heatmap + gravacoes) -->
   <script type="text/javascript">
   (function(c,l,a,r,i,t,y){
@@ -13,7 +13,7 @@
       y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
   })(window, document, "clarity", "script", "wo4u2c5a1h");
   </script>
-  <meta name="description" content="Domus Garden: duas unidades em Vila Olimpia, Sao Paulo. Coliving feminino e hostel misto. Mais leve que hotel, mais humana que aluguel." />
+  <meta name="description" content="Domus Garden: duas unidades em Vila Olímpia, São Paulo. Coliving feminino e hostel misto. Mais leve que hotel, mais humana que aluguel." />
   <meta property="og:title" content="Domus Garden — Coliving e Hostel em Vila Olímpia" />
   <meta property="og:description" content="Coliving feminino e hostel misto em Vila Olímpia, São Paulo. Mais leve que hotel, mais humana que aluguel." />
   <meta property="og:type" content="website" />
@@ -3380,7 +3380,7 @@
                   <h4 class="font-serif text-base text-domus-azul-escuro mb-4">De onde vem os hospedes</h4>
                   <div class="space-y-2">
                     <div class="flex justify-between items-center py-1.5 border-b border-domus-creme">
-                      <span class="text-sm">Sao Paulo (capital)</span>
+                      <span class="text-sm">São Paulo (capital)</span>
                       <span class="text-sm font-medium text-domus-azul-escuro">—</span>
                     </div>
                     <div class="flex justify-between items-center py-1.5 border-b border-domus-creme">
@@ -8962,7 +8962,7 @@
         '<div style="text-align:center"><span class="status ' + (pago ? 'pago' : 'pendente') + '">' + statusTxt + '</span></div>' +
         '<div class="rodape">' +
           '<p>Documento gerado automaticamente em ' + dataHoje + '</p>' +
-          '<p>Domus Garden Coliving · Sao Paulo · Vila Olimpia</p>' +
+          '<p>Domus Garden Coliving · São Paulo · Vila Olímpia</p>' +
         '</div>' +
         '</body></html>';
 
@@ -10717,7 +10717,7 @@
                   const { data: tmpl } = await db.from('whatsapp_templates').select('*').eq('tipo', 'limpeza_pronta').eq('ativo', true).single();
                   var msg = tmpl ? waPreencherTemplate(tmpl.mensagem, {
                     hospede: nomeHospede, quarto: quarto,
-                    endereco: 'R. Andrade Pertence, 40 - Vila Olimpia, SP'
+                    endereco: 'R. Andrade Pertence, 40 - Vila Olímpia, SP'
                   }) : 'Ola, ' + nomeHospede + '! Seu quarto (' + quarto + ') ja esta pronto para check-in. Seja bem-vinda à Domus Garden!';
                   var result = await waEnviarMensagem(telefone, msg, nomeHospede, reserva.id, 'limpeza_pronta');
                   if (result.ok) {
@@ -15081,7 +15081,7 @@
           hospede: r.hospede_nome || r.hospedes?.nome || 'Hospede',
           quarto: r.quarto || 'seu quarto',
           senha: senha,
-          endereco: 'R. Andrade Pertence, 40 - Vila Olimpia, SP',
+          endereco: 'R. Andrade Pertence, 40 - Vila Olímpia, SP',
           link_avaliacao: 'https://g.page/r/domusgarden/review'
         });
 
@@ -15278,7 +15278,7 @@
           (senhas || []).forEach(s => { senhaMap[s.quarto] = s.senha_atual; });
           vars.quarto = quartoSel || '';
           vars.senha = senhaMap[quartoSel] || '(senha nao cadastrada)';
-          vars.endereco = 'R. Andrade Pertence, 40 - Vila Olimpia, SP';
+          vars.endereco = 'R. Andrade Pertence, 40 - Vila Olímpia, SP';
         }
 
         if (tipo === 'checkout' || tipo === 'avaliacao') {
@@ -15370,7 +15370,7 @@
             (senhas || []).forEach(s => { senhaMap[s.quarto] = s.senha_atual; });
             vars.quarto = '';
             vars.senha = '(verificar na recepcao)';
-            vars.endereco = 'R. Andrade Pertence, 40 - Vila Olimpia, SP';
+            vars.endereco = 'R. Andrade Pertence, 40 - Vila Olímpia, SP';
           }
           if (tipo === 'checkout') {
             vars.link_avaliacao = 'https://g.page/r/domusgarden/review';
@@ -18179,5 +18179,4 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
     </div>
   </div>
 
-</body>
-</html>
+</bod
