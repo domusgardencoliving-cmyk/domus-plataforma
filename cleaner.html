@@ -6,6 +6,13 @@
     <!-- safeStorage: garante que localStorage não quebre em modo anônimo / quota cheia -->
     <script>(function(){var f={};try{localStorage.setItem('__t__','1');localStorage.removeItem('__t__');return;}catch(e){}try{Object.defineProperty(window,'localStorage',{value:{getItem:function(k){return f[k]!==undefined?f[k]:null;},setItem:function(k,v){f[k]=String(v);},removeItem:function(k){delete f[k];},clear:function(){f={};},key:function(i){return Object.keys(f)[i]||null;},get length(){return Object.keys(f).length;}},writable:true,configurable:true});console.warn('[safeStorage] usando fallback em memoria');}catch(e){console.error('[safeStorage] falhou:',e);}})();</script>
     <title>Domus Limpeza</title>
+  <link rel="manifest" href="/manifest-limpeza.json" />
+  <meta name="theme-color" content="#5DCDB8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Domus Limpeza" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon-limpeza.png" />
+  <link rel="icon" type="image/png" href="/apple-touch-icon-limpeza.png" />
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

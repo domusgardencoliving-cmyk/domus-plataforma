@@ -1,32 +1,33 @@
 {
-  "name": "Domus Garden — Gestão",
+  "name": "Domus Garden",
   "short_name": "Domus",
   "description": "Sistema de gestão do Domus Garden Coliving — PMS, OCR de notas, financeiro",
   "start_url": "/pms.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#FFF8F0",
+  "background_color": "#008B9C",
   "theme_color": "#008B9C",
   "lang": "pt-BR",
   "dir": "ltr",
   "icons": [
     {
-      "src": "/images/logo-icone-branco.png",
+      "src": "/images/icone-domus-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/images/logo-branco.png",
+      "src": "/images/icone-domus-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo-branco.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "/images/icone-domus-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
@@ -35,22 +36,21 @@
       "short_name": "Nota",
       "description": "Envia foto de nota fiscal para a IA processar",
       "url": "/notas-ocr.html",
-      "icons": [{ "src": "/images/logo-icone-branco.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/images/icone-domus-192.png", "sizes": "192x192" }]
     },
     {
       "name": "PMS completo",
       "short_name": "PMS",
       "description": "Sistema de gestão completo",
       "url": "/pms.html",
-      "icons": [{ "src": "/images/logo-icone-branco.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/images/icone-domus-192.png", "sizes": "192x192" }]
     },
     {
       "name": "App de limpeza (Vivian)",
       "short_name": "Limpeza",
       "description": "App da Vivian e Gabi",
       "url": "/cleaner.html",
-      "icons": [{ "src": "/images/logo-icone-branco.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/images/icone-domus-192.png", "sizes": "192x192" }]
     }
   ],
-  "categories": ["business", "productivity"]
-}
+  "categories": ["business", "pr

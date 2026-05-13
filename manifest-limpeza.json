@@ -1,0 +1,33 @@
+{
+  "name": "Domus Limpeza",
+  "short_name": "Limpeza",
+  "description": "App da Vivian e Gabi para tarefas de limpeza",
+  "start_url": "/cleaner.html",
+  "scope": "/cleaner.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#5DCDB8",
+  "theme_color": "#5DCDB8",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/images/icone-limpeza-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icone-limpeza-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icone-limpeza-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"]
+}

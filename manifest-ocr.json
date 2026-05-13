@@ -1,0 +1,33 @@
+{
+  "name": "Domus Nota",
+  "short_name": "Nota",
+  "description": "Envia foto de nota fiscal e a IA preenche tudo automaticamente",
+  "start_url": "/notas-ocr.html",
+  "scope": "/notas-ocr.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#C9A961",
+  "theme_color": "#C9A961",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/images/icone-ocr-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icone-ocr-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icone-ocr-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"]
+}

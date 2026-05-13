@@ -11,7 +11,7 @@
 # Sai com código 0 = OK pra deployar | código != 0 = NÃO deploya
 # ============================================================
 
-set -e
+# set -e desativado: usamos ERROS counter
 cd "$(dirname "$0")"
 ERROS=0
 
@@ -88,6 +88,45 @@ for f in index.html reservar.html minha-conta.html dominhas.html cleaner.html pm
     falha "$f: <body>=$abrir != </body>=$fechar"
   fi
 done
+
+sec "5) Smoke tests de RPC (login real no Supabase)"
+SUPABASE_URL="https://motwhfbpundrhvuwjntw.supabase.co"
+SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q"
+
+# Detecta se temos rede pro Supabase (proxy/sandbox pode bloquear)
+TESTE_REDE=$(curl -sS -m 3 -o /dev/null -w "%{http_code}" "${SUPABASE_URL}/rest/v1/" 2>/dev/null || echo "000")
+if [ "$TESTE_REDE" = "000" ]; then
+  echo "  ⚠️  Sem acesso ao Supabase daqui (proxy bloqueia) — pulando smoke tests de RPC."
+  echo "     Pra rodar do seu PC: bash validar-deploy.sh"
+else
+  testar_rpc() {
+    local nome_rpc="$1"
+    local body="$2"
+    local resp
+    resp=$(curl -sS -m 10 -o /tmp/rpc_resp.json -w "%{http_code}" \
+      -X POST "${SUPABASE_URL}/rest/v1/rpc/${nome_rpc}" \
+      -H "apikey: ${SUPABASE_KEY}" \
+      -H "Authorization: Bearer ${SUPABASE_KEY}" \
+      -H "Content-Type: application/json" \
+      -d "$body" 2>/dev/null)
+    resp="${resp:-000}"
+
+    if [ "$resp" = "000" ]; then
+      echo "  ⚠️  RPC $nome_rpc — sem conexão (skip)"
+    elif [ "$resp" = "404" ]; then
+      falha "RPC $nome_rpc não existe no Supabase"
+    elif [ "$resp" = "200" ] || [ "$resp" = "400" ] || [ "$resp" = "401" ] || [ "$resp" = "403" ]; then
+      ok "RPC $nome_rpc responde (HTTP $resp)"
+    else
+      falha "RPC $nome_rpc — HTTP $resp inesperado"
+    fi
+  }
+
+  testar_rpc verificar_dominha_login '{"p_email":"smoke@test.invalid","p_senha":"x"}'
+  testar_rpc verificar_cleaner_login '{"p_email":"smoke@test.invalid","p_senha":"x"}'
+  testar_rpc verificar_admin_login   '{"p_email":"smoke@test.invalid","p_senha":"x"}'
+  testar_rpc verificar_login         '{"p_busca":"smoke@test.invalid","p_senha":"x"}'
+fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
