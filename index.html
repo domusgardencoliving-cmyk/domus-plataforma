@@ -14642,7 +14642,18 @@
         const calEl = document.getElementById('hostel-calendario');
         if (calEl) calEl.innerHTML = gerarCalendario(resMesAll || []);
 
-        // Calcular estado de cada leito
+        // Buscar tarefas de limpeza ainda nao finalizadas pra hoje (define quem esta "em limpeza")
+        const { data: tarefasLimpeza } = await db.from('tarefas_limpeza')
+          .select('ambiente_id,status,data_tarefa,ambientes(nome)')
+          .neq('status', 'finalizada')
+          .lte('data_tarefa', hoje);
+        const camasEmLimpeza = new Set();
+        (tarefasLimpeza || []).forEach(t => {
+          const nome = t.ambientes?.nome || t.ambiente_id;
+          if (nome) camasEmLimpeza.add(String(nome).replace(/\s+/g,' ').trim().toLowerCase());
+        });
+
+        // Calcular estado de cada leito (usa STATUS real da reserva, nao so a data)
         const ativas = resAtivas || [];
         _hostelLeitos = LEITOS_HOSTEL.map(nome => {
           // Encontrar reserva ativa pra esse leito
@@ -14654,6 +14665,12 @@
 
           const leito = { nome, hospede: null, plataforma: null, valor: null, ciStr: '', coStr: '', statusFiltro: 'disponivel' };
 
+          // 1. Se tem tarefa de limpeza pendente nessa cama, status = 'limpeza'
+          //    (independente de ter reserva ou nao — pode ser limpeza pos-checkout)
+          if (camasEmLimpeza.has(nomeNorm)) {
+            leito.statusFiltro = 'limpeza';
+          }
+
           if (resLeito) {
             leito.hospede = resLeito.hospede_nome;
             leito.plataforma = resLeito.plataforma;
@@ -14662,15 +14679,23 @@
             leito.coStr = new Date(resLeito.checkout).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'});
             leito.reserva = resLeito;
 
-            if (resLeito.checkin === hoje) {
-              leito.statusFiltro = 'entra';
-            } else if (resLeito.checkout === hoje) {
-              leito.statusFiltro = 'sai';
-            } else if (resLeito.status === 'em_espera') {
+            const st = (resLeito.status || '').toLowerCase().replace('-', '_');
+
+            // 2. Status real da reserva tem prioridade sobre datas
+            if (st === 'check_in' || st === 'checkin') {
+              leito.statusFiltro = 'ocupado';   // ja fez check-in -> ocupado, nao "entra hoje"
+            } else if (st === 'check_out' || st === 'checkout') {
+              // ja fez check-out -> em limpeza (a tarefa de limpeza esta em aberto)
+              leito.statusFiltro = camasEmLimpeza.has(nomeNorm) ? 'limpeza' : 'disponivel';
+            } else if (st === 'em_espera' || st === 'pre_reserva') {
               leito.statusFiltro = 'espera';
+            } else if (resLeito.checkin === hoje) {
+              leito.statusFiltro = 'entra';     // chegou hoje mas ainda nao fez check-in
+            } else if (resLeito.checkout === hoje) {
+              leito.statusFiltro = 'sai';       // sai hoje mas ainda nao fez check-out
             } else if (resLeito.checkin <= hoje && resLeito.checkout > hoje) {
-              leito.statusFiltro = 'ocupado';
-            } else {
+              leito.statusFiltro = 'ocupado';   // periodo da reserva, sem status explicito
+            } else if (!camasEmLimpeza.has(nomeNorm)) {
               leito.statusFiltro = 'disponivel';
             }
           }
@@ -18134,31 +18159,4 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
                 <select name="plataforma" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
                   <option value="Direto">Direto</option>
                   <option value="WhatsApp">WhatsApp</option>
-                  <option value="Booking">Booking</option>
-                  <option value="Airbnb">Airbnb</option>
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
-              <div>
-                <label class="text-xs font-medium text-domus-texto uppercase">Pagamento</label>
-                <select name="forma_pagamento" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-                  <option value="">A definir</option>
-                  <option value="Pix">Pix</option>
-                  <option value="Cartão">Cartão</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                  <option value="Transferência">Transferência</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label class="text-xs font-medium text-domus-texto uppercase">Status inicial</label>
-              <select name="status" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-                <option value="confirmada" selected>Confirmada</option>
-                <option value="em_espera">Em espera (aguardando pagamento)</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-xs font-medium text-domus-texto uppercase">Observações</label>
-              <textarea name="observacoes" rows="2" placeholder="Algo importante sobre essa reserva?" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm"></textarea>
-            </div>
-            <button type="submit" class="w-full py-2.5 
+    
