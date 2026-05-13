@@ -2716,7 +2716,7 @@
         cellsContainer.className = 'mapa-room-cells';
         cellsContainer.style.gridTemplateColumns = `repeat(${mapaDias}, minmax(${colW}px, 1fr))`;
 
-        // Background cells (clicáveis para criar reserva)
+        // Background cells (clicáveis para criar reserva + drop target pra drag-and-drop)
         dayDates.forEach((dateStr, colIdx) => {
           const d = new Date(dateStr + 'T12:00:00');
           const isToday = dateStr === todayStr;
@@ -2724,10 +2724,30 @@
           const cell = document.createElement('div');
           cell.className = 'mapa-day-cell' + (isToday ? ' is-today' : '') + (isWeekend ? ' is-weekend' : '');
           cell.title = `${quarto.label} — ${d.toLocaleDateString('pt-BR')} — Clique para nova reserva`;
+          cell.dataset.quartoId = quarto.id;
+          cell.dataset.data = dateStr;
+
+          // Mostra preço da diária na célula vazia (estilo Hospedin)
+          const precoSpan = document.createElement('span');
+          precoSpan.className = 'mapa-cell-preco';
+          precoSpan.style.cssText = 'font-size:9px;color:#9CA3AF;pointer-events:none;';
+          precoSpan.textContent = 'R$ ' + (quarto.preco || 0);
+          cell.appendChild(precoSpan);
+
           cell.onclick = () => {
             document.getElementById('nrQuarto').value = quarto.id;
             document.getElementById('nrCheckin').value = dateStr;
             document.getElementById('novaReservaModal').classList.remove('hidden');
+          };
+          // Drop target pra drag-and-drop
+          cell.ondragover = (e) => { e.preventDefault(); cell.style.background = '#dbeafe'; };
+          cell.ondragleave = () => { cell.style.background = ''; };
+          cell.ondrop = async (e) => {
+            e.preventDefault();
+            cell.style.background = '';
+            const data = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+            if (!data.reservaId) return;
+            await moverReservaNoMapa(data.reservaId, quarto.id, dateStr, data.checkin, data.checkout);
           };
           cellsContainer.appendChild(cell);
         });
@@ -2765,6 +2785,21 @@
 
           const bar = document.createElement('div');
           bar.className = 'mapa-reserva-bar';
+          bar.draggable = true;
+          bar.dataset.reservaId = reserva.id;
+          bar.dataset.checkin = reserva.checkin;
+          bar.dataset.checkout = reserva.checkout;
+          bar.style.cursor = 'move';
+          bar.ondragstart = (e) => {
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+              reservaId: reserva.id,
+              checkin: reserva.checkin,
+              checkout: reserva.checkout
+            }));
+            e.dataTransfer.effectAllowed = 'move';
+            bar.style.opacity = '0.5';
+          };
+          bar.ondragend = () => { bar.style.opacity = '1'; };
 
           // Posicionar: cada coluna é (100/mapaDias)% da largura
           const colWidth = 100 / mapaDias;
@@ -3888,6 +3923,51 @@
       t.textContent = msg;
       document.body.appendChild(t);
       setTimeout(() => t.remove(), 3000);
+    }
+
+    // ============================================================
+    // DRAG-AND-DROP NO MAPA — mover reserva pra outro quarto/data
+    // ============================================================
+    async function moverReservaNoMapa(reservaId, novoQuarto, novaDataInicio, oldCheckin, oldCheckout) {
+      try {
+        // Calcula novo checkout mantendo o mesmo número de noites
+        const noites = Math.round((new Date(oldCheckout) - new Date(oldCheckin)) / 86400000);
+        const novoCheckin = novaDataInicio;
+        const novoCheckoutDate = new Date(novaDataInicio);
+        novoCheckoutDate.setDate(novoCheckoutDate.getDate() + noites);
+        const novoCheckout = novoCheckoutDate.toISOString().slice(0, 10);
+
+        // Verifica conflito (não pode jogar em quarto ocupado nas mesmas datas)
+        const { data: conflitos } = await db
+          .from('reservas')
+          .select('id, hospede_nome')
+          .neq('id', reservaId)
+          .neq('status', 'cancelada')
+          .or(`cama.ilike.${novoQuarto},quarto.ilike.${novoQuarto}`)
+          .lt('checkin', novoCheckout)
+          .gt('checkout', novoCheckin);
+
+        if (conflitos && conflitos.length > 0) {
+          mostrarToast('❌ Conflito! ' + (conflitos[0].hospede_nome || 'Outra reserva') + ' já ocupa esse quarto nesse período.', 'erro');
+          return;
+        }
+
+        if (!confirm('Mover reserva pra ' + novoQuarto + ' começando em ' + novoCheckin + '?')) return;
+
+        const { error } = await db.from('reservas').update({
+          cama: novoQuarto,
+          quarto: novoQuarto,
+          checkin: novoCheckin,
+          checkout: novoCheckout
+        }).eq('id', reservaId);
+
+        if (error) { mostrarToast('Erro ao mover: ' + error.message, 'erro'); return; }
+        mostrarToast('✅ Reserva movida pra ' + novoQuarto);
+        if (typeof currentView !== 'undefined') {
+          if (currentView === 'mapa') loadMapa();
+          else if (currentView === 'home') loadHome();
+        }
+      } catch (e) { mostrarToast('Erro: ' + e.message, 'erro'); }
     }
 
     async function abrirAcaoModal(reservaId) {
