@@ -877,28 +877,19 @@
             var dataOut = new Date(r.checkout + 'T12:00:00').toLocaleDateString('pt-BR');
             var valor = r.valor_total ? 'R$ ' + Number(r.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '';
 
+            // Aviso "instruções às 14h" só pra reservas futuras confirmadas
+            var hoje = new Date(); hoje.setHours(0,0,0,0);
+            var dataCheckin = new Date(r.checkin + 'T12:00:00');
+            var ehFuturaConfirmada = dataCheckin >= hoje &&
+              (r.status === 'confirmada' || r.status === 'em_espera' || r.status === 'pre_reserva');
+            var avisoInstrucoes = ehFuturaConfirmada
+              ? '<div class="mt-3 px-3 py-2.5 rounded-xl bg-domus-azul/5 border border-domus-azul/15 flex items-start gap-2">'
+                + '<span class="text-base mt-0.5">💬</span>'
+                + '<p class="text-[11px] text-domus-texto leading-snug">'
+                + '<strong class="text-domus-azul-escuro">No dia do check-in, às 14h</strong>, '
+                + 'enviamos pelo WhatsApp endereço, vídeo, senhas e Wi-Fi automaticamente 🌿'
+                + '</p></div>'
+              : '';
+
             return '<div class="bg-white rounded-2xl border border-domus-borda/30 p-4">'
-              + '<div class="flex items-start justify-between mb-2">'
-              + '<div><p class="font-semibold text-domus-azul-escuro">' + (r.cama || 'Acomodação') + '</p>'
-              + '<p class="text-xs text-domus-texto-suave">' + dataIn + ' - ' + dataOut + '</p></div>'
-              + statusBadge + '</div>'
-              + (valor ? '<p class="text-sm font-medium text-domus-azul mt-2">' + valor + '</p>' : '')
-              + '</div>';
-          }).join('');
-        }
-      } catch (err) {
-        console.error('Erro ao carregar reservas:', err);
-        clearTimeout(timeoutId);
-        if (loading) loading.classList.add('hidden');
-        if (vazio) vazio.classList.remove('hidden');
-      }
-    }
-
-    // Disparar carregamento ao abrir a página (depois do login restaurado)
-    setTimeout(function() {
-      try { carregarMinhasReservas(); } catch(e) { console.warn(e); }
-    }, 500);
-
-  </script>
-</body>
-</html>
+     
