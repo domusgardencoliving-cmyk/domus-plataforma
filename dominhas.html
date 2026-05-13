@@ -698,57 +698,111 @@
       const vazio = document.getElementById('financeiro-vazio');
 
       try {
-        // Calcular data de 6 meses atrás
-        const hoje = new Date();
-        const seisMesesAtrás = new Date(hoje.getFullYear(), hoje.getMonth() - 6, hoje.getDate());
-        const dataInicio = seisMesesAtrás.toISOString().split('T')[0];
-
         const moradorIdReal = _morador.morador_id || _morador.id;
-        const { data, error } = await db
-          .from('lancamentos')
+
+        // 1) Sistema novo: busca boletos do dominhas_boletos (via view)
+        let { data: boletos } = await db
+          .from('v_boletos_moradora')
           .select('*')
-          .eq('morador_id', moradorIdReal)
-          .eq('tipo', 'receita')
-          .gte('data', dataInicio)
-          .order('data', { ascending: false });
+          .eq('moradora_id', moradorIdReal)
+          .order('mes_referencia', { ascending: false })
+          .limit(12);
 
         if (loading) loading.classList.add('hidden');
 
-        if (error || !data || data.length === 0) {
-          if (vazio) vazio.classList.remove('hidden');
-          if (lista) lista.classList.add('hidden');
+        // 2) Sem boletos novos? Fallback pro lancamentos antigo
+        if (!boletos || boletos.length === 0) {
+          const hoje = new Date();
+          const seisAtras = new Date(hoje.getFullYear(), hoje.getMonth() - 6, hoje.getDate());
+          const { data: lances } = await db
+            .from('lancamentos')
+            .select('*')
+            .eq('morador_id', moradorIdReal)
+            .eq('tipo', 'receita')
+            .gte('data', seisAtras.toISOString().split('T')[0])
+            .order('data', { ascending: false });
+
+          if (!lances || lances.length === 0) {
+            if (vazio) vazio.classList.remove('hidden');
+            if (lista) lista.classList.add('hidden');
+            return;
+          }
+
+          if (vazio) vazio.classList.add('hidden');
+          if (lista) lista.classList.remove('hidden');
+          lista.innerHTML = lances.map(l => {
+            const dt = new Date(l.data + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+            const v = parseFloat(l.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const pago = new Date(l.data) <= hoje;
+            const badge = pago ? '<span class="text-green-600 font-medium">✓ Pago</span>' : '<span class="text-red-600 font-medium">Pendente</span>';
+            return '<div class="flex items-center justify-between py-2 border-b border-domus-borda/30 last:border-0">' +
+              '<div><p class="text-sm font-medium text-domus-azul-escuro">' + (l.categoria || 'Aluguel') + '</p><p class="text-xs text-domus-texto-suave">' + dt + '</p></div>' +
+              '<div class="text-right"><p class="text-sm font-bold text-domus-azul">' + v + '</p>' + badge + '</div>' +
+              '</div>';
+          }).join('');
           return;
         }
 
+        // 3) Sistema novo: cards bonitos com PIX, PDF, vencimento
         if (vazio) vazio.classList.add('hidden');
         if (lista) lista.classList.remove('hidden');
 
-        let html = '';
-        data.forEach(lance => {
-          const dtFormat = new Date(lance.data + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-          const valor = parseFloat(lance.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-          const isPago = new Date(lance.data) <= hoje;
-          const statusBadge = isPago ? '<span class="text-green-600 font-medium">✓ Pago</span>' : '<span class="text-red-600 font-medium">Pendente</span>';
+        const corSituacao = {
+          'Pago':           'bg-emerald-50 border-emerald-300 text-emerald-800',
+          'Cancelado':      'bg-gray-50 border-gray-300 text-gray-700',
+          'Vencido':        'bg-red-50 border-red-300 text-red-800',
+          'Vence hoje':     'bg-orange-50 border-orange-300 text-orange-800',
+          'Vence em breve': 'bg-amber-50 border-amber-300 text-amber-800',
+          'Em dia':         'bg-blue-50 border-blue-300 text-blue-800'
+        };
 
-          html += `
-            <div class="flex items-center justify-between py-2 border-b border-domus-borda/30 last:border-0">
-              <div>
-                <p class="text-sm font-medium text-domus-azul-escuro">${lance.categoria || 'Aluguel'}</p>
-                <p class="text-xs text-domus-texto-suave">${dtFormat}</p>
-              </div>
-              <div class="text-right">
-                <p class="text-sm font-bold text-domus-azul">${valor}</p>
-                ${statusBadge}
-              </div>
-            </div>
-          `;
-        });
+        lista.innerHTML = boletos.map(b => {
+          const valor = parseFloat(b.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          const venc = b.data_vencimento ? new Date(b.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+          const sit = b.situacao_label || 'Pendente';
+          const corCard = corSituacao[sit] || 'bg-white border-domus-borda';
 
-        if (lista) lista.innerHTML = html;
+          const acoes = [];
+          if (b.inter_pix_copia_cola) {
+            acoes.push('<button onclick="copiarPix(\'' + b.id + '\', this)" class="flex-1 py-2 rounded-lg bg-domus-azul text-white text-xs font-medium hover:bg-domus-azul-escuro transition flex items-center justify-center gap-1">📋 Copiar PIX</button>');
+          }
+          if (b.inter_pdf_url) {
+            acoes.push('<a href="' + b.inter_pdf_url + '" target="_blank" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">📄 Boleto PDF</a>');
+          }
+
+          const composicao = [];
+          if (Number(b.valor_coliving) > 0) composicao.push('Coliving R$ ' + Number(b.valor_coliving).toFixed(2));
+          if (Number(b.valor_energia) > 0)  composicao.push('Energia R$ ' + Number(b.valor_energia).toFixed(2));
+          if (Number(b.valor_extras) > 0)   composicao.push('Extras R$ ' + Number(b.valor_extras).toFixed(2));
+          if (Number(b.valor_multas) > 0)   composicao.push('Multas R$ ' + Number(b.valor_multas).toFixed(2));
+
+          return '<div class="rounded-xl border ' + corCard + ' p-4">' +
+            '<div class="flex items-start justify-between gap-2 mb-2">' +
+              '<div><p class="text-sm font-semibold capitalize">' + (b.mes_label || '') + '</p><p class="text-xs opacity-75">Vence em ' + venc + '</p></div>' +
+              '<div class="text-right"><p class="text-lg font-bold">' + valor + '</p><p class="text-[10px] uppercase tracking-wider font-medium">' + sit + '</p></div>' +
+            '</div>' +
+            (composicao.length > 1 ? '<p class="text-[11px] opacity-70 mb-2">' + composicao.join(' + ') + '</p>' : '') +
+            (acoes.length ? '<div class="flex gap-2 mt-3">' + acoes.join('') + '</div>' : '') +
+          '</div>';
+        }).join('');
+
+        window._boletosMoradora = boletos;
       } catch (err) {
         console.error('Erro ao carregar financeiro:', err);
         if (loading) loading.classList.add('hidden');
+        if (vazio) vazio.classList.remove('hidden');
       }
+    }
+
+    function copiarPix(boletoId, botao) {
+      const b = (window._boletosMoradora || []).find(x => x.id === boletoId);
+      if (!b || !b.inter_pix_copia_cola) return;
+      navigator.clipboard.writeText(b.inter_pix_copia_cola).then(() => {
+        const orig = botao.innerHTML;
+        botao.innerHTML = '✅ Copiado!';
+        setTimeout(() => { botao.innerHTML = orig; }, 2000);
+        try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
+      });
     }
 
     // ==========================================

@@ -896,6 +896,10 @@
           <span>🎟️</span>
           <span>Cupons</span>
         </a>
+        <a href="#" data-view="boletos" class="sidebar-link">
+          <span>💰</span>
+          <span>Boletos Dominhas</span>
+        </a>
       </div>
 
       <div class="sidebar-footer">
@@ -1331,6 +1335,71 @@
                 <!-- Populated by JS -->
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- BOLETOS DOMINHAS VIEW -->
+        <div id="boletosView" class="view hidden">
+          <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <div>
+              <h2 class="text-2xl font-semibold text-domus-texto">Boletos Dominhas</h2>
+              <p class="text-xs text-domus-texto-suave mt-1">Substitui o BR Condomínio. Gera, envia e acompanha boletos das moradoras.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="month" id="boletosMes" class="border border-domus-azul/30 rounded px-3 py-2 text-sm" />
+              <button id="btnCriarLote" onclick="criarLoteBoletos()" class="bg-domus-azul text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">
+                + Criar lote do mês
+              </button>
+            </div>
+          </div>
+
+          <!-- KPIs do lote -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 rounded-xl bg-gradient-to-r from-domus-azul/5 to-white border border-domus-azul/20">
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Boletos do mês</div>
+              <div id="kpiBolTotal" class="text-xl font-bold text-domus-azul-escuro">—</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Valor total</div>
+              <div id="kpiBolValor" class="text-xl font-bold text-domus-azul-escuro">—</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Pagos</div>
+              <div id="kpiBolPagos" class="text-xl font-bold text-emerald-700">—</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Pendentes</div>
+              <div id="kpiBolPendentes" class="text-xl font-bold text-amber-700">—</div>
+            </div>
+          </div>
+
+          <!-- Status do lote + Ações -->
+          <div id="boletosStatusLote" class="mb-4 hidden"></div>
+
+          <!-- Tabela -->
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Moradora</th>
+                  <th>Unidade</th>
+                  <th>Vencimento</th>
+                  <th>Coliving</th>
+                  <th>Energia</th>
+                  <th>Extras</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="boletosTable">
+                <tr><td colspan="9" class="text-center text-domus-texto-suave py-8 italic">Selecione um mês e clique em "Criar lote do mês".</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-4 text-xs text-domus-texto-suave">
+            <strong>Como funciona:</strong> Selecione o mês, clique "Criar lote do mês". O sistema busca todas as moradoras ativas e gera um boleto pra cada. Você pode ajustar valores individuais (energia, extras, multas). Quando tudo estiver pronto, clica "Enviar malote pro Inter" e os boletos sobem via API.
           </div>
         </div>
       </div>
@@ -2072,6 +2141,7 @@
       else if (view === 'reservas') loadReservas();
       else if (view === 'hospedes') loadHospedes();
       else if (view === 'cupons') loadCupons();
+      else if (view === 'boletos') loadBoletos();
     }
 
     // ==========================================
@@ -3524,6 +3594,202 @@
       document.getElementById('novoCupomModal')?.classList.remove('hidden');
       gerarCodigoCupom();
     });
+
+    // ==========================================
+    // BOLETOS DOMINHAS VIEW
+    // ==========================================
+    let boletosLoteAtual = null;
+    let boletosLista = [];
+
+    function fmtMoedaBRL(v) {
+      const n = Number(v) || 0;
+      return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function fmtDataBR(iso) {
+      if (!iso) return '—';
+      const [y, m, d] = String(iso).split('T')[0].split('-');
+      return d + '/' + m + '/' + y;
+    }
+
+    function mesAtualISO() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+
+    async function loadBoletos() {
+      const inputMes = document.getElementById('boletosMes');
+      if (!inputMes.value) inputMes.value = mesAtualISO();
+      inputMes.onchange = () => loadBoletos();
+
+      const mesISO = inputMes.value + '-01';
+
+      try {
+        const { data: lote } = await db
+          .from('dominhas_lote_envio')
+          .select('*')
+          .eq('mes_referencia', mesISO)
+          .maybeSingle();
+        boletosLoteAtual = lote;
+
+        const { data: boletos } = await db
+          .from('dominhas_boletos')
+          .select('*')
+          .eq('mes_referencia', mesISO)
+          .order('moradora_nome');
+        boletosLista = boletos || [];
+
+        renderBoletosKpis();
+        renderBoletosStatusLote();
+        renderBoletosTabela();
+      } catch (e) {
+        console.error('loadBoletos:', e);
+        document.getElementById('boletosTable').innerHTML =
+          '<tr><td colspan="9" class="text-center text-red-600 py-6">Erro ao carregar boletos: ' + (e.message || e) + '</td></tr>';
+      }
+    }
+
+    function renderBoletosKpis() {
+      const total = boletosLista.length;
+      const valorTotal = boletosLista.reduce((s, b) => s + (Number(b.valor_total) || 0), 0);
+      const pagos = boletosLista.filter(b => b.status === 'pago').length;
+      const pendentes = boletosLista.filter(b => ['pendente', 'gerado'].includes(b.status)).length;
+
+      document.getElementById('kpiBolTotal').textContent = total;
+      document.getElementById('kpiBolValor').textContent = fmtMoedaBRL(valorTotal);
+      document.getElementById('kpiBolPagos').textContent = pagos;
+      document.getElementById('kpiBolPendentes').textContent = pendentes;
+    }
+
+    function renderBoletosStatusLote() {
+      const wrap = document.getElementById('boletosStatusLote');
+      if (!boletosLoteAtual) { wrap.classList.add('hidden'); return; }
+      wrap.classList.remove('hidden');
+
+      const cfg = {
+        rascunho: { cor: 'bg-amber-50 border-amber-300 text-amber-900', icone: '📝', label: 'Rascunho — você ainda pode ajustar valores antes de enviar' },
+        enviando: { cor: 'bg-blue-50 border-blue-300 text-blue-900', icone: '⏳', label: 'Enviando para o Inter…' },
+        enviado:  { cor: 'bg-emerald-50 border-emerald-300 text-emerald-900', icone: '✅', label: 'Lote enviado — boletos disponíveis no Portal Dominhas' },
+        erro:     { cor: 'bg-red-50 border-red-300 text-red-900', icone: '⚠️', label: 'Erro no envio' }
+      }[boletosLoteAtual.status] || { cor: 'bg-gray-50 border-gray-300', icone: '•', label: boletosLoteAtual.status };
+
+      let acaoHtml = '';
+      if (boletosLoteAtual.status === 'rascunho' && boletosLista.length > 0) {
+        acaoHtml = '<button onclick="enviarMaloteInter()" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">📤 Enviar malote pro Inter</button>';
+      } else if (boletosLoteAtual.status === 'enviado') {
+        acaoHtml = '<button onclick="notificarDominhasCarteiro()" class="bg-domus-azul text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">📲 Avisar moradoras (Carteiro)</button>';
+      }
+
+      wrap.innerHTML = '<div class="p-3 rounded-lg border ' + cfg.cor + ' flex items-center justify-between gap-3 flex-wrap">' +
+        '<div class="flex items-center gap-2 text-sm font-medium"><span class="text-xl">' + cfg.icone + '</span><span>' + cfg.label + '</span></div>' +
+        acaoHtml +
+        '</div>';
+    }
+
+    function renderBoletosTabela() {
+      const tbody = document.getElementById('boletosTable');
+      if (!boletosLista.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-domus-texto-suave py-8 italic">Nenhum boleto pra esse mês ainda. Clique em "Criar lote do mês" pra gerar.</td></tr>';
+        return;
+      }
+
+      const statusBadge = {
+        pendente:   '<span class="px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-800">Pendente</span>',
+        gerado:     '<span class="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">Gerado</span>',
+        pago:       '<span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800">Pago</span>',
+        vencido:    '<span class="px-2 py-0.5 rounded text-xs bg-red-100 text-red-800">Vencido</span>',
+        cancelado:  '<span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">Cancelado</span>'
+      };
+
+      tbody.innerHTML = boletosLista.map(b => {
+        const editavel = boletosLoteAtual?.status === 'rascunho';
+        const acoes = [];
+        if (editavel) acoes.push('<button onclick="editarValoresBoleto(\'' + b.id + '\')" class="text-domus-azul hover:underline text-xs">✏️ Ajustar</button>');
+        if (b.status === 'gerado') acoes.push('<button onclick="marcarBoletoPago(\'' + b.id + '\')" class="text-emerald-600 hover:underline text-xs">✓ Pago</button>');
+        if (b.inter_pdf_url) acoes.push('<a href="' + b.inter_pdf_url + '" target="_blank" class="text-domus-azul hover:underline text-xs">📄 PDF</a>');
+
+        return '<tr>' +
+          '<td><div class="font-medium">' + (b.moradora_nome || '—') + '</div><div class="text-xs text-domus-texto-suave">' + (b.moradora_email || '') + '</div></td>' +
+          '<td><div>' + (b.unidade || '—') + '</div><div class="text-xs text-domus-texto-suave">' + (b.quarto || '') + '</div></td>' +
+          '<td>' + fmtDataBR(b.data_vencimento) + '</td>' +
+          '<td>' + fmtMoedaBRL(b.valor_coliving) + '</td>' +
+          '<td>' + fmtMoedaBRL(b.valor_energia) + '</td>' +
+          '<td>' + fmtMoedaBRL(b.valor_extras) + '</td>' +
+          '<td class="font-semibold">' + fmtMoedaBRL(b.valor_total) + '</td>' +
+          '<td>' + (statusBadge[b.status] || b.status) + '</td>' +
+          '<td><div class="flex flex-col gap-1">' + acoes.join('') + '</div></td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    async function criarLoteBoletos() {
+      const mesISO = document.getElementById('boletosMes').value + '-01';
+      const btn = document.getElementById('btnCriarLote');
+      btn.disabled = true; btn.textContent = 'Criando…';
+      try {
+        const { data, error } = await db.rpc('criar_lote_boletos_mes', { p_mes_referencia: mesISO });
+        if (error) throw error;
+        mostrarToast('✅ Lote criado: ' + (data?.total_boletos || 0) + ' boletos, total ' + fmtMoedaBRL(data?.total_valor || 0), 'sucesso');
+        await loadBoletos();
+      } catch (e) {
+        console.error('criarLoteBoletos:', e);
+        mostrarToast('❌ Erro ao criar lote: ' + (e.message || e), 'erro');
+      } finally {
+        btn.disabled = false; btn.textContent = '+ Criar lote do mês';
+      }
+    }
+
+    async function enviarMaloteInter() {
+      if (!boletosLoteAtual) return;
+      if (!confirm('Enviar ' + boletosLista.length + ' boletos pro Banco Inter agora?')) return;
+      try {
+        const { data, error } = await db.rpc('gerar_boletos_mock', { p_lote_id: boletosLoteAtual.id });
+        if (error) throw error;
+        mostrarToast('✅ ' + (data?.gerados || 0) + ' boletos gerados (modo de teste — sem Inter ainda)', 'sucesso');
+        await loadBoletos();
+      } catch (e) {
+        console.error('enviarMaloteInter:', e);
+        mostrarToast('❌ Erro: ' + (e.message || e), 'erro');
+      }
+    }
+
+    async function editarValoresBoleto(boletoId) {
+      const b = boletosLista.find(x => x.id === boletoId);
+      if (!b) return;
+      const energia = prompt('Valor de energia (R$):', b.valor_energia || 0); if (energia === null) return;
+      const extras  = prompt('Valor de extras (mercadinho, lavanderia, etc):', b.valor_extras || 0); if (extras === null) return;
+      const multas  = prompt('Multas (atraso, etc):', b.valor_multas || 0); if (multas === null) return;
+      const desc    = prompt('Descontos:', b.valor_descontos || 0); if (desc === null) return;
+      const en = Number(energia) || 0, ex = Number(extras) || 0, mu = Number(multas) || 0, de = Number(desc) || 0;
+      const total = (Number(b.valor_coliving) || 0) + en + ex + mu - de;
+      try {
+        const { error } = await db.from('dominhas_boletos').update({
+          valor_energia: en, valor_extras: ex, valor_multas: mu, valor_descontos: de, valor_total: total
+        }).eq('id', boletoId);
+        if (error) throw error;
+        mostrarToast('✅ Valores atualizados', 'sucesso');
+        await loadBoletos();
+      } catch (e) { mostrarToast('❌ ' + (e.message || e), 'erro'); }
+    }
+
+    async function marcarBoletoPago(boletoId) {
+      if (!confirm('Marcar esse boleto como pago?')) return;
+      const hoje = new Date().toISOString().slice(0, 10);
+      try {
+        const { error } = await db.from('dominhas_boletos').update({ status: 'pago', data_pagamento: hoje }).eq('id', boletoId);
+        if (error) throw error;
+        mostrarToast('✅ Marcado como pago', 'sucesso');
+        await loadBoletos();
+      } catch (e) { mostrarToast('❌ ' + (e.message || e), 'erro'); }
+    }
+
+    async function notificarDominhasCarteiro() {
+      const pendentes = boletosLista.filter(b => b.status === 'gerado' && !b.notificado_em);
+      if (!pendentes.length) { mostrarToast('Todas as moradoras já foram notificadas pra esse mês.', 'info'); return; }
+      if (!confirm('Avisar ' + pendentes.length + ' moradoras via WhatsApp (Carteiro)?')) return;
+      mostrarToast('🚧 Função em construção — Carteiro WhatsApp ainda não foi conectado', 'info');
+    }
+
 
     // ==========================================
     // FORMS
