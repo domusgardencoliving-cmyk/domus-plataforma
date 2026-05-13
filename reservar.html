@@ -66,9 +66,68 @@
     .senha-wrapper input { padding-right: 2.5rem; }
     .btn-olhinho { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #717171; padding: 4px; }
     .btn-olhinho:hover { color: #0A6B75; }
+
+    /* ====== Toast Domus (substitui alert nativo) ====== */
+    #dg-toast-overlay {
+      position: fixed; inset: 0; background: rgba(10, 49, 66, 0.45);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center;
+      z-index: 9999; padding: 20px; animation: dgFadeIn .18s ease-out;
+    }
+    #dg-toast-overlay.show { display: flex; }
+    .dg-toast-card {
+      background: #fff; border-radius: 16px; padding: 24px 28px;
+      max-width: 420px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      font-family: system-ui, -apple-system, sans-serif;
+      animation: dgSlideUp .25s cubic-bezier(.2,.9,.3,1.2);
+    }
+    .dg-toast-card.erro { border-top: 4px solid #E5707D; }
+    .dg-toast-card.aviso { border-top: 4px solid #C9A961; }
+    .dg-toast-card.sucesso { border-top: 4px solid #4FB07A; }
+    .dg-toast-card.info { border-top: 4px solid #008B9C; }
+    .dg-toast-icon { font-size: 30px; margin-bottom: 10px; display: block; }
+    .dg-toast-msg { color: #0A3142; font-size: 15px; line-height: 1.5; margin: 0 0 18px; }
+    .dg-toast-btn {
+      background: #008B9C; color: #fff; border: 0;
+      padding: 10px 28px; border-radius: 10px; font-weight: 600;
+      font-size: 14px; cursor: pointer; width: 100%;
+      transition: background .15s ease;
+    }
+    .dg-toast-btn:hover { background: #0A6B75; }
+    @keyframes dgFadeIn { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes dgSlideUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
+
+  <!-- Toast Domus (substitui alert nativo) -->
+  <div id="dg-toast-overlay" role="dialog" aria-live="polite" onclick="if(event.target===this)dgToastClose()">
+    <div class="dg-toast-card info" id="dg-toast-card">
+      <span class="dg-toast-icon" id="dg-toast-icon">💬</span>
+      <p class="dg-toast-msg" id="dg-toast-msg">Mensagem</p>
+      <button class="dg-toast-btn" onclick="dgToastClose()">OK</button>
+    </div>
+  </div>
+  <script>
+    // dgToast(mensagem, tipo) — tipo: 'erro' | 'aviso' | 'sucesso' | 'info'
+    window.dgToast = function(msg, type){
+      type = type || 'info';
+      var icons = { erro:'⚠️', aviso:'⏳', sucesso:'✅', info:'💬' };
+      var card = document.getElementById('dg-toast-card');
+      var ov = document.getElementById('dg-toast-overlay');
+      if (!card || !ov) { console.error('[dgToast]', msg); return; }
+      card.className = 'dg-toast-card ' + type;
+      document.getElementById('dg-toast-icon').textContent = icons[type] || '💬';
+      document.getElementById('dg-toast-msg').textContent = msg;
+      ov.classList.add('show');
+    };
+    window.dgToastClose = function(){
+      var ov = document.getElementById('dg-toast-overlay');
+      if (ov) ov.classList.remove('show');
+    };
+    // Atalho compatível: dgToast() vira dgToast pra qualquer chamada que sobre
+    // (não substitui no código — só é fallback de segurança)
+  </script>
 
   <!-- Header discreto -->
   <header class="bg-white/80 backdrop-blur-md border-b border-domus-borda/50 sticky top-0 z-50">
@@ -1298,7 +1357,7 @@
       var busca = (document.getElementById('pr-login-busca')?.value || '').trim();
       var senha = (document.getElementById('pr-login-senha')?.value || '').trim();
       if (!busca || !senha) {
-        alert(t('alert_login_campos'));
+        dgToast(t('alert_login_campos'));
         return;
       }
 
@@ -1379,7 +1438,7 @@
       var busca = (document.getElementById('pr-busca-hospede')?.value || '').trim();
       var senha = (document.getElementById('pr-busca-senha')?.value || '').trim();
       if (!busca || !senha) {
-        alert(t('alert_login_campos'));
+        dgToast(t('alert_login_campos'));
         return;
       }
 
@@ -1464,27 +1523,27 @@
       var tel = document.getElementById('pr-telefone')?.value.trim();
       var doc = document.getElementById('pr-documento')?.value.trim();
       if (!nome || !sobrenome || !email || !tel || !doc) {
-        alert(typeof t === 'function' ? t('alert_campos') : 'Preencha todos os campos obrigatorios.');
+        dgToast(typeof t === 'function' ? t('alert_campos') : 'Preencha todos os campos obrigatorios.');
         return;
       }
       var docUpload = document.getElementById('pr-doc-upload');
       if (!docUpload?.files?.length) {
-        alert(typeof t === 'function' ? t('alert_doc') : 'Envie a foto do seu documento.');
+        dgToast(typeof t === 'function' ? t('alert_doc') : 'Envie a foto do seu documento.');
         return;
       }
       var selfieUpload = document.getElementById('pr-selfie-upload');
       if (!selfieUpload?.files?.length) {
-        alert('Por favor, envie uma selfie sua pra confirmacao de identidade.');
+        dgToast('Por favor, envie uma selfie sua pra confirmacao de identidade.');
         return;
       }
       var senha = document.getElementById('pr-senha')?.value || '';
       var senhaConfirma = document.getElementById('pr-senha-confirma')?.value || '';
       if (senha.length < 6) {
-        alert(typeof t === 'function' ? t('alert_senha_curta') : 'A senha precisa ter pelo menos 6 caracteres.');
+        dgToast(typeof t === 'function' ? t('alert_senha_curta') : 'A senha precisa ter pelo menos 6 caracteres.');
         return;
       }
       if (senha !== senhaConfirma) {
-        alert(typeof t === 'function' ? t('alert_senha_diferente') : 'As senhas nao coincidem.');
+        dgToast(typeof t === 'function' ? t('alert_senha_diferente') : 'As senhas nao coincidem.');
         return;
       }
       // Avanca pro destino (3 se veio do irParaPagamento, senao 2)
@@ -1500,9 +1559,9 @@
       var quartoSel = document.querySelector('input[name="pr-tipo-quarto"]:checked');
       var checkin = document.getElementById('pr-checkin')?.value;
       var checkout = document.getElementById('pr-checkout')?.value;
-      if (!quartoSel) { alert(typeof t === 'function' ? t('alert_quarto') : 'Escolha um quarto'); return; }
-      if (!checkin || !checkout) { alert(typeof t === 'function' ? t('alert_datas') : 'Preencha as datas'); return; }
-      if (checkout <= checkin) { alert(typeof t === 'function' ? t('alert_checkout') : 'Check-out precisa ser depois do check-in'); return; }
+      if (!quartoSel) { dgToast(typeof t === 'function' ? t('alert_quarto') : 'Escolha um quarto'); return; }
+      if (!checkin || !checkout) { dgToast(typeof t === 'function' ? t('alert_datas') : 'Preencha as datas'); return; }
+      if (checkout <= checkin) { dgToast(typeof t === 'function' ? t('alert_checkout') : 'Check-out precisa ser depois do check-in'); return; }
 
       // Ja logado? (variavel global ou localStorage)
       var jaLogado = false;
@@ -1567,27 +1626,27 @@
         var tel = document.getElementById('pr-telefone')?.value.trim();
         var doc = document.getElementById('pr-documento')?.value.trim();
         if (!nome || !sobrenome || !email || !tel || !doc) {
-          alert(t('alert_campos'));
+          dgToast(t('alert_campos'));
           return;
         }
         var docUpload = document.getElementById('pr-doc-upload');
         if (!docUpload?.files?.length) {
-          alert(t('alert_doc'));
+          dgToast(t('alert_doc'));
           return;
         }
         var selfieUpload = document.getElementById('pr-selfie-upload');
         if (!selfieUpload?.files?.length) {
-          alert('Por favor, envie uma selfie sua pra confirmação de identidade.');
+          dgToast('Por favor, envie uma selfie sua pra confirmação de identidade.');
           return;
         }
         var senha = document.getElementById('pr-senha')?.value || '';
         var senhaConfirma = document.getElementById('pr-senha-confirma')?.value || '';
         if (senha.length < 6) {
-          alert(t('alert_senha_curta'));
+          dgToast(t('alert_senha_curta'));
           return;
         }
         if (senha !== senhaConfirma) {
-          alert(t('alert_senha_diferente'));
+          dgToast(t('alert_senha_diferente'));
           return;
         }
       }
@@ -1595,11 +1654,11 @@
         var quartoSel = document.querySelector('input[name="pr-tipo-quarto"]:checked');
         var checkin = document.getElementById('pr-checkin')?.value;
         var checkout = document.getElementById('pr-checkout')?.value;
-        if (!quartoSel) { alert(t('alert_quarto')); return; }
-        if (!checkin || !checkout) { alert(t('alert_datas')); return; }
+        if (!quartoSel) { dgToast(t('alert_quarto')); return; }
+        if (!checkin || !checkout) { dgToast(t('alert_datas')); return; }
         var comoConheceu = document.getElementById('pr-como-conheceu')?.value;
-        if (!comoConheceu) { alert(t('alert_como_conheceu')); return; }
-        if (checkout <= checkin) { alert(t('alert_checkout')); return; }
+        if (!comoConheceu) { dgToast(t('alert_como_conheceu')); return; }
+        if (checkout <= checkin) { dgToast(t('alert_checkout')); return; }
         // Validar dados do grupo
         if (_prGrupoAtivo) {
           var grupoPessoas = getGrupoPessoas();
@@ -1608,7 +1667,7 @@
             if (!p.nome.trim() || !p.documento) grupoIncompleto = true;
           });
           if (grupoIncompleto) {
-            alert(_idiomaAtual === 'en' ? 'Please fill in the name and document for all group members.' :
+            dgToast(_idiomaAtual === 'en' ? 'Please fill in the name and document for all group members.' :
                   _idiomaAtual === 'es' ? 'Por favor complete el nombre y documento de todos los miembros del grupo.' :
                   'Preencha o nome e documento de todas as pessoas do grupo.');
             return;
@@ -2260,7 +2319,7 @@
     // ==========================================
     async function enviarPreReserva() {
       var aceite = document.getElementById('pr-aceite')?.checked;
-      if (!aceite) { alert(t('alert_aceite')); return; }
+      if (!aceite) { dgToast(t('alert_aceite')); return; }
 
       var quartoSel = document.querySelector('input[name="pr-tipo-quarto"]:checked');
       var checkin = document.getElementById('pr-checkin')?.value;
@@ -2294,7 +2353,7 @@
       var _selfieInputEl = document.getElementById('pr-selfie-upload');
 
       function _faltou(msg, idCampo) {
-        alert(msg);
+        dgToast(msg);
         mostrarPrStep(3);
         try { if (idCampo) document.getElementById(idCampo)?.focus(); } catch(e) {}
       }
@@ -2532,7 +2591,7 @@
           console.error('Erro ao salvar pré-reserva:', error);
           // 🚫 Hóspede bloqueado: mostra mensagem cordial sem revelar motivo
           if (error.message && error.message.includes('HOSPEDE_BLOQUEADO')) {
-            alert('Este quarto acabou de ficar indisponível para essas datas. Tente outras datas ou outro quarto.');
+            dgToast('Este quarto acabou de ficar indisponível para essas datas. Tente outras datas ou outro quarto.');
             return;
           }
           if (error.message && error.message.includes('check')) {
@@ -2568,15 +2627,15 @@
             }).select('id').single();
             if (e2) {
               if (e2.message && e2.message.includes('HOSPEDE_BLOQUEADO')) {
-                alert('Este quarto acabou de ficar indisponível para essas datas. Tente outras datas ou outro quarto.');
+                dgToast('Este quarto acabou de ficar indisponível para essas datas. Tente outras datas ou outro quarto.');
                 return;
               }
-              alert(t('alert_erro'));
+              dgToast(t('alert_erro'));
               return;
             }
             reservaId = d2data?.id || null;
           } else {
-            alert(t('alert_erro'));
+            dgToast(t('alert_erro'));
             return;
           }
         }
@@ -2675,7 +2734,7 @@
         }
       } catch (err) {
         console.error('Erro inesperado:', err);
-        alert(t('alert_erro_conexao'));
+        dgToast(t('alert_erro_conexao'));
       }
     }
 
@@ -2804,8 +2863,6 @@
       }
 
       // ========== "ADICIONAR MAIS UMA RESERVA" (Etapa 4) ==========
-      // Volta pra escolha de quartos preservando login e dados pessoais.
-      // Limpa apenas as datas e quarto selecionado. Aumenta ticket médio.
       var btnAdicionarMais = document.getElementById('pr-btn-adicionar-mais');
       if (btnAdicionarMais) {
         btnAdicionarMais.addEventListener('click', function() {
@@ -2819,27 +2876,21 @@
           var como = document.getElementById('pr-como-conheceu'); if (como) como.value = 'indicacao';
           var cupom = document.getElementById('pr-cupom'); if (cupom) cupom.value = '';
           var cupomInfo = document.getElementById('pr-cupom-info'); if (cupomInfo) cupomInfo.classList.add('hidden');
-
           if (typeof mostrarPrStep === 'function') mostrarPrStep(2);
-
           var banner = document.getElementById('pr-banner-adicional');
           if (!banner) {
             banner = document.createElement('div');
             banner.id = 'pr-banner-adicional';
             banner.className = 'mb-4 p-3 rounded-xl bg-domus-rosa/10 border border-domus-rosa/30 text-center';
-            banner.innerHTML = '<p class="text-sm text-domus-rosa font-semibold">＋ Adicionando mais uma reserva</p>' +
-                               '<p class="text-[11px] text-domus-texto-suave mt-1">Você já está logado. Escolha as datas e o quarto desta reserva extra.</p>';
+            banner.innerHTML = '<p class="text-sm text-domus-rosa font-semibold">+ Adicionando mais uma reserva</p>' +
+                               '<p class="text-[11px] text-domus-texto-suave mt-1">Voce ja esta logado. Escolha as datas e o quarto desta reserva extra.</p>';
             var step2El = document.getElementById('pr-step-2');
             if (step2El) step2El.insertBefore(banner, step2El.firstChild);
           } else {
             banner.classList.remove('hidden');
           }
-
           window._reservaAdicional = true;
         });
       }
-
-        })();
-  </script>
-</body>
-</html>
+    })();
+  </scrip
