@@ -5693,8 +5693,10 @@
                 <div class="flex gap-2">
                   <input id="ocr-api-key" type="password" placeholder="sk-ant-..." class="flex-1 p-2 rounded-lg border border-domus-borda text-sm" value="">
                   <button onclick="ocrSalvarApiKey()" class="px-4 py-2 rounded-lg bg-domus-azul text-white text-sm">Salvar</button>
+                  <button type="button" onclick="ocrLimparApiKey()" class="px-3 py-2 rounded-lg border border-domus-borda text-sm text-domus-texto-suave" title="Apagar a chave salva">🗑️</button>
                 </div>
-                <p class="text-xs text-domus-texto-suave mt-2">A chave fica salva apenas neste navegador (localStorage). Nunca e enviada a terceiros.</p>
+                <p id="ocr-key-status" class="text-xs mt-2"></p>
+                <p class="text-xs text-domus-texto-suave mt-1">A chave fica salva apenas neste navegador (localStorage). Nunca e enviada a terceiros.</p>
               </div>
             </div>
 
@@ -15796,8 +15798,40 @@
       const key = document.getElementById('ocr-api-key').value.trim();
       if (!key) { alert('Cole sua chave da API Claude'); return; }
       localStorage.setItem('domus_ocr_api_key', key);
+      ocrAtualizarUiKey();
       alert('Chave salva com sucesso!');
     }
+
+    function ocrLimparApiKey() {
+      if (!confirm('Apagar a chave salva? Voce vai precisar colar de novo pra usar o OCR.')) return;
+      localStorage.removeItem('domus_ocr_api_key');
+      var inp = document.getElementById('ocr-api-key');
+      if (inp) inp.value = '';
+      ocrAtualizarUiKey();
+    }
+
+    // Atualiza a UI mostrando se ja tem chave salva (so os ultimos 6 caracteres, mascarados)
+    function ocrAtualizarUiKey() {
+      var inp = document.getElementById('ocr-api-key');
+      var status = document.getElementById('ocr-key-status');
+      if (!inp || !status) return;
+      var k = ocrGetApiKey();
+      if (k && k.length > 12) {
+        // Pre-preenche o input com a chave (input type=password mascara automaticamente)
+        if (!inp.value) inp.value = k;
+        status.innerHTML = '<span style="color:#4FB07A">✅ Chave ja salva neste navegador</span> · termina em <code>' + k.slice(-6) + '</code>';
+      } else {
+        status.innerHTML = '<span style="color:#C9A961">⚠️ Nenhuma chave salva ainda</span>';
+      }
+    }
+    // Atualiza quando o usuario abrir a aba Notas (OCR) — chama ao expandir o card de configuracao
+    document.addEventListener('DOMContentLoaded', function(){
+      // Tenta atualizar imediatamente (caso a aba ja esteja visivel)
+      try { ocrAtualizarUiKey(); } catch(e) {}
+      // Tambem atualiza quando o card de configuracao for aberto
+      var cfgHeader = document.querySelector('[onclick*="ocr-config-body"]');
+      if (cfgHeader) cfgHeader.addEventListener('click', function(){ setTimeout(ocrAtualizarUiKey, 50); });
+    });
 
     function ocrHandleDrop(e) {
       const file = e.dataTransfer.files[0];
@@ -18148,35 +18182,4 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
         <p class="text-sm text-domus-texto-suave mt-1">Acesso restrito</p>
       </div>
 
-      <form onsubmit="event.preventDefault(); tentarLogin();" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-domus-texto mb-1">E-mail</label>
-          <input id="login-email" type="email" required placeholder="seu@email.com"
-            class="w-full px-4 py-2.5 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" autocomplete="username" />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-domus-texto mb-1">Senha</label>
-          <div class="relative">
-            <input id="login-senha" type="password" required placeholder="senha"
-              class="w-full px-4 py-2.5 pr-12 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" autocomplete="current-password" />
-            <button type="button" onclick="toggleSenha()" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-domus-texto-suave hover:text-domus-texto text-base" aria-label="Mostrar/ocultar senha">👁️</button>
-          </div>
-        </div>
-
-        <label class="flex items-center gap-2 text-sm text-domus-texto-suave cursor-pointer">
-          <input id="login-lembrar" type="checkbox" class="w-4 h-4 rounded border-domus-borda text-domus-azul focus:ring-domus-azul" />
-          <span>Lembrar de mim</span>
-        </label>
-
-        <div id="login-erro" class="hidden text-sm text-red-600 text-center p-2 bg-red-50 rounded-lg"></div>
-
-        <button type="submit" class="w-full bg-domus-azul text-white py-2.5 rounded-lg font-medium hover:bg-domus-azul-escuro transition flex items-center justify-center gap-2">
-          <span id="login-texto">Entrar</span>
-          <span id="login-spinner" class="hidden inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-        </button>
-      </form>
-    </div>
-  </div>
-
-</bod
+      <form onsubmit="event.preventDe
