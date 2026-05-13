@@ -18266,4 +18266,20 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
           </div>
         </div>
 
-        <label class="flex items-center gap-2 text-sm text-do
+        <label class="flex items-center gap-2 text-sm text-domus-texto-suave cursor-pointer">
+          <input id="login-lembrar" type="checkbox" class="w-4 h-4 rounded border-domus-borda text-domus-azul focus:ring-domus-azul" />
+          <span>Lembrar de mim</span>
+        </label>
+
+        <div id="login-erro" class="hidden text-sm text-red-600 text-center p-2 bg-red-50 rounded-lg"></div>
+
+        <button type="submit" class="w-full bg-domus-azul text-white py-2.5 rounded-lg font-medium hover:bg-domus-azul-escuro transition flex items-center justify-center gap-2">
+          <span id="login-texto">Entrar</span>
+          <span id="login-spinner" class="hidden inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
