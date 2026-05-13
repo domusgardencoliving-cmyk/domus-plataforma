@@ -1580,7 +1580,7 @@
 
         <div class="space-y-2">
           <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1">Status</p>
-          <button onclick="mudarStatusReserva('check-in')" id="btnCheckin"
+          <button onclick="fazerCheckinComMensagem()" id="btnCheckin"
             class="w-full px-4 py-2 bg-domus-verde text-white rounded text-sm hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
             🟢 Fazer Check-in
           </button>
@@ -1599,24 +1599,20 @@
             💰 Registrar Pagamento
           </button>
 
-          <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1 mt-4">Documentos</p>
-          <button onclick="gerarVoucherPDF()"
+          <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1 mt-4">Editar</p>
+          <button onclick="abrirEditarReserva()"
             class="w-full px-4 py-2 bg-domus-azul text-white rounded text-sm hover:bg-domus-azul-escuro flex items-center justify-center gap-2">
-            📄 Gerar Voucher
-          </button>
-          <button onclick="gerarReciboPDF()"
-            class="w-full px-4 py-2 bg-white border border-domus-borda text-domus-texto rounded text-sm hover:bg-gray-50 flex items-center justify-center gap-2">
-            🧾 Gerar Recibo
+            ✏️ Editar Reserva (datas, valor, quarto)
           </button>
 
-          <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1 mt-4">Enviar</p>
+          <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1 mt-4">Comunicar</p>
+          <button onclick="conversarWhatsApp()"
+            class="w-full px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 flex items-center justify-center gap-2">
+            💬 Conversar no WhatsApp
+          </button>
           <button onclick="enviarVoucherEmail()"
             class="w-full px-4 py-2 bg-white border border-domus-borda text-domus-texto rounded text-sm hover:bg-gray-50 flex items-center justify-center gap-2">
             ✉️ Enviar Voucher por E-mail
-          </button>
-          <button onclick="enviarVoucherWhatsApp()"
-            class="w-full px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 flex items-center justify-center gap-2">
-            💬 Enviar por WhatsApp
           </button>
 
           <button onclick="closeAcaoModal()"
@@ -2165,18 +2161,20 @@
         document.getElementById('statusAvailable').textContent = disponiveis;
         document.getElementById('statusOccupied').textContent = ocupados;
 
+        // ENTRA HOJE: só quem ainda NÃO fez check-in (status='confirmada')
         const { data: entradaHoje } = await db
           .from('reservas')
           .select('*')
           .eq('checkin', hoje)
-          .neq('status', 'cancelada')
+          .eq('status', 'confirmada')
           .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
 
+        // SAI HOJE: só quem ainda NÃO fez check-out (status confirmada ou check-in)
         const { data: saidaHoje } = await db
           .from('reservas')
           .select('*')
           .eq('checkout', hoje)
-          .neq('status', 'cancelada')
+          .in('status', ['confirmada','check-in','check_in'])
           .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
 
         document.getElementById('statusCheckIn').textContent = (entradaHoje || []).length;
@@ -4027,6 +4025,149 @@
       }
     }
 
+
+    // ============================================================
+    // CHECK-IN — muda status + abre WhatsApp com mensagem dia_checkin
+    // (usa a função montar_mensagem_checkin do banco que tem o
+    // padrão Domus completo: senhas, localização, WiFi, lavanderia, etc)
+    // ============================================================
+    async function fazerCheckinComMensagem() {
+      if (!_currentReservaId) return;
+      if (!confirm('Fazer check-in desta reserva? Vai abrir o WhatsApp do hóspede com a mensagem completa de boas-vindas.')) return;
+
+      const reservaIdLocal = _currentReservaId;
+
+      // 1) Buscar dados da reserva
+      let reserva;
+      try {
+        const { data, error } = await db.from('reservas').select('*').eq('id', reservaIdLocal).maybeSingle();
+        if (error) throw error;
+        reserva = data;
+      } catch (e) {
+        mostrarToast('Erro ao buscar reserva: ' + e.message, 'error');
+        return;
+      }
+      if (!reserva) { mostrarToast('Reserva não encontrada', 'error'); return; }
+
+      // 2) Mudar status pra check-in
+      const { data: upd, error: errStatus } = await db
+        .from('reservas')
+        .update({ status: 'check-in' })
+        .eq('id', reservaIdLocal)
+        .select('id, status');
+      if (errStatus) {
+        mostrarToast('Erro ao fazer check-in: ' + (errStatus.message || ''), 'error');
+        return;
+      }
+      if (!upd || !upd.length) {
+        mostrarToast('Mudança bloqueada (sem permissão).', 'error');
+        return;
+      }
+
+      // 3) Pegar mensagem montada da função SQL (padrão Domus completo)
+      let msg = '';
+      try {
+        const { data: rpcData, error: rpcErr } = await db.rpc('montar_mensagem_checkin', {
+          p_reserva_id: reservaIdLocal,
+          p_momento: 'dia_checkin'
+        });
+        if (rpcErr) throw rpcErr;
+        if (rpcData && rpcData.success) msg = rpcData.mensagem;
+        else throw new Error(rpcData?.erro || 'Sem mensagem');
+      } catch (e) {
+        console.warn('Erro montar_mensagem_checkin:', e);
+        const nome = (reserva.hospede_nome || 'hóspede').split(' ')[0];
+        msg = `Oi ${nome}! Hoje é seu dia 🎉\n\nQualquer coisa, é só responder por aqui.\nEquipe Domus 🌿`;
+      }
+
+      // 4) Abrir WhatsApp
+      const tel = normalizarTelefone(reserva.hospede_contato || reserva.hospede_telefone || '');
+      if (!tel) {
+        mostrarToast('Check-in feito! Mas hóspede sem telefone — copie a msg do console.', 'info');
+        console.log('===== MENSAGEM CHECK-IN =====\n' + msg.replace(/\\n/g,'\n'));
+      } else {
+        const url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(msg.replace(/\\n/g,'\n'));
+        window.open(url, '_blank');
+        mostrarToast('Check-in feito! WhatsApp aberto com a mensagem.');
+      }
+
+      // 5) Recarregar
+      closeAcaoModal();
+      if (typeof currentView !== 'undefined') {
+        if (currentView === 'home') loadHome();
+        else if (currentView === 'mapa') loadMapa();
+        else if (currentView === 'reservas') loadReservas();
+      }
+    }
+
+    // ============================================================
+    // CONVERSAR NO WHATSAPP — só abre wa.me limpo (sem msg pronta)
+    // ============================================================
+    async function conversarWhatsApp() {
+      if (!_currentReservaId) return;
+      try {
+        const { data: r } = await db.from('reservas').select('hospede_nome,hospede_contato,hospede_telefone').eq('id', _currentReservaId).maybeSingle();
+        if (!r) { mostrarToast('Reserva não encontrada', 'error'); return; }
+        const tel = normalizarTelefone(r.hospede_contato || r.hospede_telefone || '');
+        if (!tel) { mostrarToast('Hóspede sem telefone cadastrado', 'error'); return; }
+        window.open('https://wa.me/' + tel, '_blank');
+      } catch (e) { mostrarToast('Erro: ' + e.message, 'error'); }
+    }
+
+    // ============================================================
+    // EDITAR RESERVA — abre modal com campos editáveis
+    // ============================================================
+    async function abrirEditarReserva() {
+      if (!_currentReservaId) return;
+      try {
+        const { data: r, error } = await db.from('reservas').select('*').eq('id', _currentReservaId).maybeSingle();
+        if (error) throw error;
+        if (!r) { mostrarToast('Reserva não encontrada', 'error'); return; }
+        document.getElementById('editResId').value = r.id;
+        document.getElementById('editResNome').value = r.hospede_nome || '';
+        document.getElementById('editResTel').value = r.hospede_contato || r.hospede_telefone || '';
+        document.getElementById('editResCheckin').value = (r.checkin || '').slice(0,10);
+        document.getElementById('editResCheckout').value = (r.checkout || '').slice(0,10);
+        document.getElementById('editResQuarto').value = r.quarto || r.cama || '';
+        document.getElementById('editResValor').value = r.valor_total || '';
+        document.getElementById('editResObs').value = r.observacoes || '';
+        closeAcaoModal();
+        document.getElementById('editarReservaModal').classList.remove('hidden');
+      } catch (e) { mostrarToast('Erro ao abrir edição: ' + e.message, 'error'); }
+    }
+
+    function fecharEditarReservaModal() {
+      document.getElementById('editarReservaModal').classList.add('hidden');
+    }
+
+    async function salvarEdicaoReserva(e) {
+      e.preventDefault();
+      const id = document.getElementById('editResId').value;
+      if (!id) { mostrarToast('ID da reserva ausente', 'error'); return; }
+      const updates = {
+        hospede_nome:    document.getElementById('editResNome').value.trim(),
+        hospede_contato: document.getElementById('editResTel').value.trim(),
+        checkin:         document.getElementById('editResCheckin').value,
+        checkout:        document.getElementById('editResCheckout').value,
+        quarto:          document.getElementById('editResQuarto').value.trim(),
+        cama:            document.getElementById('editResQuarto').value.trim(),
+        valor_total:     parseFloat(document.getElementById('editResValor').value) || null,
+        observacoes:     document.getElementById('editResObs').value.trim()
+      };
+      try {
+        const { data, error } = await db.from('reservas').update(updates).eq('id', id).select('id');
+        if (error) throw error;
+        if (!data || !data.length) { mostrarToast('Mudança bloqueada (RLS)', 'error'); return; }
+        mostrarToast('✅ Reserva atualizada');
+        fecharEditarReservaModal();
+        if (typeof currentView !== 'undefined') {
+          if (currentView === 'home') loadHome();
+          else if (currentView === 'mapa') loadMapa();
+          else if (currentView === 'reservas') loadReservas();
+        }
+      } catch (e) { mostrarToast('Erro: ' + e.message, 'error'); }
+    }
+
     async function cancelarReserva() {
       if (!_currentReservaId) return;
       // Abre o modal de motivo (não cancela direto)
@@ -4287,6 +4428,54 @@
               class="flex-1 px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 font-medium">
               Confirmar cancelamento
             </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal Editar Reserva -->
+  <div id="editarReservaModal" class="hidden">
+    <div class="modal-overlay" onclick="fecharEditarReservaModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full pointer-events-auto max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-semibold text-domus-texto mb-4">Editar Reserva</h3>
+        <form onsubmit="salvarEdicaoReserva(event)" class="space-y-3">
+          <input type="hidden" id="editResId" />
+          <div>
+            <label class="block text-xs font-medium text-domus-texto-suave mb-1">Nome do hóspede</label>
+            <input id="editResNome" type="text" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-domus-texto-suave mb-1">WhatsApp</label>
+            <input id="editResTel" type="text" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" placeholder="11999999999" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-medium text-domus-texto-suave mb-1">Check-in</label>
+              <input id="editResCheckin" type="date" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-domus-texto-suave mb-1">Check-out</label>
+              <input id="editResCheckout" type="date" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-domus-texto-suave mb-1">Quarto / Cama</label>
+            <input id="editResQuarto" type="text" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" placeholder="Ex: Studio 1, Hostel 6 - Cama 1" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-domus-texto-suave mb-1">Valor total (R$)</label>
+            <input id="editResValor" type="number" step="0.01" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-domus-texto-suave mb-1">Observações</label>
+            <textarea id="editResObs" rows="2" class="w-full px-3 py-2 border border-domus-borda rounded text-sm"></textarea>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <button type="button" onclick="fecharEditarReservaModal()" class="flex-1 px-4 py-2 bg-gray-200 text-domus-texto rounded text-sm">Cancelar</button>
+            <button type="submit" class="flex-1 px-4 py-2 bg-domus-azul text-white rounded text-sm hover:bg-domus-azul-escuro">Salvar mudanças</button>
           </div>
         </form>
       </div>
