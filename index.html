@@ -8620,17 +8620,32 @@
     })();
 
     function mostrarModuloProtegido(id) {
-      // Portal Dominhas tem login proprio dentro do modulo
-      if (id === 'portal') {
-        mostrarModulo(id);
-        return;
+      try {
+        console.log('[engrenagem] click — modulo solicitado:', id);
+        // Portal Dominhas tem login proprio dentro do modulo
+        if (id === 'portal') {
+          mostrarModulo(id);
+          return;
+        }
+        if (typeof temAcessoAdmin === 'function' && temAcessoAdmin()) {
+          document.documentElement.classList.remove('modo-publico');
+          mostrarModulo(id);
+          return;
+        }
+        if (typeof abrirLogin === 'function') {
+          abrirLogin(id);
+        } else {
+          // Fallback: ir direto pro DG Gestão pela URL
+          console.warn('[engrenagem] abrirLogin nao definido — fallback pra ?login=pms');
+          window.location.href = window.location.pathname + '?login=pms';
+        }
+      } catch (err) {
+        console.error('[engrenagem] erro:', err);
+        // Fallback ultimo recurso: tenta abrir o overlay direto
+        var ov = document.getElementById('login-overlay');
+        if (ov) ov.classList.remove('hidden');
+        else alert('Nao consegui abrir o login. Recarregue a pagina (Ctrl+F5).');
       }
-      if (temAcessoAdmin()) {
-        document.documentElement.classList.remove('modo-publico');
-        mostrarModulo(id);
-        return;
-      }
-      abrirLogin(id);
     }
 
     function mostrarModulo(id) {
@@ -18159,4 +18174,96 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
                 <select name="plataforma" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
                   <option value="Direto">Direto</option>
                   <option value="WhatsApp">WhatsApp</option>
-    
+                  <option value="Booking">Booking</option>
+                  <option value="Airbnb">Airbnb</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-domus-texto uppercase">Pagamento</label>
+                <select name="forma_pagamento" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
+                  <option value="">A definir</option>
+                  <option value="Pix">Pix</option>
+                  <option value="Cartão">Cartão</option>
+                  <option value="Dinheiro">Dinheiro</option>
+                  <option value="Transferência">Transferência</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-domus-texto uppercase">Status inicial</label>
+              <select name="status" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
+                <option value="confirmada" selected>Confirmada</option>
+                <option value="em_espera">Em espera (aguardando pagamento)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-domus-texto uppercase">Observações</label>
+              <textarea name="observacoes" rows="2" placeholder="Algo importante sobre essa reserva?" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm"></textarea>
+            </div>
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition">Criar reserva</button>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    async function criarReservaManual(form) {
+      const dados = {
+        hospede_nome: form.hospede_nome.value.trim(),
+        hospede_documento: form.hospede_documento.value.trim() || null,
+        hospede_contato: form.hospede_contato.value.trim() || null,
+        quarto: form.quarto.value,
+        checkin: form.checkin.value,
+        checkout: form.checkout.value,
+        valor_total: parseFloat(form.valor_total.value) || 0,
+        plataforma: form.plataforma ? form.plataforma.value : 'Direto',
+        observacoes: form.observacoes ? form.observacoes.value.trim() : null,
+        status: 'confirmada',
+        cama: form.quarto.value
+      };
+      try {
+        const { error } = await db.from('reservas').insert(dados);
+        if (error) throw error;
+        alert('Reserva criada com sucesso!');
+        const m = document.querySelector('.fixed.inset-0.z-\\[60\\]');
+        if (m) m.remove();
+        if (typeof carregarPMS === 'function') carregarPMS();
+      } catch (err) {
+        console.error('Erro ao criar reserva:', err);
+        alert('Erro ao criar reserva: ' + (err.message || 'desconhecido'));
+      }
+    }
+
+  </script>
+
+  <!-- ==========================================
+       MODAL DE LOGIN ADMIN (DG Gestão / engrenagem)
+       Reconstituído após truncamento.
+       ========================================== -->
+  <div id="login-overlay" class="hidden fixed inset-0 z-[200] flex items-center justify-center" style="backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.55);">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 relative">
+      <button onclick="fecharLogin()" class="absolute top-4 right-4 text-domus-texto-suave hover:text-domus-texto text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition" aria-label="Fechar">&times;</button>
+
+      <div class="text-center mb-6">
+        <h2 class="font-serif text-2xl text-domus-azul-escuro">DG Gestão</h2>
+        <p class="text-sm text-domus-texto-suave mt-1">Acesso restrito</p>
+      </div>
+
+      <form onsubmit="event.preventDefault(); tentarLogin();" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-domus-texto mb-1">E-mail</label>
+          <input id="login-email" type="email" required placeholder="seu@email.com"
+            class="w-full px-4 py-2.5 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" autocomplete="username" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-domus-texto mb-1">Senha</label>
+          <div class="relative">
+            <input id="login-senha" type="password" required placeholder="senha"
+              class="w-full px-4 py-2.5 pr-12 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" autocomplete="current-password" />
+            <button type="button" onclick="toggleSenha()" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-domus-texto-suave hover:text-domus-texto text-base" aria-label="Mostrar/ocultar senha">👁️</button>
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2 text-sm text-do
