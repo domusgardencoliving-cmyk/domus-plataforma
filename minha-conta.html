@@ -880,4 +880,25 @@
             return '<div class="bg-white rounded-2xl border border-domus-borda/30 p-4">'
               + '<div class="flex items-start justify-between mb-2">'
               + '<div><p class="font-semibold text-domus-azul-escuro">' + (r.cama || 'Acomodação') + '</p>'
-              + '<p class="text-xs text-domus-texto-suave">' + dataIn + ' - ' + 
+              + '<p class="text-xs text-domus-texto-suave">' + dataIn + ' - ' + dataOut + '</p></div>'
+              + statusBadge + '</div>'
+              + (valor ? '<p class="text-sm font-medium text-domus-azul mt-2">' + valor + '</p>' : '')
+              + '</div>';
+          }).join('');
+        }
+      } catch (err) {
+        console.error('Erro ao carregar reservas:', err);
+        clearTimeout(timeoutId);
+        if (loading) loading.classList.add('hidden');
+        if (vazio) vazio.classList.remove('hidden');
+      }
+    }
+
+    // Disparar carregamento ao abrir a página (depois do login restaurado)
+    setTimeout(function() {
+      try { carregarMinhasReservas(); } catch(e) { console.warn(e); }
+    }, 500);
+
+  </script>
+</body>
+</html>

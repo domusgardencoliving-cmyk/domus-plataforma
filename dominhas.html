@@ -1172,4 +1172,23 @@
               mostrarPainel();
               return;
             }
-          } 
+          } catch(e) { console.warn('sessão inválida', e); }
+        }
+
+        // Pré-preencher email se "lembrar de mim" foi marcado
+        const remember = localStorage.getItem('domus_morador_remember');
+        const savedEmail = localStorage.getItem('domus_morador_email');
+        if (remember && savedEmail) {
+          var emailEl = document.getElementById('login-email');
+          var lembrarEl = document.getElementById('lembrar-mim');
+          if (emailEl) emailEl.value = savedEmail;
+          if (lembrarEl) lembrarEl.checked = true;
+        }
+      } catch (err) {
+        console.error('Erro na inicialização:', err);
+      }
+    })();
+  </script>
+
+</body>
+</html>

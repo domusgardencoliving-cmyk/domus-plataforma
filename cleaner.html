@@ -1329,4 +1329,19 @@
                 const sessaoSalva = localStorage.getItem('cleaner_session');
                 if (sessaoSalva) {
                     const sessao = JSON.parse(sessaoSalva);
-                    if (sessao && sessao.cleaner_id && ses
+                    if (sessao && sessao.cleaner_id && sessao.cleaner_email) {
+                        currentUser = { id: sessao.cleaner_id, email: sessao.cleaner_email };
+                        currentUserProfile = { id: sessao.cleaner_id, nome: sessao.cleaner_nome, perfil: 'limpeza' };
+                        const h1 = document.querySelector('#mainScreen h1');
+                        if (h1) h1.textContent = 'Olá, ' + (sessao.cleaner_nome || 'Equipe Domus') + '!';
+                        showMainScreen();
+                        return;
+                    }
+                }
+            } catch(e) { console.warn('[CLEANER] sessao invalida', e); }
+            showLoginScreen();
+        })();
+
+    </script>
+</body>
+</html>

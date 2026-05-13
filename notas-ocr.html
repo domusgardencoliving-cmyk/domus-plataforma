@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- safeStorage: garante que localStorage não quebre em modo anônimo / quota cheia -->
+  <script>(function(){var f={};try{localStorage.setItem('__t__','1');localStorage.removeItem('__t__');return;}catch(e){}try{Object.defineProperty(window,'localStorage',{value:{getItem:function(k){return f[k]!==undefined?f[k]:null;},setItem:function(k,v){f[k]=String(v);},removeItem:function(k){delete f[k];},clear:function(){f={};},key:function(i){return Object.keys(f)[i]||null;},get length(){return Object.keys(f).length;}},writable:true,configurable:true});console.warn('[safeStorage] usando fallback em memoria');}catch(e){console.error('[safeStorage] falhou:',e);}})();</script>
+
+  <title>Nota Domus — OCR rápido</title>
+  <meta name="description" content="Manda foto de nota fiscal e a IA preenche o financeiro automaticamente." />
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#008B9C" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Nota Domus" />
+  <link rel="apple-touch-icon" href="/images/logo-icone-branco.png" />
+  <link rel="icon" type="image/png" href="/images/logo-icone-branco.png" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: {
+      'domus-azul':         '#008B9C',
+      'domus-azul-escuro':  '#0A3142',
+      'domus-azul-claro':   '#4DC5D0',
+      'domus-creme':        '#FFF8F0',
+      'domus-borda':        '#E5E5E5',
+      'domus-texto':        '#222',
+      'domus-texto-suave':  '#717171',
+      'domus-rosa':         '#E5707D',
+      'domus-dourado':      '#C9A961'
+    }}}};
+  </script>
+  <style>
+    body { background:#FFF8F0; font-family:system-ui,-apple-system,'Segoe UI',sans-serif; padding-bottom:env(safe-area-inset-bottom); }
+    .upload-zone { border:2px dashed #008B9C; transition: all .2s; min-height: 200px; }
+    .upload-zone.drag-over { background:#008B9C10; border-color:#0A3142; transform: scale(1.01); }
+    .pulse { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.5 } }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header compacto -->
+  <header class="bg-domus-azul text-white px-4 py-3 sticky top-0 z-10 flex items-center gap-3 shadow-md" style="padding-top: calc(0.75rem + env(safe-area-inset-top));">
+    <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-lg">📸</div>
+    <div class="flex-1">
+      <h1 class="font-serif text-lg leading-tight">Nota Domus</h1>
+      <p class="text-xs text-white/80">Tira foto da nota e manda</p>
+    </div>
+    <a href="/pms.html" class="text-xs underline opacity-90 hover:opacity-100">PMS</a>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-4">
+
+    <!-- 1. Selecionar unidade -->
+    <div class="bg-white rounded-2xl p-4 border border-domus-borda">
+      <p class="text-xs font-semibold text-domus-texto-suave uppercase tracking-wider mb-2">Unidade</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="selUnidade('AP')" id="bt-ap" class="py-3 rounded-xl border-2 border-domus-azul bg-domus-azul text-white font-medium">AP</button>
+        <button onclick="selUnidade('Rib')" id="bt-rib" class="py-3 rounded-xl border-2 border-domus-borda bg-white text-domus-texto font-medium">Rib</button>
+      </div>
+    </div>
+
+    <!-- 2. Upload da nota -->
+    <div class="bg-white rounded-2xl border border-domus-borda overflow-hidden">
+      <label for="ocr-file" class="upload-zone block p-6 text-center cursor-pointer rounded-xl m-3" id="dropZone">
+        <div id="upload-empty">
+          <div class="text-5xl mb-2" id="upload-icon">📷</div>
+          <p class="font-semibold text-domus-azul-escuro mb-1" id="upload-title">Tira foto da nota</p>
+          <p class="text-sm text-domus-texto-suave" id="upload-desc">Toque aqui pra abrir a câmera</p>
+        </div>
+        <div id="upload-preview" class="hidden">
+          <img id="preview-img" src="" alt="Pré-visualização" class="max-h-48 mx-auto rounded-xl mb-3" />
+          <p class="text-sm text-domus-texto-suave" id="preview-name"></p>
+        </div>
+      </label>
+      <input id="ocr-file" type="file" accept="image/*,application/pdf" capture="environment" class="hidden" onchange="onFile(event.target.files[0])" />
+    </div>
+
+    <!-- 3. Estado de processamento -->
+    <div id="estado-card" class="bg-white rounded-2xl p-4 border border-domus-borda hidden">
+      <div id="estado-loading" class="hidden text-center py-4">
+        <div class="text-3xl pulse">🤖</div>
+        <p class="text-sm text-domus-texto-suave mt-2">A IA está lendo a nota...</p>
+      </div>
+      <div id="estado-erro" class="hidden text-center py-4">
+        <div class="text-3xl">⚠️</div>
+        <p class="text-sm text-domus-rosa mt-2 font-medium" id="erro-msg">Erro ao processar</p>
+        <button onclick="resetar()" class="mt-3 px-4 py-2 rounded-lg border border-domus-borda text-sm">Tentar de novo</button>
+      </div>
+    </div>
+
+    <!-- 4. Resultado da IA — confirma valores -->
+    <div id="resultado-card" class="bg-white rounded-2xl p-4 border border-domus-borda hidden">
+      <p class="text-xs font-semibold text-domus-azul uppercase tracking-wider mb-3">A IA leu isso aqui</p>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-domus-texto-suave block">Estabelecimento</label>
+          <input id="r-estab" type="text" class="w-full p-2.5 border border-domus-borda rounded-lg text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-domus-texto-suave block">Valor</label>
+            <input id="r-valor" type="number" step="0.01" class="w-full p-2.5 border border-domus-borda rounded-lg text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-domus-texto-suave block">Data</label>
+            <input id="r-data" type="date" class="w-full p-2.5 border border-domus-borda rounded-lg text-sm" />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-domus-texto-suave block">Categoria</label>
+          <select id="r-cat" class="w-full p-2.5 border border-domus-borda rounded-lg text-sm bg-white">
+            <option value="">Selecione…</option>
+            <option>HOSPEDAGEM</option>
+            <option>SERVIÇOS</option>
+            <option>ALUGUEL</option>
+            <option>OBRA</option>
+            <option>ENEL</option>
+            <option>COMGAS</option>
+            <option>SABESP</option>
+            <option>INTERNET</option>
+            <option>LIMPEZA</option>
+            <option>MATERIAL DE LIMPEZA</option>
+            <option>LAVANDERIA OMO</option>
+            <option>CONTABILIDADE</option>
+            <option>SEGUROS</option>
+            <option>MERCADINHO</option>
+            <option>DESPESAS</option>
+            <option>COLIVING</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-domus-texto-suave block">Forma de pagamento</label>
+          <select id="r-pag" class="w-full p-2.5 border border-domus-borda rounded-lg text-sm bg-white">
+            <option value="">Selecione…</option>
+            <option value="pix">PIX</option>
+            <option value="cartao_credito">Cartão de crédito</option>
+            <option value="cartao_debito">Cartão de débito</option>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="transferencia">Transferência</option>
+            <option value="boleto">Boleto</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-domus-texto-suave block">Descrição</label>
+          <input id="r-desc" type="text" class="w-full p-2.5 border border-domus-borda rounded-lg text-sm" placeholder="Detalhes opcionais" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mt-4">
+        <button onclick="descartar()" class="py-3 rounded-xl border border-domus-borda text-domus-texto-suave font-medium">Descartar</button>
+        <button onclick="confirmar()" id="bt-confirmar" class="py-3 rounded-xl bg-domus-azul text-white font-semibold">Confirmar e lançar</button>
+      </div>
+    </div>
+
+    <!-- 5. Configuração da chave (escondido por default) -->
+    <details class="bg-white rounded-2xl p-4 border border-domus-borda">
+      <summary class="text-sm text-domus-texto-suave cursor-pointer">⚙️ Chave da API (config inicial)</summary>
+      <div class="mt-3 space-y-2">
+        <input id="api-key" type="password" placeholder="sk-ant-..." class="w-full p-2.5 border border-domus-borda rounded-lg text-sm" />
+        <p id="key-status" class="text-xs"></p>
+        <div class="flex gap-2">
+          <button onclick="salvarKey()" class="flex-1 py-2 rounded-lg bg-domus-azul text-white text-sm">Salvar</button>
+          <button onclick="limparKey()" class="px-3 py-2 rounded-lg border border-domus-borda text-sm">🗑️</button>
+        </div>
+        <p class="text-xs text-domus-texto-suave">A chave fica salva no celular. Nunca enviada a terceiros.</p>
+      </div>
+    </details>
+
+    <!-- 6. Histórico curto -->
+    <div class="bg-white rounded-2xl p-4 border border-domus-borda">
+      <p class="text-xs font-semibold text-domus-texto-suave uppercase tracking-wider mb-2">Últimas 5 notas</p>
+      <div id="historico" class="space-y-2 text-sm">
+        <p class="text-xs text-domus-texto-suave text-center py-2">Carregando...</p>
+      </div>
+      <a href="/pms.html" class="block text-center mt-3 text-xs text-domus-azul underline">Ver tudo no PMS →</a>
+    </div>
+
+  </main>
+
+  <!-- Toast feedback -->
+  <div id="toast" class="hidden fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-domus-azul-escuro text-white p-4 rounded-xl shadow-2xl z-50">
+    <p id="toast-msg" class="text-sm"></p>
+  </div>
+
+  <script>
+    // Supabase
+    const SB_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+    const db = supabase.createClient(SB_URL, SB_KEY);
+
+    // Estado
+    let unidade = 'AP';
+    let arquivoNome = '';
+    let arquivoBase64 = '';
+    let mediaType = '';
+
+    // Toast feedback
+    function toast(msg, ms){
+      const el = document.getElementById('toast');
+      const m = document.getElementById('toast-msg');
+      m.textContent = msg;
+      el.classList.remove('hidden');
+      setTimeout(()=>el.classList.add('hidden'), ms || 3000);
+    }
+
+    // Unidade
+    function selUnidade(u){
+      unidade = u;
+      document.getElementById('bt-ap').className  = 'py-3 rounded-xl border-2 ' + (u==='AP'  ? 'border-domus-azul bg-domus-azul text-white font-medium' : 'border-domus-borda bg-white text-domus-texto font-medium');
+      document.getElementById('bt-rib').className = 'py-3 rounded-xl border-2 ' + (u==='Rib' ? 'border-domus-azul bg-domus-azul text-white font-medium' : 'border-domus-borda bg-white text-domus-texto font-medium');
+    }
+
+    // API key
+    function getKey(){ return localStorage.getItem('domus_ocr_api_key') || ''; }
+    function salvarKey(){
+      const k = document.getElementById('api-key').value.trim();
+      if (!k) return toast('Cole a chave primeiro');
+      localStorage.setItem('domus_ocr_api_key', k);
+      atualizarKeyStatus();
+      toast('Chave salva!');
+    }
+    function limparKey(){
+      if (!confirm('Apagar a chave salva?')) return;
+      localStorage.removeItem('domus_ocr_api_key');
+      document.getElementById('api-key').value = '';
+      atualizarKeyStatus();
+    }
+    function atualizarKeyStatus(){
+      const k = getKey();
+      const inp = document.getElementById('api-key');
+      const st = document.getElementById('key-status');
+      if (k && k.length > 12){
+        if (!inp.value) inp.value = k;
+        st.innerHTML = '<span style="color:#4FB07A">✅ Chave salva</span> · termina em <code>' + k.slice(-6) + '</code>';
+      } else {
+        st.innerHTML = '<span style="color:#C9A961">⚠️ Sem chave</span>';
+      }
+    }
+
+    // Upload
+    document.getElementById('dropZone').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); });
+    document.getElementById('dropZone').addEventListener('dragleave', e => e.currentTarget.classList.remove('drag-over'));
+    document.getElementById('dropZone').addEventListener('drop', e => {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]);
+    });
+    document.addEventListener('paste', e => {
+      const it = e.clipboardData?.items;
+      if (!it) return;
+      for (const i of it){
+        if (i.type.startsWith('image/')){ const f = i.getAsFile(); if (f) onFile(f); break; }
+      }
+    });
+
+    function onFile(f){
+      if (!f) return;
+      if (f.size > 10*1024*1024) return toast('Arquivo muito grande (máx 10 MB)');
+      const isImg = f.type.startsWith('image/');
+      const isPdf = f.type === 'application/pdf';
+      if (!isImg && !isPdf) return toast('Envie uma imagem (JPG/PNG) ou PDF');
+      arquivoNome = f.name || 'foto.jpg';
+      mediaType = isPdf ? 'application/pdf' : (f.type === 'image/png' ? 'image/png' : 'image/jpeg');
+      const reader = new FileReader();
+      reader.onload = ev => {
+        arquivoBase64 = ev.target.result.split(',')[1];
+        document.getElementById('upload-empty').classList.add('hidden');
+        document.getElementById('upload-preview').classList.remove('hidden');
+        if (isImg) document.getElementById('preview-img').src = ev.target.result;
+        document.getElementById('preview-name').textContent = arquivoNome + ' · ' + (f.size/1024).toFixed(0) + ' KB';
+        processar();
+      };
+      reader.readAsDataURL(f);
+    }
+
+    async function processar(){
+      const key = getKey();
+      if (!key) return toast('Configure sua chave (engrenagem abaixo)');
+      const card = document.getElementById('estado-card');
+      card.classList.remove('hidden');
+      document.getElementById('estado-loading').classList.remove('hidden');
+      document.getElementById('estado-erro').classList.add('hidden');
+
+      const prompt = `Você é um assistente que lê notas fiscais brasileiras. Extraia os dados e responda APENAS com JSON válido nesse formato:
+{
+  "estabelecimento": "Nome do estabelecimento",
+  "valor": 0.00,
+  "data": "YYYY-MM-DD",
+  "categoria": "HOSPEDAGEM | SERVIÇOS | ALUGUEL | OBRA | ENEL | COMGAS | SABESP | INTERNET | LIMPEZA | MATERIAL DE LIMPEZA | LAVANDERIA OMO | CONTABILIDADE | SEGUROS | MERCADINHO | DESPESAS",
+  "forma_pagamento": "pix | cartao_credito | cartao_debito | dinheiro | transferencia | boleto",
+  "descricao": "Descrição curta dos itens"
+}
+Se não souber alguma coisa, deixe em branco.`;
+
+      try {
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 800,
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'image', source: { type: 'base64', media_type: mediaType, data: arquivoBase64 }},
+                { type: 'text', text: prompt }
+              ]
+            }]
+          })
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j?.error?.message || 'Erro HTTP ' + r.status);
+        const txt = j?.content?.[0]?.text || '';
+        const match = txt.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error('IA não retornou JSON válido');
+        const dados = JSON.parse(match[0]);
+        preencherResultado(dados);
+      } catch (err) {
+        document.getElementById('estado-loading').classList.add('hidden');
+        document.getElementById('estado-erro').classList.remove('hidden');
+        document.getElementById('erro-msg').textContent = err.message || 'Erro';
+      }
+    }
+
+    function preencherResultado(d){
+      document.getElementById('estado-card').classList.add('hidden');
+      document.getElementById('resultado-card').classList.remove('hidden');
+      document.getElementById('r-estab').value = d.estabelecimento || '';
+      document.getElementById('r-valor').value = d.valor || '';
+      document.getElementById('r-data').value  = d.data || new Date().toISOString().split('T')[0];
+      document.getElementById('r-cat').value   = d.categoria || '';
+      document.getElementById('r-pag').value   = d.forma_pagamento || '';
+      document.getElementById('r-desc').value  = d.descricao || '';
+    }
+
+    async function confirmar(){
+      const estab = document.getElementById('r-estab').value.trim();
+      const data  = document.getElementById('r-data').value;
+      const valor = parseFloat(document.getElementById('r-valor').value) || 0;
+      const cat   = document.getElementById('r-cat').value;
+      const pag   = document.getElementById('r-pag').value;
+      const desc  = document.getElementById('r-desc').value.trim();
+      if (!estab || !data || valor <= 0) return toast('Preencha estabelecimento, data e valor');
+      const bt = document.getElementById('bt-confirmar');
+      bt.disabled = true; bt.textContent = 'Salvando...';
+      try {
+        // Upload do arquivo no Storage
+        let arquivoUrl = null;
+        try {
+          const byteChars = atob(arquivoBase64);
+          const byteNums = new Array(byteChars.length);
+          for (let i=0;i<byteChars.length;i++) byteNums[i] = byteChars.charCodeAt(i);
+          const blob = new Blob([new Uint8Array(byteNums)], { type: mediaType });
+          const ext = (arquivoNome.split('.').pop() || (mediaType==='application/pdf'?'pdf':'jpg')).toLowerCase();
+          const fileName = 'notas-ocr/' + Date.now() + '_' + Math.random().toString(36).slice(2,8) + '.' + ext;
+          const { data: up, error: ue } = await db.storage.from('comprovantes').upload(fileName, blob, { contentType: mediaType, upsert: false });
+          if (!ue && up) {
+            const { data: pub } = db.storage.from('comprovantes').getPublicUrl(fileName);
+            arquivoUrl = pub?.publicUrl || null;
+          }
+        } catch(e){ console.warn('upload falhou (segue):', e); }
+
+        // Lancamento
+        const { data: lanc, error: le } = await db.from('lancamentos').insert({
+          tipo:'despesa', unidade, categoria:cat, descricao: estab + ' — ' + desc,
+          valor, data, forma_pagamento: pag || null, origem:'ocr', pago:true,
+          observacoes: 'Nota lida por IA. Arquivo: ' + arquivoNome
+        }).select().single();
+        if (le) throw le;
+
+        // Notas_ocr
+        await db.from('notas_ocr').insert({
+          arquivo_nome: arquivoNome, arquivo_tipo: mediaType.startsWith('image')?'image':'pdf',
+          arquivo_url: arquivoUrl, estabelecimento: estab, valor, data_nota: data,
+          categoria: cat, forma_pagamento: pag, unidade, descricao_ia: desc,
+          status:'confirmada', lancamento_id: lanc.id
+        });
+
+        toast('✅ Lançado com sucesso!');
+        setTimeout(()=>{ resetar(); carregarHistorico(); }, 1500);
+      } catch(err){
+        toast('Erro: ' + (err.message||err));
+        bt.disabled = false; bt.textContent = 'Confirmar e lançar';
+      }
+    }
+
+    async function descartar(){
+      if (!confirm('Descartar essa nota?')) return;
+      try {
+        await db.from('notas_ocr').insert({
+          arquivo_nome: arquivoNome, estabelecimento: document.getElementById('r-estab').value || 'Descartada',
+          valor: parseFloat(document.getElementById('r-valor').value)||0,
+          data_nota: document.getElementById('r-data').value || null,
+          categoria: document.getElementById('r-cat').value, unidade,
+          status:'descartada'
+        });
+      } catch(e){}
+      resetar();
+    }
+
+    function resetar(){
+      arquivoBase64 = ''; arquivoNome = ''; mediaType = '';
+      document.getElementById('ocr-file').value = '';
+      document.getElementById('upload-empty').classList.remove('hidden');
+      document.getElementById('upload-preview').classList.add('hidden');
+      document.getElementById('estado-card').classList.add('hidden');
+      document.getElementById('resultado-card').classList.add('hidden');
+    }
+
+    async function carregarHistorico(){
+      const cont = document.getElementById('historico');
+      try {
+        const { data } = await db.from('notas_ocr').select('*').order('criado_em', { ascending: false }).limit(5);
+        if (!data || !data.length) { cont.innerHTML = '<p class="text-xs text-domus-texto-suave text-center py-2">Nenhuma nota ainda</p>'; return; }
+        cont.innerHTML = data.map(n => {
+          const v = n.valor ? 'R$ ' + parseFloat(n.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '--';
+          const ic = n.status==='confirmada' ? '✓' : n.status==='descartada' ? '✕' : '⏳';
+          const cor = n.status==='confirmada' ? 'text-domus-azul' : 'text-domus-texto-suave';
+          return '<div class="flex items-center justify-between gap-2 py-1.5 border-b border-domus-borda/40 last:border-0">' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="font-medium truncate">' + (n.estabelecimento||'Sem nome') + '</p>' +
+              '<p class="text-xs text-domus-texto-suave">' + (n.unidade||'') + ' · ' + (n.categoria||'') + '</p>' +
+            '</div>' +
+            '<div class="text-right text-xs">' +
+              '<p class="font-semibold ' + cor + '">' + v + '</p>' +
+              '<p class="text-domus-texto-suave">' + ic + '</p>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      } catch(e){
+        cont.innerHTML = '<p class="text-xs text-domus-rosa text-center py-2">Erro ao carregar</p>';
+      }
+    }
+
+    // Init
+    atualizarKeyStatus();
+    carregarHistorico();
+  </script>
+
+</body>
+</html>

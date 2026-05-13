@@ -8,6 +8,15 @@
   <title>Domus PMS — Hostel Andrade Pertence</title>
   <meta name="description" content="Sistema de gestão do hostel Domus Garden Coliving" />
 
+  <!-- PWA: permite "instalar" como app no celular -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#008B9C" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Domus PMS" />
+  <link rel="apple-touch-icon" href="/images/logo-icone-branco.png" />
+  <link rel="icon" type="image/png" href="/images/logo-icone-branco.png" />
+
   <!-- CDNs -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -4000,4 +4009,24 @@
           </div>
 
           <div id="cancEnganoAviso" class="hidden p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
-            ⚠️ Reservas marcadas como "por engano" <strong>não entram nas estatísticas</strong> de receita, ocupaçã
+            ⚠️ Reservas marcadas como "por engano" <strong>não entram nas estatísticas</strong> de receita, ocupação ou taxa de cancelamento. Use somente quando a reserva nunca deveria ter existido (clique acidental, teste, etc.).
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button type="button" onclick="fecharCancelarReservaModal()"
+              class="flex-1 px-4 py-2 bg-gray-100 text-domus-texto rounded text-sm hover:bg-gray-200">
+              Voltar
+            </button>
+            <button type="submit"
+              class="flex-1 px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 font-medium">
+              Confirmar cancelamento
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+   
