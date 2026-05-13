@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Instalar Domus no celular</title>
+  <meta name="description" content="Adicione a Domus à tela inicial do seu celular pra acessar como app." />
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#008B9C" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Domus" />
+  <link rel="apple-touch-icon" href="/images/logo-icone-branco.png" />
+  <link rel="icon" type="image/png" href="/images/logo-icone-branco.png" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: {
+      'domus-azul':         '#008B9C',
+      'domus-azul-escuro':  '#0A3142',
+      'domus-azul-claro':   '#4DC5D0',
+      'domus-creme':        '#FFF8F0',
+      'domus-borda':        '#E5E5E5',
+      'domus-texto':        '#222',
+      'domus-texto-suave':  '#717171',
+      'domus-rosa':         '#E5707D',
+      'domus-dourado':      '#C9A961'
+    }}}};
+  </script>
+  <style>
+    body { background:#FFF8F0; font-family:system-ui,-apple-system,'Segoe UI',sans-serif; }
+    .step-card { animation: slideUp .4s cubic-bezier(.2,.9,.3,1.2); }
+    @keyframes slideUp { from { opacity:0; transform: translateY(15px) } to { opacity:1; transform: translateY(0) } }
+    .pulse-arrow { animation: bounce 1.2s infinite; }
+    @keyframes bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+    .pulse-share { animation: pulseRing 1.8s infinite; }
+    @keyframes pulseRing {
+      0% { box-shadow: 0 0 0 0 rgba(0,139,156,0.6) }
+      70% { box-shadow: 0 0 0 18px rgba(0,139,156,0) }
+      100% { box-shadow: 0 0 0 0 rgba(0,139,156,0) }
+    }
+    .qr-frame { box-shadow: 0 20px 60px rgba(10,49,66,0.2); }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <header class="bg-domus-azul text-white px-4 py-5 sticky top-0 z-10 shadow-md" style="padding-top: calc(1.25rem + env(safe-area-inset-top));">
+    <div class="max-w-md mx-auto flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-2xl">📲</div>
+      <div>
+        <h1 class="font-serif text-xl leading-tight">Instalar a Domus</h1>
+        <p class="text-xs text-white/80">Adicione como app na tela inicial</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-4">
+
+    <!-- ============== DESKTOP ============== -->
+    <div id="bloco-desktop" class="hidden">
+      <div class="bg-white rounded-2xl p-6 border border-domus-borda text-center step-card">
+        <div class="text-5xl mb-3">📱</div>
+        <h2 class="font-serif text-xl text-domus-azul-escuro mb-2">Você está no computador</h2>
+        <p class="text-sm text-domus-texto-suave mb-6">Pra instalar como app, abra essa página no seu celular escaneando o QR abaixo:</p>
+
+        <div class="bg-white p-4 rounded-2xl qr-frame inline-block">
+          <img id="qr-img" src="" alt="QR Code" class="w-56 h-56 mx-auto" />
+        </div>
+
+        <p class="text-xs text-domus-texto-suave mt-4">Aponte a câmera do celular pro QR · funciona no iPhone e Android</p>
+
+        <div class="grid grid-cols-3 gap-2 mt-6 text-xs">
+          <a href="?app=ocr"  class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">Nota Domus</a>
+          <a href="?app=pms"  class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">PMS</a>
+          <a href="?app=dom"  class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">Portal</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== iOS (iPhone/iPad) ============== -->
+    <div id="bloco-ios" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-5 border border-domus-borda step-card">
+        <div class="flex items-start gap-3 mb-3">
+          <div class="w-10 h-10 rounded-full bg-domus-azul/10 flex items-center justify-center text-domus-azul font-bold text-lg flex-shrink-0">1</div>
+          <div class="flex-1">
+            <h3 class="font-serif text-lg text-domus-azul-escuro">Toque no botão de compartilhar</h3>
+            <p class="text-sm text-domus-texto-suave mt-1">Aquele quadradinho com a seta pra cima ⬆️ — fica embaixo, no meio do Safari.</p>
+          </div>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-4 flex items-center justify-around relative">
+          <span class="text-3xl opacity-30">‹</span>
+          <span class="text-3xl opacity-30">›</span>
+          <div class="pulse-share rounded-full bg-domus-azul/10 w-14 h-14 flex items-center justify-center relative">
+            <svg class="w-7 h-7 text-domus-azul" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            <div class="pulse-arrow absolute -top-7 text-2xl">👆</div>
+          </div>
+          <span class="text-3xl opacity-30">⎋</span>
+          <span class="text-3xl opacity-30">⊞</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 border border-domus-borda step-card">
+        <div class="flex items-start gap-3 mb-3">
+          <div class="w-10 h-10 rounded-full bg-domus-azul/10 flex items-center justify-center text-domus-azul font-bold text-lg flex-shrink-0">2</div>
+          <div class="flex-1">
+            <h3 class="font-serif text-lg text-domus-azul-escuro">Role pra baixo e toque em "Adicionar à Tela de Início"</h3>
+            <p class="text-sm text-domus-texto-suave mt-1">É um item da lista, com um ícone de quadrado com +.</p>
+          </div>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-3 space-y-2 text-sm">
+          <div class="bg-white rounded-lg px-3 py-2 flex items-center justify-between text-gray-400">
+            <span>Copiar</span>
+            <span>📄</span>
+          </div>
+          <div class="bg-white rounded-lg px-3 py-2 flex items-center justify-between text-gray-400">
+            <span>Adicionar à lista de leitura</span>
+            <span>👓</span>
+          </div>
+          <div class="bg-white rounded-lg px-3 py-2 flex items-center justify-between text-gray-400">
+            <span>Adicionar marcador</span>
+            <span>📖</span>
+          </div>
+          <div class="bg-domus-azul/10 rounded-lg px-3 py-3 flex items-center justify-between border-2 border-domus-azul">
+            <span class="font-semibold text-domus-azul-escuro">Adicionar à Tela de Início</span>
+            <span class="text-2xl">⊕</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 border border-domus-borda step-card">
+        <div class="flex items-start gap-3 mb-3">
+          <div class="w-10 h-10 rounded-full bg-domus-azul/10 flex items-center justify-center text-domus-azul font-bold text-lg flex-shrink-0">3</div>
+          <div class="flex-1">
+            <h3 class="font-serif text-lg text-domus-azul-escuro">Pronto!</h3>
+            <p class="text-sm text-domus-texto-suave mt-1">O ícone da Domus vai aparecer na sua tela inicial. Toque nele pra abrir o app em tela cheia.</p>
+          </div>
+        </div>
+        <div class="bg-gradient-to-br from-domus-azul to-domus-azul-escuro rounded-2xl p-4 text-center">
+          <div class="w-20 h-20 mx-auto rounded-2xl bg-white shadow-2xl flex items-center justify-center text-3xl">🏨</div>
+          <p class="text-white font-medium mt-2 text-sm" id="ios-app-name">Domus</p>
+        </div>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        💡 <strong>Atenção:</strong> só funciona no Safari. Se você abriu pelo Chrome, pelo Instagram ou outro app, copie a URL e cole no Safari primeiro.
+      </div>
+    </div>
+
+    <!-- ============== ANDROID ============== -->
+    <div id="bloco-android" class="hidden space-y-4">
+      <!-- Botão grande "Instalar agora" (se o navegador suportar) -->
+      <div id="bt-instalar-android" class="hidden bg-white rounded-2xl p-5 border-2 border-domus-azul step-card">
+        <div class="text-center">
+          <div class="text-5xl mb-3">📲</div>
+          <h2 class="font-serif text-xl text-domus-azul-escuro mb-3">Pronto pra instalar!</h2>
+          <button onclick="instalarAndroid()" class="w-full py-4 bg-domus-azul text-white rounded-xl font-semibold text-base shadow-md">
+            Instalar Domus
+          </button>
+          <p class="text-xs text-domus-texto-suave mt-3">Vai criar o ícone na sua tela inicial</p>
+        </div>
+      </div>
+
+      <!-- Instruções manuais (sempre visível como backup) -->
+      <div class="bg-white rounded-2xl p-5 border border-domus-borda step-card">
+        <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Ou faça manualmente:</h3>
+        <ol class="space-y-3 text-sm">
+          <li class="flex gap-3">
+            <span class="w-6 h-6 rounded-full bg-domus-azul text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+            <span>Toque no menu do Chrome (⋮ no canto superior direito)</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="w-6 h-6 rounded-full bg-domus-azul text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+            <span>Toque em <strong>"Instalar app"</strong> ou <strong>"Adicionar à tela inicial"</strong></span>
+          </li>
+          <li class="flex gap-3">
+            <span class="w-6 h-6 rounded-full bg-domus-azul text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+            <span>Confirme o nome e toque em <strong>Adicionar</strong></span>
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- ============== Seletor de qual app instalar ============== -->
+    <div class="bg-white rounded-2xl p-4 border border-domus-borda">
+      <p class="text-xs font-semibold text-domus-texto-suave uppercase tracking-wider mb-3">Qual app você quer instalar?</p>
+      <div class="grid grid-cols-3 gap-2">
+        <button onclick="trocarApp('ocr')" id="bt-app-ocr" class="py-3 rounded-xl border-2 transition flex flex-col items-center gap-1">
+          <span class="text-2xl">📸</span>
+          <span class="text-xs font-medium">Nota</span>
+        </button>
+        <button onclick="trocarApp('pms')" id="bt-app-pms" class="py-3 rounded-xl border-2 transition flex flex-col items-center gap-1">
+          <span class="text-2xl">🏨</span>
+          <span class="text-xs font-medium">PMS</span>
+        </button>
+        <button onclick="trocarApp('dom')" id="bt-app-dom" class="py-3 rounded-xl border-2 transition flex flex-col items-center gap-1">
+          <span class="text-2xl">🏡</span>
+          <span class="text-xs font-medium">Portal</span>
+        </button>
+      </div>
+      <p class="text-xs text-domus-texto-suave mt-3 text-center" id="app-descricao">Instalando: <strong id="app-label">Nota Domus</strong></p>
+    </div>
+
+  </main>
+
+  <script>
+    const APPS = {
+      ocr: { url: '/notas-ocr.html', nome: 'Nota Domus',  icone: '📸' },
+      pms: { url: '/pms.html',       nome: 'Domus PMS',   icone: '🏨' },
+      dom: { url: '/dominhas.html',  nome: 'Portal Dominhas', icone: '🏡' }
+    };
+
+    let appAtual = 'ocr';
+
+    function detectarPlataforma() {
+      const ua = navigator.userAgent.toLowerCase();
+      const isMobile = /iphone|ipad|android|mobile/i.test(ua);
+      if (!isMobile) return 'desktop';
+      if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
+      if (/android/i.test(ua)) return 'android';
+      return 'desktop';
+    }
+
+    function trocarApp(key) {
+      appAtual = key;
+      const app = APPS[key];
+      // Atualiza visual
+      ['ocr','pms','dom'].forEach(k => {
+        const bt = document.getElementById('bt-app-' + k);
+        if (k === key) {
+          bt.classList.remove('border-domus-borda','bg-white');
+          bt.classList.add('border-domus-azul','bg-domus-azul/5');
+        } else {
+          bt.classList.remove('border-domus-azul','bg-domus-azul/5');
+          bt.classList.add('border-domus-borda','bg-white');
+        }
+      });
+      document.getElementById('app-label').textContent = app.nome;
+
+      // Atualiza nome no card iOS
+      const iosName = document.getElementById('ios-app-name');
+      if (iosName) iosName.textContent = app.nome;
+
+      // Atualiza QR pra apontar pro app escolhido
+      atualizarQR();
+
+      // No iOS, redireciona pra própria página da app pra que o "Adicionar à tela inicial" peque o ícone certo
+      const plat = detectarPlataforma();
+      if (plat === 'ios' || plat === 'android') {
+        // Não redireciona automaticamente, só mostra as instruções
+      }
+
+      // Atualiza URL sem recarregar
+      try { history.replaceState(null, '', '?app=' + key); } catch(e){}
+    }
+
+    function atualizarQR() {
+      const img = document.getElementById('qr-img');
+      if (!img) return;
+      const targetUrl = window.location.origin + APPS[appAtual].url;
+      // QR gerado pelo serviço público (sem dependência de biblioteca JS)
+      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(targetUrl) + '&color=0A3142&bgcolor=FFF8F0&margin=10';
+      img.alt = 'QR Code para ' + APPS[appAtual].nome;
+    }
+
+    // Suporte ao prompt de instalação no Android
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btCard = document.getElementById('bt-instalar-android');
+      if (btCard) btCard.classList.remove('hidden');
+    });
+
+    async function instalarAndroid() {
+      if (!deferredPrompt) {
+        alert('Use o menu do Chrome (⋮) e escolha "Instalar app" — seu navegador não suporta o botão direto.');
+        return;
+      }
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if (outcome === 'accepted') {
+        document.getElementById('bt-instalar-android').innerHTML = '<div class="text-center py-4"><div class="text-5xl mb-2">✅</div><p class="font-medium text-domus-azul-escuro">Instalado! Procure o ícone da Domus na sua tela inicial.</p></div>';
+      }
+    }
+
+    // Init
+    (function init() {
+      const params = new URLSearchParams(window.location.search);
+      const app = params.get('app');
+      if (app && APPS[app]) appAtual = app;
+      trocarApp(appAtual);
+
+      const plat = detectarPlataforma();
+      document.getElementById('bloco-' + plat).classList.remove('hidden');
+    })();
+  </script>
+
+</body>
+</html>
