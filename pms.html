@@ -3983,7 +3983,7 @@
         mostrarToast('Check-out feito, mas sem telefone do hóspede. Copie a mensagem do console.', 'info');
         console.log('===== MENSAGEM CHECK-OUT (' + tipoMsg + ') =====\n' + msg.replace(/\\n/g,'\n'));
       } else {
-        const url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(msg.replace(/\\n/g,'\n'));
+        const url = 'https://wa.me/' + String(tel).replace(/\\D/g,'') + '?text=' + encodeURIComponent(msg.replace(/\\n/g,'\n'));
         window.open(url, '_blank');
         mostrarToast('Check-out feito! WhatsApp aberto (' + tipoMsg + ')');
       }
@@ -4086,7 +4086,7 @@
         mostrarToast('Check-in feito! Mas hóspede sem telefone — copie a msg do console.', 'info');
         console.log('===== MENSAGEM CHECK-IN =====\n' + msg.replace(/\\n/g,'\n'));
       } else {
-        const url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(msg.replace(/\\n/g,'\n'));
+        const url = 'https://wa.me/' + String(tel).replace(/\\D/g,'') + '?text=' + encodeURIComponent(msg.replace(/\\n/g,'\n'));
         window.open(url, '_blank');
         mostrarToast('Check-in feito! WhatsApp aberto com a mensagem.');
       }
@@ -4151,9 +4151,11 @@
         checkout:        document.getElementById('editResCheckout').value,
         quarto:          document.getElementById('editResQuarto').value.trim(),
         cama:            document.getElementById('editResQuarto').value.trim(),
-        valor_total:     parseFloat(document.getElementById('editResValor').value) || null,
         observacoes:     document.getElementById('editResObs').value.trim()
       };
+      // Só inclui valor_total se foi preenchido (campo é NOT NULL no banco)
+      const valorEdit = parseFloat(document.getElementById('editResValor').value);
+      if (!isNaN(valorEdit) && valorEdit > 0) updates.valor_total = valorEdit;
       try {
         const { data, error } = await db.from('reservas').update(updates).eq('id', id).select('id');
         if (error) throw error;
