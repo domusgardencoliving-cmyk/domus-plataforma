@@ -1,0 +1,4020 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Domus PMS — Hostel Andrade Pertence</title>
+  <meta name="description" content="Sistema de gestão do hostel Domus Garden Coliving" />
+
+  <!-- CDNs -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Supabase Config -->
+  <script>
+    const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'domus-azul': '#5B9BD5',
+            'domus-azul-escuro': '#2C3E6B',
+            'domus-azul-claro': '#E8F0FE',
+            'domus-terra': '#D4A574',
+            'domus-terra-escura': '#8B6914',
+            'domus-areia': '#FAF3E8',
+            'domus-creme-claro': '#FFF8F0',
+            'domus-verde': '#27AE60',
+            'domus-texto': '#2D3748',
+            'domus-texto-suave': '#718096',
+            'domus-borda': '#E2E8F0'
+          },
+          fontFamily: {
+            serif: ['Instrument Serif', 'serif'],
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e8edf5 100%);
+      margin: 0;
+    }
+
+    .font-serif {
+      font-family: 'Instrument Serif', serif;
+    }
+
+    /* Login Styles */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(44, 62, 107, 0.85) 0%, rgba(91, 155, 213, 0.7) 100%);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .login-overlay > div {
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Modal Blur */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(6px);
+      z-index: 40;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 230px;
+      background: linear-gradient(180deg, #1e2d52 0%, #2C3E6B 40%, #344874 100%);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 30;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar-logo {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar-logo img {
+      height: 32px;
+      opacity: 0.95;
+    }
+
+    .sidebar-logo h2 {
+      font-family: 'Instrument Serif', serif;
+      font-size: 20px;
+      margin: 0 0 2px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-logo p {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      margin: 0;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 12px 0;
+    }
+
+    .sidebar-nav a, .sidebar-nav button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 20px;
+      color: rgba(255, 255, 255, 0.65);
+      text-decoration: none;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 400;
+      transition: all 0.25s ease;
+      width: 100%;
+      text-align: left;
+      border-left: 3px solid transparent;
+      letter-spacing: 0.2px;
+    }
+
+    .sidebar-nav a:hover, .sidebar-nav button:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .sidebar-nav a.active {
+      background: rgba(91, 155, 213, 0.15);
+      color: #8bb8e8;
+      border-left: 3px solid #5B9BD5;
+      font-weight: 500;
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .sidebar-footer button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.45);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 8px 0;
+      transition: all 0.2s ease;
+    }
+
+    .sidebar-footer button:hover {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Layout */
+    .app-container {
+      margin-left: 230px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .top-bar {
+      background: white;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+      padding: 10px 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 12.5px;
+      color: #4a5568;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      font-size: 12.5px;
+    }
+
+    .status-badge strong {
+      color: #2C3E6B;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .status-filter {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 7px 14px;
+      cursor: pointer;
+      background: none;
+      transition: all 0.2s ease;
+    }
+
+    .status-filter:hover {
+      background: #eef3fb;
+      border-color: rgba(91, 155, 213, 0.3);
+    }
+
+    .status-filter.active {
+      background: linear-gradient(135deg, #e8f0fe, #dce8f8);
+      border-color: rgba(91, 155, 213, 0.4);
+      box-shadow: 0 1px 4px rgba(91, 155, 213, 0.15);
+    }
+
+    .content {
+      flex: 1;
+      padding: 28px;
+      overflow-y: auto;
+    }
+
+    /* Room Cards */
+    .room-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .room-card {
+      background: white;
+      border: 1px solid rgba(226, 232, 240, 0.7);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .room-card:hover {
+      box-shadow: 0 8px 24px rgba(44, 62, 107, 0.12);
+      transform: translateY(-2px);
+      border-color: rgba(91, 155, 213, 0.4);
+    }
+
+    .room-card-header {
+      padding: 12px 14px;
+      color: white;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+    }
+
+    .room-card-header.occupied {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .room-card-header.available {
+      background: linear-gradient(135deg, #27AE60, #219a52);
+    }
+
+    .room-card-header.cleaning {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .room-card-body {
+      padding: 14px;
+    }
+
+    .room-guest-name {
+      font-weight: 600;
+      color: #1a202c;
+      font-size: 14px;
+      margin: 6px 0;
+      line-height: 1.3;
+    }
+
+    .room-date-range {
+      font-size: 12px;
+      color: #718096;
+      margin: 6px 0;
+    }
+
+    .room-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .room-action-btn {
+      flex: 1;
+      padding: 7px;
+      background: linear-gradient(135deg, #e8f0fe, #dce8f8);
+      border: none;
+      border-radius: 6px;
+      color: #3b73a8;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .room-action-btn:hover {
+      background: linear-gradient(135deg, #5B9BD5, #4a8bc4);
+      color: white;
+      box-shadow: 0 2px 8px rgba(91, 155, 213, 0.3);
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: white;
+      border: 1px solid rgba(226, 232, 240, 0.6);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #5B9BD5, #2C3E6B);
+      opacity: 0.6;
+    }
+
+    .kpi-card:hover {
+      box-shadow: 0 4px 16px rgba(44, 62, 107, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .kpi-label {
+      font-size: 10.5px;
+      color: #8896a6;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1e2d52;
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
+    }
+
+    .kpi-subtitle {
+      font-size: 11.5px;
+      color: #a0aec0;
+    }
+
+    /* Tables */
+    .table-container {
+      background: white;
+      border: 1px solid rgba(226, 232, 240, 0.6);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead {
+      background: linear-gradient(180deg, #f8fafc, #f1f5f9);
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    th {
+      padding: 13px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #4a5568;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 13px 16px;
+      border-bottom: 1px solid #f7fafc;
+      color: #2d3748;
+    }
+
+    tbody tr {
+      transition: background 0.15s ease;
+    }
+
+    tbody tr:hover {
+      background: #f7fafc;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+
+    .badge-confirmed {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      color: #065f46;
+    }
+
+    .badge-checkin {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      color: #1e40af;
+    }
+
+    .badge-checkout {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #92400e;
+    }
+
+    .badge-cancelled {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      color: #991b1b;
+    }
+
+    /* Mapa de Reservas — visual refinado, mais respiro e elegância */
+    .mapa-grid {
+      display: grid;
+      gap: 0;
+      border-radius: 14px;
+      overflow: auto;
+      min-height: 400px;
+      border: 1px solid #e8ecf2;
+      box-shadow: 0 4px 20px rgba(30, 45, 82, 0.05);
+      background: white;
+    }
+
+    .mapa-header-row {
+      display: contents;
+    }
+
+    .mapa-header-cell {
+      background: linear-gradient(180deg, #fafbfd, #f3f5f9);
+      padding: 7px 4px 9px;
+      text-align: center;
+      font-size: 9.5px;
+      color: #6b7280;
+      border-bottom: 1.5px solid #e8ecf2;
+      border-right: 1px solid #f1f3f7;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .mapa-header-cell .day-name {
+      text-transform: uppercase;
+      font-weight: 700;
+      font-size: 8.5px;
+      letter-spacing: 0.6px;
+      color: #a3a9b6;
+    }
+
+    .mapa-header-cell .day-num {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e2d52;
+      line-height: 1.15;
+      margin-top: 1px;
+    }
+
+    .mapa-header-cell .day-month {
+      font-size: 8.5px;
+      text-transform: uppercase;
+      color: #a3a9b6;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+    }
+
+    .mapa-header-cell .day-occ {
+      font-size: 8.5px;
+      font-weight: 600;
+      margin-top: 3px;
+      padding: 1px 7px;
+      border-radius: 8px;
+      display: inline-block;
+      letter-spacing: 0.2px;
+    }
+
+    .mapa-header-cell.is-today {
+      background: linear-gradient(180deg, #eff6ff, #dbeafe);
+    }
+
+    .mapa-header-cell.is-today .day-num {
+      color: #2563eb;
+    }
+
+    .mapa-header-cell.is-weekend {
+      background: linear-gradient(180deg, #fefce8, #fef9c3);
+    }
+
+    .mapa-header-cell.is-weekend .day-num {
+      color: #a16207;
+    }
+
+    .mapa-header-cell.is-today.is-weekend {
+      background: linear-gradient(180deg, #eff6ff, #dbeafe);
+    }
+
+    .mapa-header-cell.is-today.is-weekend .day-num {
+      color: #2563eb;
+    }
+
+    .mapa-header-corner {
+      background: linear-gradient(180deg, #fafbfd, #f3f5f9);
+      border-bottom: 1.5px solid #e8ecf2;
+      border-right: 1px solid #e8ecf2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #6b7280;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+
+    .mapa-room-row {
+      display: contents;
+    }
+
+    .mapa-room-label {
+      background: #fafbfd;
+      padding: 7px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-bottom: 1px solid #f1f3f7;
+      border-right: 1px solid #e8ecf2;
+      min-height: 60px;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+    }
+
+    .mapa-room-label .room-code {
+      font-weight: 700;
+      font-size: 10.5px;
+      color: #1e2d52;
+      letter-spacing: 0.3px;
+    }
+
+    .mapa-room-label .room-name {
+      font-size: 8.5px;
+      color: #a3a9b6;
+      margin-top: 2px;
+      letter-spacing: 0.2px;
+    }
+
+    .mapa-room-cells {
+      position: relative;
+      display: grid;
+      grid-column: 2 / -1;
+      border-bottom: 1px solid #f1f3f7;
+      min-height: 60px;
+    }
+
+    .mapa-day-cell {
+      border-right: 1px solid #f4f6f9;
+      min-height: 60px;
+      transition: background 0.15s ease;
+      cursor: pointer;
+      position: relative;
+      z-index: 0;
+    }
+
+    .mapa-day-cell:hover {
+      background: #f0f7ff;
+    }
+
+    .mapa-day-cell.is-today {
+      background: #f5f9ff;
+    }
+
+    .mapa-day-cell.is-weekend {
+      background: #fffef5;
+    }
+
+    .mapa-reserva-bar {
+      position: absolute;
+      top: 14px;
+      bottom: 14px;
+      color: white;
+      font-size: 10.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      z-index: 1;
+      transition: filter 0.15s ease, box-shadow 0.15s ease, z-index 0s;
+      letter-spacing: 0.1px;
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    .mapa-reserva-bar span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mapa-reserva-bar:hover {
+      filter: brightness(0.95);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+      z-index: 2;
+    }
+
+    /* Variante "futura paga" e "pré-reserva" — texto escuro pra contraste melhor */
+    .mapa-reserva-bar.bar-pre,
+    .mapa-reserva-bar.bar-fim {
+      color: #1f2937;
+    }
+
+    .mapa-room-row:nth-child(odd) .mapa-day-cell {
+      background: rgba(250, 251, 253, 0.7);
+    }
+
+    .mapa-room-row:nth-child(odd) .mapa-day-cell:hover {
+      background: #f0f7ff;
+    }
+
+    .mapa-room-row:nth-child(odd) .mapa-room-label {
+      background: #f3f5f8;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #27AE60, #219a52);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(39, 174, 96, 0.3);
+      z-index: 100;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c4cdd8;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 60px;
+      }
+      .sidebar-logo h2, .sidebar-logo p {
+        display: none;
+      }
+      .app-container {
+        margin-left: 60px;
+      }
+      .sidebar-nav a span:last-child,
+      .sidebar-nav button span:last-child {
+        display: none;
+      }
+      .room-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      }
+      .top-bar {
+        gap: 6px;
+        font-size: 11px;
+        padding: 8px 16px;
+      }
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .content {
+        padding: 16px;
+      }
+    }
+
+    /* Tab Buttons */
+    .tab-button {
+      padding: 6px 14px;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      background: white;
+      color: #718096;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-button:hover {
+      background: #f8fafc;
+      color: #2D3748;
+    }
+
+    .tab-button.active {
+      background: #2C3E6B;
+      color: white;
+      border-color: #2C3E6B;
+    }
+
+    /* Filtros rápidos (data, criação e plataforma) */
+    .filtro-data-btn, .filtro-plat-btn, .filtro-criacao-btn {
+      cursor: pointer;
+      background: white;
+      color: #718096;
+      transition: all 0.15s ease;
+    }
+    .filtro-data-btn:hover, .filtro-plat-btn:hover, .filtro-criacao-btn:hover {
+      background: #f8fafc;
+      color: #2D3748;
+    }
+    .filtro-pronto-btn.active {
+      box-shadow: 0 0 0 2px rgba(27,168,184,0.35), 0 1px 4px rgba(0,0,0,0.06);
+      transform: scale(1.04);
+      font-weight: 700;
+    }
+    .filtro-data-btn.active, .filtro-plat-btn.active, .filtro-criacao-btn.active {
+      background: #1BA8B8;
+      color: white;
+      border-color: #1BA8B8;
+    }
+
+    /* Cabeçalhos de tabela ordenáveis */
+    .th-sortable { cursor: pointer; user-select: none; }
+    .th-sortable:hover { background: #f0f9fb; }
+    .sort-arrow { color: #cbd5e0; font-size: 11px; margin-left: 4px; transition: color 0.2s; }
+    .th-sortable:hover .sort-arrow { color: #1BA8B8; }
+    .sort-arrow.active { color: #1BA8B8; font-weight: bold; }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- LOGIN OVERLAY -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+      <h1 class="text-3xl font-serif text-domus-azul-escuro mb-2 text-center">Domus Garden</h1>
+      <p class="text-sm text-domus-texto-suave text-center mb-8">PMS Hostel</p>
+
+      <div id="loginChecking" class="text-center text-sm text-domus-texto-suave py-4">
+        Verificando sessão...
+      </div>
+
+      <form id="loginForm" class="space-y-4 hidden">
+        <div>
+          <label class="block text-sm font-medium text-domus-texto mb-2">E-mail</label>
+          <input
+            id="loginEmail"
+            type="email"
+            required
+            placeholder="seu@email.com"
+            class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul"
+            autofocus
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-domus-texto mb-2">Senha</label>
+          <input
+            id="loginPassword"
+            type="password"
+            required
+            placeholder="••••••••"
+            class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-domus-azul text-white py-2 rounded-lg font-medium hover:bg-domus-azul-escuro transition"
+        >
+          Entrar
+        </button>
+
+        <div id="loginError" class="text-sm text-red-600 text-center hidden"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- APP CONTAINER -->
+  <div id="appContainer" class="hidden">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <h2>Domus Garden</h2>
+        <p>PMS Hostel</p>
+      </div>
+      <div class="sidebar-nav">
+        <a href="#" data-view="home" class="sidebar-link active">
+          <span>🏠</span>
+          <span>Home</span>
+        </a>
+        <a href="#" data-view="indicadores" class="sidebar-link">
+          <span>📊</span>
+          <span>Indicadores</span>
+        </a>
+        <a href="#" data-view="mapa" class="sidebar-link">
+          <span>📅</span>
+          <span>Mapa</span>
+        </a>
+        <a href="#" data-view="reservas" class="sidebar-link">
+          <span>📋</span>
+          <span>Reservas</span>
+        </a>
+        <a href="#" data-view="hospedes" class="sidebar-link">
+          <span>👥</span>
+          <span>Hóspedes</span>
+        </a>
+        <a href="#" data-view="cupons" class="sidebar-link">
+          <span>🎟️</span>
+          <span>Cupons</span>
+        </a>
+      </div>
+
+      <div class="sidebar-footer">
+        <div>Domus Garden</div>
+        <button id="linkGestao" onclick="window.location.href='index.html?modulo=dg'" style="margin-top: 8px;">
+          <span>⚙️</span> DG Gestão
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <div class="app-container">
+      <!-- TOP BAR -->
+      <div class="top-bar" id="topBar">
+        <button class="status-badge status-filter active" data-filter="all" onclick="filterRooms('all')">
+          <span>Todos:</span>
+          <strong id="statusTotal">13</strong>
+        </button>
+        <button class="status-badge status-filter" data-filter="available" onclick="filterRooms('available')">
+          <span>Disponível:</span>
+          <strong id="statusAvailable">-</strong>
+        </button>
+        <button class="status-badge status-filter" data-filter="occupied" onclick="filterRooms('occupied')">
+          <span>Ocupado:</span>
+          <strong id="statusOccupied">-</strong>
+        </button>
+        <button class="status-badge status-filter" data-filter="checkin" onclick="filterRooms('checkin')">
+          <span>Entra hoje:</span>
+          <strong id="statusCheckIn">-</strong>
+        </button>
+        <button class="status-badge status-filter" data-filter="checkout" onclick="filterRooms('checkout')">
+          <span>Sai hoje:</span>
+          <strong id="statusCheckOut">-</strong>
+        </button>
+        <button class="status-badge status-filter" data-filter="cleaning" onclick="filterRooms('cleaning')" style="border-color:#F59E0B;">
+          <span>🧹 Em limpeza:</span>
+          <strong id="statusCleaning">-</strong>
+        </button>
+        <div class="ml-auto flex items-center gap-4">
+          <button onclick="abrirBloqueioModal()" class="bg-red-500 text-white px-4 py-2 rounded text-sm hover:bg-red-600">
+            🔒 Bloquear Quarto
+          </button>
+          <button id="novaReservaBtn" class="bg-domus-verde text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">
+            + Nova Reserva
+          </button>
+          <button id="logoutBtn" class="text-domus-texto-suave text-sm hover:text-domus-texto">
+            Sair
+          </button>
+        </div>
+      </div>
+
+      <!-- CONTENT AREA -->
+      <div class="content">
+        <!-- HOME VIEW -->
+        <div id="homeView" class="view">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-semibold text-domus-texto">Quartos em Tempo Real</h2>
+            <button id="refreshHome" class="bg-domus-azul text-white px-4 py-2 rounded text-sm">
+              Atualizar
+            </button>
+          </div>
+          <div id="roomCardsContainer" class="room-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- INDICADORES VIEW -->
+        <div id="indicadoresView" class="view hidden">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-semibold text-domus-texto">Indicadores</h2>
+            <div class="flex items-center gap-2">
+              <select id="periodSelector" class="px-4 py-2 border border-domus-borda rounded text-sm" onchange="onPeriodChange()">
+                <option value="today">Hoje</option>
+                <option value="yesterday">Ontem</option>
+                <option value="tomorrow">Amanhã</option>
+                <option value="month" selected>Este mês</option>
+                <option value="lastMonth">Mês anterior</option>
+                <option value="quarter">Este trimestre</option>
+                <option value="year">Este ano</option>
+                <option value="custom">Personalizado</option>
+              </select>
+              <div id="customDateRange" style="display:none;" class="flex items-center gap-2">
+                <input type="date" id="customStart" class="px-3 py-2 border border-domus-borda rounded text-sm" />
+                <span class="text-sm text-gray-400">a</span>
+                <input type="date" id="customEnd" class="px-3 py-2 border border-domus-borda rounded text-sm" />
+                <button onclick="loadIndicadores()" style="padding:6px 14px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Aplicar</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="syncStatus" class="mb-6 p-3 bg-domus-azul-claro rounded text-sm text-domus-azul-escuro">
+            Última sincronização: <span id="syncTime">--</span>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Taxa de Ocupação</div>
+              <div class="kpi-value" id="kpiOccupancy">-</div>
+              <div class="kpi-subtitle">do período</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">RevPAR</div>
+              <div class="kpi-value" id="kpiRevPAR">-</div>
+              <div class="kpi-subtitle">por noite</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Receitas</div>
+              <div class="kpi-value" id="kpiRevenue">-</div>
+              <div class="kpi-subtitle">no período</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Novas Reservas</div>
+              <div class="kpi-value" id="kpiNewReservations">-</div>
+              <div class="kpi-subtitle">confirmadas</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Nº de Hóspedes</div>
+              <div class="kpi-value" id="kpiGuests">-</div>
+              <div class="kpi-subtitle">no período</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Diária Média</div>
+              <div class="kpi-value" id="kpiAvgDaily">-</div>
+              <div class="kpi-subtitle">do período</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Despesas</div>
+              <div class="kpi-value" id="kpiExpenses">-</div>
+              <div class="kpi-subtitle">registradas</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Canceladas</div>
+              <div class="kpi-value" id="kpiCancelled">-</div>
+              <div class="kpi-subtitle">do período</div>
+            </div>
+          </div>
+
+          <!-- 3 GRÁFICOS estilo Hospedin -->
+          <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl border border-domus-borda p-5 shadow-sm">
+              <h3 class="text-sm font-semibold uppercase tracking-wide text-domus-texto-suave mb-3">Reservas por dia</h3>
+              <canvas id="chartReservas" style="max-height:260px;"></canvas>
+            </div>
+            <div class="bg-white rounded-xl border border-domus-borda p-5 shadow-sm">
+              <h3 class="text-sm font-semibold uppercase tracking-wide text-domus-texto-suave mb-3">Hóspedes por dia</h3>
+              <canvas id="chartHospedes" style="max-height:260px;"></canvas>
+            </div>
+            <div class="bg-white rounded-xl border border-domus-borda p-5 shadow-sm lg:col-span-2">
+              <h3 class="text-sm font-semibold uppercase tracking-wide text-domus-texto-suave mb-3">Receita por dia</h3>
+              <canvas id="chartTransacoes" style="max-height:260px;"></canvas>
+            </div>
+          </div>
+
+          <div class="mt-8">
+            <h3 class="text-lg font-semibold text-domus-texto mb-4">✨ Insights da Domus IA</h3>
+            <div id="insightsContainer" class="space-y-3">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- MAPA VIEW -->
+        <div id="mapaView" class="view hidden">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <h2 class="text-2xl font-semibold text-domus-texto">Mapa de Reservas</h2>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button id="mapaBack" title="Período anterior" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e6ed;background:white;cursor:pointer;font-size:13px;color:#6b7280;transition:all 0.15s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">◀</button>
+              <button id="mapaToday" title="Voltar pra hoje" style="padding:6px 14px;border-radius:8px;background:#5B9BD5;color:white;border:none;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:0.3px;transition:all 0.15s;" onmouseover="this.style.background='#4a8ac4'" onmouseout="this.style.background='#5B9BD5'">Hoje</button>
+              <input type="date" id="mapaPicker" title="Escolher data específica" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e6ed;background:white;cursor:pointer;font-size:12px;color:#374151;font-weight:500;transition:all 0.15s;" onmouseover="this.style.borderColor='#5B9BD5'" onmouseout="this.style.borderColor='#e2e6ed'" />
+              <button id="mapaNext" title="Próximo período" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e6ed;background:white;cursor:pointer;font-size:13px;color:#6b7280;transition:all 0.15s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">▶</button>
+
+              <!-- Período (14 / 30 dias) -->
+              <div style="display:flex;border:1px solid #e2e6ed;border-radius:8px;overflow:hidden;margin-left:4px;">
+                <button id="mapaPeriodo14" data-dias="14" class="mapa-periodo-btn" style="padding:6px 10px;font-size:11px;font-weight:600;background:#5B9BD5;color:white;border:none;cursor:pointer;">14d</button>
+                <button id="mapaPeriodo30" data-dias="30" class="mapa-periodo-btn" style="padding:6px 10px;font-size:11px;font-weight:600;background:white;color:#6b7280;border:none;border-left:1px solid #e2e6ed;cursor:pointer;">30d</button>
+              </div>
+
+              <!-- Botão Adicionar (dropdown) -->
+              <div style="position:relative;margin-left:8px;" id="mapaAddWrap">
+                <button id="mapaAddBtn" style="padding:7px 14px;border-radius:8px;background:#10B981;color:white;border:none;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:0.3px;display:flex;align-items:center;gap:6px;transition:all 0.15s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10B981'">
+                  + Adicionar <span style="font-size:9px;">▾</span>
+                </button>
+                <div id="mapaAddMenu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:white;border:1px solid #e2e6ed;border-radius:8px;box-shadow:0 4px 14px rgba(30,45,82,0.12);z-index:50;min-width:180px;overflow:hidden;">
+                  <button onclick="abrirNovaReservaDoMapa()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;color:#374151;background:white;border:none;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">📅 Nova reserva</button>
+                  <button onclick="abrirBloqueioDoMapa()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;color:#374151;background:white;border:none;cursor:pointer;border-top:1px solid #f1f3f7;transition:background 0.15s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">🚫 Bloquear UH</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Legenda (cores por status) -->
+          <div class="flex items-center gap-4 flex-wrap mb-3" style="padding:8px 12px;background:#fafbfd;border:1px solid #f1f3f7;border-radius:8px;">
+            <span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.6px;font-weight:600;">Legenda:</span>
+            <div class="flex items-center gap-1.5"><div style="width:14px;height:14px;background:#FBBF24;border-radius:3px;"></div><span style="font-size:11px;color:#6b7280;">Pré-reserva</span></div>
+            <div class="flex items-center gap-1.5"><div style="width:14px;height:14px;background:#5B9BD5;border-radius:3px;"></div><span style="font-size:11px;color:#6b7280;">Paga (futura)</span></div>
+            <div class="flex items-center gap-1.5"><div style="width:14px;height:14px;background:#EF6F6C;border-radius:3px;"></div><span style="font-size:11px;color:#6b7280;">Hospedado agora</span></div>
+            <div class="flex items-center gap-1.5"><div style="width:14px;height:14px;background:#9CA3AF;border-radius:3px;"></div><span style="font-size:11px;color:#6b7280;">Em limpeza</span></div>
+            <div class="flex items-center gap-1.5"><div style="width:14px;height:14px;background:#6CC18E;border-radius:3px;"></div><span style="font-size:11px;color:#6b7280;">Finalizada</span></div>
+          </div>
+
+          <div id="mapaPeriodo" style="text-align:center;margin-bottom:16px;font-size:13px;color:#6b7280;font-weight:500;"></div>
+
+          <div class="table-container">
+            <div id="mapaGrid" class="mapa-grid">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- RESERVAS VIEW -->
+        <div id="reservasView" class="view hidden">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-semibold text-domus-texto">Reservas</h2>
+            <input
+              id="searchReservas"
+              type="text"
+              placeholder="Buscar por hóspede..."
+              class="px-4 py-2 border border-domus-borda rounded text-sm w-64"
+            />
+          </div>
+
+          <div class="flex gap-2 mb-3 flex-wrap">
+            <button class="tab-button active" data-status="all">Todas</button>
+            <button class="tab-button" data-status="confirmada">Confirmadas</button>
+            <button class="tab-button" data-status="check-in">Check-in</button>
+            <button class="tab-button" data-status="check-out">Check-out</button>
+            <button class="tab-button" data-status="cancelada">Canceladas</button>
+          </div>
+
+          <!-- Filtros rápidos -->
+          <div class="space-y-2 mb-4">
+            <!-- Reservada em (data de criação) -->
+            <div class="flex gap-1.5 flex-wrap items-center text-xs">
+              <span class="text-domus-texto-suave font-medium uppercase tracking-wider text-[10px] mr-1">Reservada em:</span>
+              <button class="filtro-criacao-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition active" data-filtro-criacao="todas">Todas</button>
+              <button class="filtro-criacao-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-criacao="hoje">Hoje</button>
+              <button class="filtro-criacao-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-criacao="ontem">Ontem</button>
+              <button class="filtro-criacao-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-criacao="semana">Últimos 7 dias</button>
+              <button class="filtro-criacao-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-criacao="mes">Este mês</button>
+            </div>
+            <!-- Check-in (data da estadia) -->
+            <div class="flex gap-1.5 flex-wrap items-center text-xs">
+              <span class="text-domus-texto-suave font-medium uppercase tracking-wider text-[10px] mr-1">Check-in:</span>
+              <button class="filtro-data-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition active" data-filtro-data="todas">Todas</button>
+              <button class="filtro-data-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-data="hoje">Hoje</button>
+              <button class="filtro-data-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-data="amanha">Amanhã</button>
+              <button class="filtro-data-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-data="semana">Próx. 7 dias</button>
+              <button class="filtro-data-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-data="passadas">Já passaram</button>
+            </div>
+            <!-- Plataforma -->
+            <div class="flex gap-1.5 flex-wrap items-center text-xs">
+              <span class="text-domus-texto-suave font-medium uppercase tracking-wider text-[10px] mr-1">Plataforma:</span>
+              <button class="filtro-plat-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition active" data-filtro-plat="todas">Todas</button>
+              <button class="filtro-plat-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-plat="Booking">Booking</button>
+              <button class="filtro-plat-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-plat="Airbnb">Airbnb</button>
+              <button class="filtro-plat-btn px-3 py-1 rounded-full border border-domus-borda hover:border-domus-azul transition" data-filtro-plat="Direto">Direto</button>
+            </div>
+            <!-- Filtros prontos (atalhos inteligentes) -->
+            <div class="flex gap-1.5 flex-wrap items-center text-xs">
+              <span class="text-domus-texto-suave font-medium uppercase tracking-wider text-[10px] mr-1">Atalhos:</span>
+              <button class="filtro-pronto-btn px-3 py-1 rounded-full border border-domus-rosa/30 bg-domus-rosa/5 text-domus-rosa hover:bg-domus-rosa/10 transition" data-filtro-pronto="checkin-semana">🔥 Check-in esta semana</button>
+              <button class="filtro-pronto-btn px-3 py-1 rounded-full border border-domus-rosa/30 bg-domus-rosa/5 text-domus-rosa hover:bg-domus-rosa/10 transition" data-filtro-pronto="checkout-48h">🚪 Check-out 48h</button>
+              <button class="filtro-pronto-btn px-3 py-1 rounded-full border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition" data-filtro-pronto="pagto-pendente">💸 Pagamento pendente</button>
+              <button class="filtro-pronto-btn px-3 py-1 rounded-full border border-domus-azul/30 bg-domus-azul/5 text-domus-azul hover:bg-domus-azul/10 transition" data-filtro-pronto="recorrentes">💚 Recorrentes</button>
+              <button class="filtro-pronto-btn px-3 py-1 rounded-full border border-purple-300 bg-purple-50 text-purple-800 hover:bg-purple-100 transition" data-filtro-pronto="estadia-longa">📅 Estadia longa</button>
+              <button class="filtro-pronto-btn px-3 py-1 rounded-full border border-red-300 bg-red-50 text-red-800 hover:bg-red-100 transition" data-filtro-pronto="cancelamentos-mes">❌ Canceladas no mês</button>
+            </div>
+          </div>
+
+          <!-- KPIs do filtro ativo (recalculam dinamicamente) -->
+          <div id="reservasKpis" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 rounded-xl bg-gradient-to-r from-domus-creme to-white border border-domus-azul/20">
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Reservas</div>
+              <div id="kpiQtde" class="text-xl font-bold text-domus-azul-escuro">—</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Receita</div>
+              <div id="kpiReceita" class="text-xl font-bold text-domus-azul-escuro">—</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Ticket médio</div>
+              <div id="kpiTicket" class="text-xl font-bold text-domus-azul-escuro">—</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Taxa cancelamento</div>
+              <div id="kpiCancel" class="text-xl font-bold text-domus-azul-escuro">—</div>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th class="th-sortable" onclick="ordenarReservas('hospede_nome')">Hóspede <span class="sort-arrow" data-col="hospede_nome">↕</span></th>
+                  <th class="th-sortable" onclick="ordenarReservas('cama')">Quarto <span class="sort-arrow" data-col="cama">↕</span></th>
+                  <th class="th-sortable" onclick="ordenarReservas('checkin')">Check-in <span class="sort-arrow" data-col="checkin">↕</span></th>
+                  <th class="th-sortable" onclick="ordenarReservas('checkout')">Check-out <span class="sort-arrow" data-col="checkout">↕</span></th>
+                  <th class="th-sortable" onclick="ordenarReservas('plataforma')">Plataforma <span class="sort-arrow" data-col="plataforma">↕</span></th>
+                  <th class="th-sortable" style="text-align: right;" onclick="ordenarReservas('valor_total')">Valor <span class="sort-arrow" data-col="valor_total">↕</span></th>
+                  <th class="th-sortable" onclick="ordenarReservas('status')">Status <span class="sort-arrow" data-col="status">↕</span></th>
+                  <th style="text-align: center;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="reservasTable">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex items-center justify-between mt-4">
+            <div id="paginationInfo" class="text-sm text-domus-texto-suave"></div>
+            <div class="flex gap-2">
+              <button id="prevPage" class="px-4 py-2 border border-domus-borda rounded text-sm hover:bg-gray-50">
+                Anterior
+              </button>
+              <button id="nextPage" class="px-4 py-2 border border-domus-borda rounded text-sm hover:bg-gray-50">
+                Próxima
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HOSPEDES VIEW (CRM) -->
+        <div id="hospedesView" class="view hidden">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div>
+              <h2 class="text-2xl font-semibold text-domus-texto">Hóspedes — CRM</h2>
+              <p class="text-xs text-domus-texto-suave mt-1">Quem já passou pela Domus, quem volta, quem gasta mais</p>
+            </div>
+            <input
+              id="searchHospedes"
+              type="text"
+              placeholder="Buscar por nome ou e-mail..."
+              class="px-4 py-2 border border-domus-borda rounded text-sm w-64"
+              oninput="filtrarHospedes()"
+            />
+          </div>
+
+          <!-- KPIs do CRM -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-5" id="crmKpis">
+            <!-- preenchido por JS -->
+          </div>
+
+          <!-- Filtros rápidos -->
+          <div class="flex gap-2 mb-4 flex-wrap">
+            <button class="crm-filtro tab-button active" data-crm="todos" onclick="setFiltroCRM('todos')">Todos</button>
+            <button class="crm-filtro tab-button" data-crm="vip" onclick="setFiltroCRM('vip')">⭐ VIP (5+)</button>
+            <button class="crm-filtro tab-button" data-crm="recorrentes" onclick="setFiltroCRM('recorrentes')">Recorrentes (2+)</button>
+            <button class="crm-filtro tab-button" data-crm="unicos" onclick="setFiltroCRM('unicos')">Só uma vez</button>
+            <button class="crm-filtro tab-button" data-crm="risco" onclick="setFiltroCRM('risco')">Em risco (>180d)</button>
+            <button class="crm-filtro tab-button" data-crm="ativos" onclick="setFiltroCRM('ativos')">Hospedados agora</button>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Nome</th>
+                  <th>Contato</th>
+                  <th>Estadias</th>
+                  <th>Total gasto</th>
+                  <th>Última visita</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="hospedesTable">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CUPONS VIEW -->
+        <div id="cuponsView" class="view hidden">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-semibold text-domus-texto">Cupons de Desconto</h2>
+            <button id="newCouponBtn" class="bg-amber-500 text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">
+              + Novo Cupom
+            </button>
+          </div>
+
+          <!-- Performance dos cupons -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 rounded-xl bg-gradient-to-r from-amber-50 to-white border border-amber-200">
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Cupons ativos</div>
+              <div id="kpiCupAtivos" class="text-xl font-bold text-amber-800">—</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Usos totais</div>
+              <div id="kpiCupUsos" class="text-xl font-bold text-amber-800">—</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Desconto dado</div>
+              <div id="kpiCupDesconto" class="text-xl font-bold text-amber-800">—</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] uppercase tracking-wider text-domus-texto-suave font-semibold">Top cupom</div>
+              <div id="kpiCupTop" class="text-sm font-bold text-amber-800 truncate">—</div>
+            </div>
+          </div>
+
+          <!-- Sugestões IA -->
+          <div class="mb-4 p-4 rounded-xl bg-gradient-to-br from-domus-azul/5 to-purple-50 border border-domus-azul/20">
+            <div class="flex items-start gap-3">
+              <div class="text-2xl">✨</div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="font-semibold text-domus-azul-escuro text-sm">Sugestões da Gabi~ia</h3>
+                  <button onclick="gerarSugestoesCupons()" class="text-xs text-domus-azul hover:underline">↻ atualizar</button>
+                </div>
+                <div id="cuponsSugestoes" class="text-sm text-domus-texto leading-relaxed">
+                  <span class="text-domus-texto-suave italic">Carregando análise…</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Tipo</th>
+                  <th>Valor</th>
+                  <th>Validade</th>
+                  <th>Usos</th>
+                  <th>Status</th>
+                  <th>Link Direto</th>
+                </tr>
+              </thead>
+              <tbody id="cuponsTable">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Modal Nova Reserva -->
+  <div id="novaReservaModal" class="hidden">
+    <div class="modal-overlay" onclick="closeNovaReservaModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div class="bg-white rounded-lg shadow-lg p-8 max-w-lg pointer-events-auto max-h-96 overflow-y-auto">
+        <h3 class="text-xl font-semibold text-domus-texto mb-6">Nova Reserva</h3>
+        <form id="novaReservaForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Nome do Hóspede *</label>
+            <input id="nrNome" type="text" required placeholder="Nome completo"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">E-mail ou Telefone</label>
+            <input id="nrContato" type="text" placeholder="E-mail ou telefone"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Quarto *</label>
+            <select id="nrQuarto" required
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul">
+              <option value="">Selecione um quarto...</option>
+              <option value="Studio 1">Studio 1</option>
+              <option value="Studio 2">Studio 2</option>
+              <option value="Individual 3">Individual 3</option>
+              <option value="Individual 4">Individual 4</option>
+              <option value="Individual 5">Individual 5</option>
+              <option value="Hostel 6 - Cama 1">H6 · Cama 1</option>
+              <option value="Hostel 6 - Cama 2">H6 · Cama 2</option>
+              <option value="Hostel 6 - Cama 3">H6 · Cama 3</option>
+              <option value="Hostel 6 - Cama 4">H6 · Cama 4</option>
+              <option value="Hostel 7 - Cama 5">H7 · Cama 5</option>
+              <option value="Hostel 7 - Cama 6">H7 · Cama 6</option>
+              <option value="Hostel 7 - Cama 7">H7 · Cama 7</option>
+              <option value="Hostel 7 - Cama 8">H7 · Cama 8</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">Check-in *</label>
+              <input id="nrCheckin" type="date" required
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">Check-out *</label>
+              <input id="nrCheckout" type="date" required
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Plataforma</label>
+            <select id="nrPlataforma"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul">
+              <option value="Direto">Direto</option>
+              <option value="Booking">Booking</option>
+              <option value="Airbnb">Airbnb</option>
+              <option value="Hotels.com">Hotels.com</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Valor Total (R$) *</label>
+            <input id="nrValor" type="number" required step="0.01" min="0" placeholder="0.00"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Observações</label>
+            <textarea id="nrObservacoes" placeholder="Observações (opcional)"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" rows="2"></textarea>
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="submit" class="flex-1 px-4 py-2 bg-domus-verde text-white rounded-lg text-sm hover:bg-opacity-90 font-medium">
+              Criar Reserva
+            </button>
+            <button type="button" onclick="closeNovaReservaModal()"
+              class="flex-1 px-4 py-2 bg-gray-200 text-domus-texto rounded-lg text-sm hover:bg-gray-300 font-medium">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nova Cupom -->
+  <div id="novoCupomModal" class="hidden">
+    <div class="modal-overlay" onclick="closeNovoCupomModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div class="bg-white rounded-lg shadow-lg p-8 max-w-lg pointer-events-auto max-h-96 overflow-y-auto">
+        <h3 class="text-xl font-semibold text-domus-texto mb-6">Novo Cupom</h3>
+        <form id="novoCupomForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Código do Cupom *</label>
+            <div class="flex gap-2">
+              <input id="ncCodigo" type="text" required placeholder="DOMUS-XXXX"
+                class="flex-1 px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+              <button type="button" onclick="gerarCodigoCupom()"
+                class="px-3 py-2 bg-gray-100 text-domus-texto rounded text-sm hover:bg-gray-200">
+                Gerar
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Tipo de Desconto *</label>
+            <select id="ncTipo" required onchange="atualizarLabelValor()"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul">
+              <option value="percentual">Percentual (%)</option>
+              <option value="valor_fixo">Valor Fixo (R$)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1" id="ncValorLabel">Valor do Desconto (%) *</label>
+            <input id="ncValor" type="number" required step="0.01" min="0" placeholder="10"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Validade *</label>
+            <input id="ncValidade" type="date" required
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Usos Máximos</label>
+            <input id="ncUsosMax" type="number" min="1" value="1"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Observação</label>
+            <input id="ncObservacao" type="text" placeholder="Descrição (opcional)"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="submit" class="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-opacity-90 font-medium">
+              Criar Cupom
+            </button>
+            <button type="button" onclick="closeNovoCupomModal()"
+              class="flex-1 px-4 py-2 bg-gray-200 text-domus-texto rounded-lg text-sm hover:bg-gray-300 font-medium">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ações Reserva -->
+  <div id="acaoModal" class="hidden">
+    <div class="modal-overlay" onclick="closeAcaoModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div class="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full pointer-events-auto max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-semibold text-domus-texto mb-4">Ações da Reserva</h3>
+
+        <!-- Indicador de status atual -->
+        <div id="acaoStatusAtual" class="mb-4 p-3 rounded text-sm bg-gray-50 border border-domus-borda">
+          <span class="text-domus-texto-suave">Status: </span>
+          <span id="acaoStatusBadge" class="font-semibold">—</span>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1">Status</p>
+          <button onclick="mudarStatusReserva('check-in')" id="btnCheckin"
+            class="w-full px-4 py-2 bg-domus-verde text-white rounded text-sm hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+            🟢 Fazer Check-in
+          </button>
+          <button onclick="fazerCheckoutComMensagem()" id="btnCheckout"
+            class="w-full px-4 py-2 bg-domus-azul-escuro text-white rounded text-sm hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+            🔴 Fazer Check-out
+          </button>
+          <button onclick="cancelarReserva()" id="btnCancelar"
+            class="w-full px-4 py-2 bg-white border border-red-400 text-red-600 rounded text-sm hover:bg-red-50 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+            ✖ Cancelar Reserva
+          </button>
+
+          <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1 mt-4">Pagamento</p>
+          <button onclick="abrirPagamentoModal()"
+            class="w-full px-4 py-2 bg-domus-terra text-white rounded text-sm hover:opacity-90 flex items-center justify-center gap-2">
+            💰 Registrar Pagamento
+          </button>
+
+          <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1 mt-4">Documentos</p>
+          <button onclick="gerarVoucherPDF()"
+            class="w-full px-4 py-2 bg-domus-azul text-white rounded text-sm hover:bg-domus-azul-escuro flex items-center justify-center gap-2">
+            📄 Gerar Voucher
+          </button>
+          <button onclick="gerarReciboPDF()"
+            class="w-full px-4 py-2 bg-white border border-domus-borda text-domus-texto rounded text-sm hover:bg-gray-50 flex items-center justify-center gap-2">
+            🧾 Gerar Recibo
+          </button>
+
+          <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1 mt-4">Enviar</p>
+          <button onclick="enviarVoucherEmail()"
+            class="w-full px-4 py-2 bg-white border border-domus-borda text-domus-texto rounded text-sm hover:bg-gray-50 flex items-center justify-center gap-2">
+            ✉️ Enviar Voucher por E-mail
+          </button>
+          <button onclick="enviarVoucherWhatsApp()"
+            class="w-full px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 flex items-center justify-center gap-2">
+            💬 Enviar por WhatsApp
+          </button>
+
+          <button onclick="closeAcaoModal()"
+            class="w-full px-4 py-2 bg-gray-200 text-domus-texto rounded text-sm hover:bg-gray-300 mt-3">
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalhe Hóspede -->
+  <div id="detalheHospedeModal" class="hidden">
+    <div class="modal-overlay" onclick="closeDetalheHospede()"></div>
+    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div class="bg-white rounded-lg shadow-lg p-8 max-w-md pointer-events-auto max-h-[80vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-domus-texto">Perfil do Hóspede</h3>
+          <button onclick="closeDetalheHospede()" class="text-domus-texto-suave hover:text-domus-texto text-xl">&times;</button>
+        </div>
+        <div id="detalheHospedeContent">
+          <!-- Preenchido por JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Bloquear Quarto -->
+  <div id="bloqueioModal" class="hidden">
+    <div class="modal-overlay" onclick="closeBloqueioModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div class="bg-white rounded-lg shadow-lg p-8 max-w-lg pointer-events-auto">
+        <h3 class="text-xl font-semibold text-domus-texto mb-6">🔒 Bloquear Quarto</h3>
+        <form id="bloqueioForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Quarto *</label>
+            <select id="blQuarto" required
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400">
+              <option value="">Selecione um quarto...</option>
+              <option value="Studio 1">Studio 1</option>
+              <option value="Studio 2">Studio 2</option>
+              <option value="Individual 3">Individual 3</option>
+              <option value="Individual 4">Individual 4</option>
+              <option value="Individual 5">Individual 5</option>
+              <option value="Hostel 6 - Cama 1">H6 · Cama 1</option>
+              <option value="Hostel 6 - Cama 2">H6 · Cama 2</option>
+              <option value="Hostel 6 - Cama 3">H6 · Cama 3</option>
+              <option value="Hostel 6 - Cama 4">H6 · Cama 4</option>
+              <option value="Hostel 7 - Cama 5">H7 · Cama 5</option>
+              <option value="Hostel 7 - Cama 6">H7 · Cama 6</option>
+              <option value="Hostel 7 - Cama 7">H7 · Cama 7</option>
+              <option value="Hostel 7 - Cama 8">H7 · Cama 8</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">De *</label>
+              <input id="blDe" type="date" required
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">Até *</label>
+              <input id="blAte" type="date" required
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Motivo</label>
+            <input id="blMotivo" type="text" placeholder="Ex: Manutenção, Limpeza profunda..."
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" />
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="submit" class="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 font-medium">
+              Bloquear
+            </button>
+            <button type="button" onclick="closeBloqueioModal()"
+              class="flex-1 px-4 py-2 bg-gray-200 text-domus-texto rounded-lg text-sm hover:bg-gray-300 font-medium">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Registrar Pagamento -->
+  <div id="pagamentoModal" class="hidden">
+    <div class="modal-overlay" onclick="closePagamentoModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none p-4">
+      <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full pointer-events-auto max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-domus-texto">💰 Registrar Pagamento</h3>
+          <button onclick="closePagamentoModal()" class="text-domus-texto-suave hover:text-domus-texto text-2xl">&times;</button>
+        </div>
+
+        <!-- Resumo da reserva -->
+        <div id="pagResumoReserva" class="mb-5 p-3 bg-domus-areia rounded text-sm">
+          <div class="font-semibold text-domus-texto" id="pagResumoNome">—</div>
+          <div class="text-domus-texto-suave text-xs mt-1" id="pagResumoDatas">—</div>
+          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-domus-borda text-xs">
+            <div>
+              <div class="text-domus-texto-suave">Total da reserva</div>
+              <div class="font-semibold text-domus-texto" id="pagResumoTotal">R$ 0,00</div>
+            </div>
+            <div>
+              <div class="text-domus-texto-suave">Já recebido</div>
+              <div class="font-semibold text-domus-verde" id="pagResumoRecebido">R$ 0,00</div>
+            </div>
+          </div>
+          <div class="mt-2 pt-2 border-t border-domus-borda text-xs">
+            <div class="text-domus-texto-suave">Saldo a receber</div>
+            <div class="font-semibold text-domus-azul-escuro text-base" id="pagResumoSaldo">R$ 0,00</div>
+          </div>
+        </div>
+
+        <form id="pagamentoForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Valor (R$) *</label>
+            <input id="pagValor" type="number" step="0.01" min="0.01" required
+              placeholder="0,00"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-terra" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-2">Método *</label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 px-3 py-2 border border-domus-borda rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-domus-azul-claro has-[:checked]:border-domus-azul">
+                <input type="radio" name="pagMetodo" value="Dinheiro" required class="text-domus-azul" />
+                <span class="text-sm">💵 Dinheiro</span>
+              </label>
+              <label class="flex items-center gap-2 px-3 py-2 border border-domus-borda rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-domus-azul-claro has-[:checked]:border-domus-azul">
+                <input type="radio" name="pagMetodo" value="PIX" class="text-domus-azul" />
+                <span class="text-sm">⚡ PIX</span>
+              </label>
+              <label class="flex items-center gap-2 px-3 py-2 border border-domus-borda rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-domus-azul-claro has-[:checked]:border-domus-azul">
+                <input type="radio" name="pagMetodo" value="Cartão" class="text-domus-azul" />
+                <span class="text-sm">💳 Cartão</span>
+              </label>
+              <label class="flex items-center gap-2 px-3 py-2 border border-domus-borda rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-domus-azul-claro has-[:checked]:border-domus-azul">
+                <input type="radio" name="pagMetodo" value="Transferência" class="text-domus-azul" />
+                <span class="text-sm">🏦 Transferência</span>
+              </label>
+              <label class="flex items-center gap-2 px-3 py-2 border border-domus-borda rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-domus-azul-claro has-[:checked]:border-domus-azul">
+                <input type="radio" name="pagMetodo" value="Boleto" class="text-domus-azul" />
+                <span class="text-sm">📄 Boleto</span>
+              </label>
+              <label class="flex items-center gap-2 px-3 py-2 border border-domus-borda rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-domus-azul-claro has-[:checked]:border-domus-azul">
+                <input type="radio" name="pagMetodo" value="InfinitePay" class="text-domus-azul" />
+                <span class="text-sm">💚 InfinitePay</span>
+              </label>
+              <label class="flex items-center gap-2 px-3 py-2 border border-domus-borda rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-domus-azul-claro has-[:checked]:border-domus-azul">
+                <input type="radio" name="pagMetodo" value="Booking" class="text-domus-azul" />
+                <span class="text-sm">🅱️ Booking <span class="text-[10px] text-domus-texto-suave">(repasse mês seguinte)</span></span>
+              </label>
+              <label class="flex items-center gap-2 px-3 py-2 border border-domus-borda rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-domus-azul-claro has-[:checked]:border-domus-azul">
+                <input type="radio" name="pagMetodo" value="Airbnb" class="text-domus-azul" />
+                <span class="text-sm">🅰️ Airbnb <span class="text-[10px] text-domus-texto-suave">(repasse dia seguinte)</span></span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Data do pagamento *</label>
+            <input id="pagData" type="date" required
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-terra" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Observação (opcional)</label>
+            <textarea id="pagObservacao" rows="2"
+              placeholder="Ex: pagamento na chegada, parcial, etc."
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-terra resize-none"></textarea>
+          </div>
+
+          <!-- Histórico -->
+          <div id="pagHistorico" class="hidden border-t border-domus-borda pt-4">
+            <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-2">Pagamentos anteriores</p>
+            <div id="pagHistoricoLista" class="space-y-1 text-xs"></div>
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="submit" id="pagBtnSalvar"
+              class="flex-1 px-4 py-2 bg-domus-terra text-white rounded-lg text-sm hover:opacity-90 font-medium">
+              Registrar pagamento
+            </button>
+            <button type="button" onclick="closePagamentoModal()"
+              class="flex-1 px-4 py-2 bg-gray-200 text-domus-texto rounded-lg text-sm hover:bg-gray-300 font-medium">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+    // ==========================================
+    // CONSTANTS
+    // ==========================================
+    const QUARTOS = [
+      { id: 'Studio 1', label: 'STUDIO 1', grupo: 'Studios', preco: 209, aliases: ['studio_1','studio 1','std. 1','std 1','studio1'] },
+      { id: 'Studio 2', label: 'STUDIO 2', grupo: 'Studios', preco: 239, aliases: ['studio_2','studio 2','std. 2','std 2','studio2'] },
+      { id: 'Individual 3', label: 'INDIVIDUAL 3', grupo: 'Individuais', preco: 138, aliases: ['individual_3','individual 3','ind. 3','ind 3','quarto 3'] },
+      { id: 'Individual 4', label: 'INDIVIDUAL 4', grupo: 'Individuais', preco: 128, aliases: ['individual_4','individual 4','ind. 4','ind 4','quarto 4'] },
+      { id: 'Individual 5', label: 'INDIVIDUAL 5', grupo: 'Individuais', preco: 128, aliases: ['individual_5','individual 5','ind. 5','ind 5','quarto 5'] },
+      { id: 'Hostel 6 - Cama 1', label: 'H6 · C1', grupo: 'Hostel 6 (Fem)', preco: 86, aliases: ['hostel 6 - cama 1','h6 cama 1','h6 c1','h6-c1','cama 1','hostel_6_cama_1','q6 cama 1','quarto 6 - cama 1'] },
+      { id: 'Hostel 6 - Cama 2', label: 'H6 · C2', grupo: 'Hostel 6 (Fem)', preco: 86, aliases: ['hostel 6 - cama 2','h6 cama 2','h6 c2','h6-c2','cama 2','hostel_6_cama_2','q6 cama 2','quarto 6 - cama 2'] },
+      { id: 'Hostel 6 - Cama 3', label: 'H6 · C3', grupo: 'Hostel 6 (Fem)', preco: 86, aliases: ['hostel 6 - cama 3','h6 cama 3','h6 c3','h6-c3','cama 3','hostel_6_cama_3','q6 cama 3','quarto 6 - cama 3'] },
+      { id: 'Hostel 6 - Cama 4', label: 'H6 · C4', grupo: 'Hostel 6 (Fem)', preco: 86, aliases: ['hostel 6 - cama 4','h6 cama 4','h6 c4','h6-c4','cama 4','hostel_6_cama_4','q6 cama 4','quarto 6 - cama 4'] },
+      { id: 'Hostel 7 - Cama 5', label: 'H7 · C5', grupo: 'Hostel 7 (Misto)', preco: 86, aliases: ['hostel 7 - cama 5','h7 cama 5','h7 c5','h7-c5','cama 5','hostel_7_cama_5','q7 cama 5','quarto 7 - cama 5'] },
+      { id: 'Hostel 7 - Cama 6', label: 'H7 · C6', grupo: 'Hostel 7 (Misto)', preco: 86, aliases: ['hostel 7 - cama 6','h7 cama 6','h7 c6','h7-c6','cama 6','hostel_7_cama_6','q7 cama 6','quarto 7 - cama 6'] },
+      { id: 'Hostel 7 - Cama 7', label: 'H7 · C7', grupo: 'Hostel 7 (Misto)', preco: 86, aliases: ['hostel 7 - cama 7','h7 cama 7','h7 c7','h7-c7','cama 7','hostel_7_cama_7','q7 cama 7','quarto 7 - cama 7'] },
+      { id: 'Hostel 7 - Cama 8', label: 'H7 · C8', grupo: 'Hostel 7 (Misto)', preco: 86, aliases: ['hostel 7 - cama 8','h7 cama 8','h7 c8','h7-c8','cama 8','hostel_7_cama_8','q7 cama 8','quarto 7 - cama 8'] }
+    ];
+
+    const PLAT_COR = {
+      'Booking': '#003580',
+      'Airbnb': '#FF5A5F',
+      'Direto': '#27AE60',
+      'Outro': '#F59E0B'
+    };
+
+    // ==========================================
+    // MATCH QUARTO (aliases)
+    // ==========================================
+    function matchQuarto(cama, quarto) {
+      if (!cama) return false;
+      const c = cama.toLowerCase().trim();
+      if (c === quarto.id.toLowerCase()) return true;
+      if (c.includes(quarto.id.toLowerCase())) return true;
+      if (quarto.aliases) {
+        return quarto.aliases.some(a => c === a || c.includes(a));
+      }
+      return false;
+    }
+
+    // ==========================================
+    // STATE
+    // ==========================================
+    let currentView = 'home';
+    let currentUser = null;
+    let selectedReserva = null;
+    let currentPage = 1;
+    let currentFilter = 'all';
+    let mapaStartDate = new Date();
+
+    // Helpers de data — evitam bug de timezone (Date('2026-05-01') vira 30/04 no Brasil)
+    // Retorna YYYY-MM-DD do "hoje" em horário de São Paulo (não UTC)
+    function hojeISO() {
+      const f = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' });
+      return f.format(new Date()); // "2026-05-04"
+    }
+
+    function fmtData(s) {
+      if (!s) return '—';
+      const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+      return new Date(s).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    }
+    function fmtDataCurta(s) {
+      if (!s) return '—';
+      const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return `${m[3]}/${m[2]}`;
+      return new Date(s).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
+    }
+
+    // ==========================================
+    // FORMATAR NOME DO HÓSPEDE + SELO DE FIDELIDADE
+    // - Mostra nome real quando existe
+    // - Adiciona selo "💚 Recorrente (3ª)" ou "⭐ VIP (8ª)"
+    // - Quando vazio: mostra "Hóspede [Canal]" com selo e botão editar
+    // ==========================================
+    var _cacheFidelidade = {};  // cache por telefone normalizado
+
+    function _normalizarTel(s) {
+      return (s || '').replace(/[^0-9]/g, '');
+    }
+
+    function _seloFidelidade(reserva) {
+      var tel = _normalizarTel(reserva.hospede_contato);
+      if (tel.length < 10) return '';
+      var info = _cacheFidelidade[tel];
+      if (!info) return '';  // ainda não carregou
+      if (info.estadias < 2) return '';  // só mostra de Recorrente pra cima
+      var cor = info.estadias >= 5 ? '#FFF8DC' : '#E8F7F4';
+      var corTexto = info.estadias >= 5 ? '#92400E' : '#0A6B75';
+      var emoji = info.estadias >= 5 ? '⭐' : '💚';
+      var label = info.estadias >= 5 ? 'VIP' : 'Recorrente';
+      return ' <span title="' + label + ' — ' + info.estadias + ' estadias" '
+           + 'style="display:inline-block;margin-left:6px;padding:1px 7px;font-size:9.5px;font-weight:700;background:' + cor + ';color:' + corTexto + ';border-radius:6px;vertical-align:middle;">'
+           + emoji + ' ' + info.estadias + 'ª estadia</span>';
+    }
+
+    // Pré-carrega fidelidade pra lista de reservas (1 chamada batch ao banco)
+    async function precarregarFidelidade(reservas) {
+      try {
+        var telefones = {};
+        (reservas || []).forEach(function(r) {
+          var tel = _normalizarTel(r.hospede_contato);
+          if (tel.length >= 10 && !_cacheFidelidade[tel]) telefones[tel] = true;
+        });
+        var pendentes = Object.keys(telefones);
+        if (pendentes.length === 0) return;
+        // Busca tudo de uma vez
+        var { data, error } = await db
+          .from('v_hospedes_consolidados')
+          .select('tel_norm, estadias_concretizadas, status_fidelidade, emoji_fidelidade')
+          .in('tel_norm', pendentes);
+        if (error) { console.warn('precarregarFidelidade:', error); return; }
+        (data || []).forEach(function(h) {
+          _cacheFidelidade[h.tel_norm] = {
+            estadias: h.estadias_concretizadas,
+            status: h.status_fidelidade,
+            emoji: h.emoji_fidelidade
+          };
+        });
+      } catch (e) { console.warn('precarregarFidelidade erro:', e); }
+    }
+
+    function formatarNomeHospede(reserva) {
+      if (!reserva) return '<span style="color:#999">(sem reserva)</span>';
+      var nome = (reserva.hospede_nome || '').trim();
+      var selo = _seloFidelidade(reserva);
+      if (nome) {
+        return _escapeHtml(nome) + selo;
+      }
+      // Sem nome real — buscar fallbacks
+      var contato = (reserva.hospede_contato || '').trim();
+      if (contato && !contato.match(/^\+\d{1,3}\s*$/)) {
+        return _escapeHtml(contato) + selo + _btnEditarNome(reserva.id);
+      }
+      var canal = (reserva.canal_codigo || reserva.plataforma || '').trim();
+      var placeholderNome = canal ? 'Hóspede ' + canal : '(sem nome)';
+      var seloVazio = canal && canal.toLowerCase().indexOf('booking') >= 0
+        ? '<span title="O Booking só libera o nome real do hóspede no dia do check-in" style="display:inline-block;margin-left:6px;padding:1px 6px;font-size:9px;font-weight:600;background:#FEF3C7;color:#92400E;border-radius:6px;vertical-align:middle;">aguardando dados</span>'
+        : '<span style="display:inline-block;margin-left:6px;padding:1px 6px;font-size:9px;font-weight:600;background:#FEE2E2;color:#9B1C1C;border-radius:6px;vertical-align:middle;">sem nome</span>';
+      return '<span style="color:#666;font-style:italic;">' + _escapeHtml(placeholderNome) + '</span>' + seloVazio + _btnEditarNome(reserva.id);
+    }
+
+    function _escapeHtml(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function _btnEditarNome(reservaId) {
+      if (!reservaId) return '';
+      return ' <button onclick="event.stopPropagation();editarNomeHospede(\'' + reservaId + '\')" '
+           + 'title="Editar nome do hóspede" '
+           + 'style="background:none;border:none;cursor:pointer;font-size:11px;padding:0 4px;color:#1BA8B8;">✏️</button>';
+    }
+
+    async function editarNomeHospede(reservaId) {
+      var nome = prompt('Digite o nome do hóspede:');
+      if (nome === null) return; // cancelou
+      nome = (nome || '').trim();
+      if (!nome) { alert('Nome em branco — nada foi alterado.'); return; }
+      if (nome.length < 3) { alert('Nome muito curto. Mínimo 3 letras.'); return; }
+      try {
+        var { error } = await db.from('reservas').update({ hospede_nome: nome }).eq('id', reservaId);
+        if (error) { console.error(error); alert('Erro ao salvar: ' + error.message); return; }
+        alert('Nome atualizado para: ' + nome + ' ✓');
+        // Recarregar a tela atual
+        if (typeof carregarReservas === 'function') carregarReservas();
+        if (typeof carregarMapa === 'function') carregarMapa();
+        if (typeof carregarHome === 'function') carregarHome();
+      } catch (e) {
+        console.error(e); alert('Erro: ' + e.message);
+      }
+    }
+
+
+    // ==========================================
+    // LOGIN (Supabase Auth — compartilha sessão com DG Gestão)
+    // ==========================================
+
+    // Tenta restaurar sessão existente (se logou no DG Gestão, já entra direto)
+    function mostrarFormularioLogin() {
+      // Sem sessão? Não mostra form duplicado — manda pro DG Gestão pra logar lá
+      // (única fonte de verdade do login admin)
+      window.location.href = 'index.html?login=pms';
+    }
+
+    async function tentarRestaurarSessao() {
+      // Supabase Auth está quebrado neste projeto — usar localStorage do DG Gestão
+      try {
+        const raw = localStorage.getItem('dg_admin_session');
+        if (raw) {
+          const sess = JSON.parse(raw);
+          if (sess && sess.admin_id && sess.email) {
+            currentUser = { nome: sess.nome || 'Admin', email: sess.email, id: sess.admin_id };
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            init();
+            return;
+          }
+        }
+      } catch (e) { console.warn('localStorage indisponivel:', e); }
+      mostrarFormularioLogin();
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const password = document.getElementById('loginPassword').value;
+      const errorEl = document.getElementById('loginError');
+
+      errorEl.classList.add('hidden');
+
+      try {
+        // Login via RPC (Supabase Auth está quebrado neste projeto)
+        const rpcResp = await db.rpc('verificar_admin_login', { p_email: email, p_senha: password });
+
+        if (rpcResp.error || !rpcResp.data || !rpcResp.data.success) {
+          errorEl.textContent = (rpcResp.data && rpcResp.data.erro) || 'E-mail ou senha incorretos.';
+          errorEl.classList.remove('hidden');
+          document.getElementById('loginPassword').value = '';
+          return;
+        }
+
+        const nome = rpcResp.data.nome || email.split('@')[0];
+
+        // Salva sessão (mesmo formato do DG Gestão pra compartilhar login)
+        try {
+          localStorage.setItem('dg_admin_session', JSON.stringify({
+            admin_id: rpcResp.data.admin_id,
+            email: rpcResp.data.email,
+            nome: nome,
+            perfil: rpcResp.data.perfil || 'admin',
+            logado_em: new Date().toISOString()
+          }));
+        } catch(e) { /* localStorage indisponivel */ }
+
+        currentUser = { nome, email: rpcResp.data.email, id: rpcResp.data.admin_id };
+        document.getElementById('loginOverlay').classList.add('hidden');
+        document.getElementById('appContainer').classList.remove('hidden');
+        init();
+
+      } catch (err) {
+        console.error('Erro no login:', err);
+        errorEl.textContent = 'Erro de conexão. Tente novamente.';
+        errorEl.classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      try { localStorage.removeItem('dg_admin_session'); } catch(e) {}
+      currentUser = null;
+      document.getElementById('appContainer').classList.add('hidden');
+      document.getElementById('loginOverlay').classList.remove('hidden');
+      document.getElementById('loginChecking').classList.add('hidden');
+      document.getElementById('loginForm').classList.remove('hidden');
+      document.getElementById('loginForm').reset();
+    });
+
+    // Escutar mudanças de sessão
+    db.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        currentUser = null;
+      }
+    });
+
+    // ==========================================
+    // INIT
+    // ==========================================
+    function init() {
+      setupSidebarNavigation();
+      loadView('home');
+      iniciarRealtimeLimpezas();
+    }
+
+    // Realtime: quando Vivian inicia/finaliza limpeza no app /cleaner,
+    // o PMS recarrega o Home na hora pra refletir o status "🧹 em limpeza"
+    function iniciarRealtimeLimpezas() {
+      try {
+        db.channel('pms-limpezas-realtime')
+          .on('postgres_changes',
+              { event: '*', schema: 'public', table: 'tarefas_limpeza' },
+              () => {
+                if (currentView === 'home') {
+                  console.log('[realtime] tarefa de limpeza mudou, recarregando Home');
+                  loadHome();
+                }
+              })
+          .subscribe();
+      } catch(e) {
+        console.warn('[realtime] não foi possível assinar tarefas_limpeza:', e);
+      }
+      // Fallback: polling a cada 60s caso websocket falhe
+      setInterval(() => {
+        if (currentView === 'home' && !document.hidden) loadHome();
+      }, 60000);
+    }
+
+    function setupSidebarNavigation() {
+      document.querySelectorAll('.sidebar-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const view = link.getAttribute('data-view');
+          loadView(view);
+        });
+      });
+    }
+
+    function loadView(view) {
+      document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+      document.getElementById(view + 'View').classList.remove('hidden');
+
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      document.querySelector(`[data-view="${view}"]`).classList.add('active');
+
+      currentView = view;
+
+      if (view === 'home') loadHome();
+      else if (view === 'indicadores') loadIndicadores();
+      else if (view === 'mapa') loadMapa();
+      else if (view === 'reservas') loadReservas();
+      else if (view === 'hospedes') loadHospedes();
+      else if (view === 'cupons') loadCupons();
+    }
+
+    // ==========================================
+    // HOME VIEW
+    // ==========================================
+    async function loadHome() {
+      const hoje = hojeISO();
+
+      try {
+        const { data: reservas } = await db
+          .from('reservas')
+          .select('*')
+          .lte('checkin', hoje)
+          .gte('checkout', hoje)
+          .in('status', ['confirmada', 'check-in', 'check_in'])
+          .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
+
+        const ocupados = (reservas || []).length;
+        const disponiveis = 13 - ocupados;
+
+        document.getElementById('statusAvailable').textContent = disponiveis;
+        document.getElementById('statusOccupied').textContent = ocupados;
+
+        const { data: entradaHoje } = await db
+          .from('reservas')
+          .select('*')
+          .eq('checkin', hoje)
+          .neq('status', 'cancelada')
+          .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
+
+        const { data: saidaHoje } = await db
+          .from('reservas')
+          .select('*')
+          .eq('checkout', hoje)
+          .neq('status', 'cancelada')
+          .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
+
+        document.getElementById('statusCheckIn').textContent = (entradaHoje || []).length;
+        document.getElementById('statusCheckOut').textContent = (saidaHoje || []).length;
+
+        // ===== Buscar limpezas em andamento HOJE (integração com app /cleaner da Vivian) =====
+        let ambientesEmLimpeza = [];
+        try {
+          const { data: limpezasHoje } = await db
+            .from('tarefas_limpeza')
+            .select('id, status, ambiente_id, ambientes(nome)')
+            .eq('data', hoje)
+            .eq('status', 'em_andamento');
+
+          ambientesEmLimpeza = (limpezasHoje || [])
+            .map(l => (l.ambientes?.nome || '').toLowerCase().trim())
+            .filter(Boolean);
+
+          // Contagem na top-bar
+          const cleaningCount = QUARTOS.filter(q => ambientesEmLimpeza.some(n => matchQuarto(n, q))).length;
+          const elCleaning = document.getElementById('statusCleaning');
+          if (elCleaning) elCleaning.textContent = cleaningCount;
+        } catch (e) {
+          console.warn('[loadHome] Falha ao buscar limpezas:', e);
+          const elCleaning = document.getElementById('statusCleaning');
+          if (elCleaning) elCleaning.textContent = '0';
+        }
+
+        // Render room cards
+        const container = document.getElementById('roomCardsContainer');
+        container.innerHTML = '';
+
+        const grupos = {};
+        QUARTOS.forEach(q => {
+          if (!grupos[q.grupo]) grupos[q.grupo] = [];
+          grupos[q.grupo].push(q);
+        });
+
+        const entraHojeIds = (entradaHoje || []).map(e => e.id);
+        const saiHojeIds = (saidaHoje || []).map(e => e.id);
+
+        // Pré-carrega selo de fidelidade pra todas reservas exibidas (1 query batch)
+        await precarregarFidelidade([...(reservas || []), ...(entradaHoje || []), ...(saidaHoje || [])]);
+
+        Object.values(grupos).forEach(grupo => {
+          grupo.forEach(quarto => {
+            // Busca nas reservas ativas (ocupados) E nas entradas/saídas de hoje
+            let reserva = reservas?.find(r => matchQuarto(r.cama, quarto));
+            const reservaEntrada = !reserva ? (entradaHoje || []).find(r => matchQuarto(r.cama, quarto)) : null;
+            const reservaSaida = !reserva ? (saidaHoje || []).find(r => matchQuarto(r.cama, quarto)) : null;
+
+            // Se não tem reserva ativa mas tem entrada hoje, usa essa
+            const displayReserva = reserva || reservaEntrada || reservaSaida;
+            const isOccupied = !!reserva;
+            const isCheckin = (reserva && entraHojeIds.includes(reserva.id)) || !!reservaEntrada;
+            const isCheckout = (reserva && saiHojeIds.includes(reserva.id)) || !!reservaSaida;
+            const isCleaning = ambientesEmLimpeza.some(n => matchQuarto(n, quarto));
+            // Cleaning sobrepõe os outros (visualmente dá pra ver na hora que tá sendo arrumado)
+            const headerClass = isCleaning ? 'cleaning' : (isOccupied || isCheckin) ? 'occupied' : 'available';
+
+            // Tags de filtro
+            let filterTags = isCleaning ? 'cleaning' : (isOccupied ? 'occupied' : 'available');
+            if (isCheckin) filterTags += ' checkin';
+            if (isCheckout) filterTags += ' checkout';
+
+            const card = document.createElement('div');
+            card.className = 'room-card';
+            card.setAttribute('data-room-filter', filterTags);
+            card.innerHTML = `
+              <div class="room-card-header ${headerClass}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${quarto.label}</span>
+                ${isCleaning ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🧹 em limpeza</span>'
+                  : isCheckin ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🟢 entra hoje</span>'
+                  : isCheckout ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🔴 sai hoje</span>'
+                  : ''}
+              </div>
+              <div class="room-card-body">
+                ${displayReserva ? `
+                  <div class="room-guest-name">${formatarNomeHospede(displayReserva)}</div>
+                  <div class="room-date-range">
+                    ${fmtDataCurta(displayReserva.checkin)}
+                    a ${fmtDataCurta(displayReserva.checkout)}
+                  </div>
+                  <div class="room-actions">
+                    <button class="room-action-btn" onclick="abrirAcaoModal('${displayReserva.id}')">⋮ Ações</button>
+                  </div>
+                ` : `
+                  <div style="color: #27AE60; font-weight: 600; margin: 20px 0;">
+                    Disponível
+                  </div>
+                `}
+              </div>
+            `;
+            container.appendChild(card);
+          });
+        });
+
+        // Reservas de hoje que NÃO fizeram match com nenhum quarto
+        const matchedIds = new Set();
+        document.querySelectorAll('.room-card').forEach(card => {
+          const btn = card.querySelector('.room-action-btn');
+          if (btn) {
+            const onclick = btn.getAttribute('onclick') || '';
+            const m = onclick.match(/abrirAcaoModal\('(.+?)'\)/);
+            if (m) matchedIds.add(m[1]);
+          }
+        });
+
+        const unmatchedEntradas = (entradaHoje || []).filter(r => !matchedIds.has(r.id));
+        const unmatchedSaidas = (saidaHoje || []).filter(r => !matchedIds.has(r.id));
+        const allUnmatched = [...unmatchedEntradas, ...unmatchedSaidas.filter(s => !unmatchedEntradas.some(e => e.id === s.id))];
+
+        allUnmatched.forEach(r => {
+          const isCI = unmatchedEntradas.some(e => e.id === r.id);
+          const isCO = unmatchedSaidas.some(e => e.id === r.id);
+          const card = document.createElement('div');
+          card.className = 'room-card';
+          card.setAttribute('data-room-filter', 'occupied' + (isCI ? ' checkin' : '') + (isCO ? ' checkout' : ''));
+          card.innerHTML = `
+            <div class="room-card-header occupied" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cama || 'Sem quarto'}</span>
+              ${isCI ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🟢 entra hoje</span>' : ''}
+              ${isCO ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🔴 sai hoje</span>' : ''}
+            </div>
+            <div class="room-card-body">
+              <div class="room-guest-name">${formatarNomeHospede(r)}</div>
+              <div class="room-date-range">
+                ${fmtDataCurta(r.checkin)}
+                a ${fmtDataCurta(r.checkout)}
+              </div>
+              <div class="room-actions">
+                <button class="room-action-btn" onclick="abrirAcaoModal('${r.id}')">⋮ Ações</button>
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+
+      } catch (err) {
+        console.error('Erro ao carregar home:', err);
+      }
+    }
+
+    document.getElementById('refreshHome').addEventListener('click', loadHome);
+    document.getElementById('novaReservaBtn').addEventListener('click', () => {
+      document.getElementById('novaReservaModal').classList.remove('hidden');
+    });
+
+    // ==========================================
+    // INDICADORES VIEW
+    // ==========================================
+    function onPeriodChange() {
+      const periodo = document.getElementById('periodSelector').value;
+      const customDiv = document.getElementById('customDateRange');
+      if (periodo === 'custom') {
+        customDiv.style.display = 'flex';
+        // Preencher com mês atual como default
+        const hoje = new Date();
+        if (!document.getElementById('customStart').value) {
+          document.getElementById('customStart').value = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+          document.getElementById('customEnd').value = hoje.toISOString().split('T')[0];
+        }
+      } else {
+        customDiv.style.display = 'none';
+        loadIndicadores();
+      }
+    }
+
+    // ============================================================
+    // GRÁFICOS DA ABA INDICADORES (Chart.js)
+    // ============================================================
+    let _chartReservas = null, _chartHospedes = null, _chartTransacoes = null;
+
+    function renderGraficosIndicadores(reservas, inicioISO, fimISO) {
+      if (typeof Chart === 'undefined') { console.warn('Chart.js nao carregou'); return; }
+
+      const dias = [];
+      const d = new Date(inicioISO + 'T12:00:00');
+      const fim = new Date(fimISO + 'T12:00:00');
+      while (d <= fim) {
+        dias.push(d.toISOString().slice(0,10));
+        d.setDate(d.getDate() + 1);
+      }
+      const labels = dias.map(s => {
+        const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        return m ? (m[3]+'/'+m[2]) : s;
+      });
+
+      const novas = dias.map(dia => reservas.filter(r => r.checkin === dia && r.status !== 'cancelada').length);
+      const canc = dias.map(dia => reservas.filter(r => r.checkin === dia && r.status === 'cancelada').length);
+
+      const hospedesPorDia = dias.map(dia => {
+        return reservas.reduce((acc, r) => {
+          if (r.status === 'cancelada') return acc;
+          if (r.checkin <= dia && r.checkout > dia) return acc + parseInt(r.num_hospedes || 1);
+          return acc;
+        }, 0);
+      });
+
+      const receitaPorDia = dias.map(dia => {
+        let total = 0;
+        reservas.forEach(r => {
+          if (r.status === 'cancelada') return;
+          if (r.checkin <= dia && r.checkout > dia) {
+            const noites = r.noites || Math.max(1, Math.ceil((new Date(r.checkout) - new Date(r.checkin)) / 86400000));
+            const diaria = parseFloat(r.valor_diaria) || (parseFloat(r.valor_total||0) / noites);
+            total += diaria;
+          }
+        });
+        return Math.round(total * 100) / 100;
+      });
+
+      const opcoesBase = {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+        scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10 } }, beginAtZero: true } }
+      };
+
+      if (_chartReservas) _chartReservas.destroy();
+      _chartReservas = new Chart(document.getElementById('chartReservas'), {
+        type: 'bar',
+        data: { labels, datasets: [
+          { label: 'Novas', data: novas, backgroundColor: '#5B9BD5' },
+          { label: 'Canceladas', data: canc, backgroundColor: '#F87171' }
+        ]},
+        options: opcoesBase
+      });
+
+      if (_chartHospedes) _chartHospedes.destroy();
+      _chartHospedes = new Chart(document.getElementById('chartHospedes'), {
+        type: 'line',
+        data: { labels, datasets: [
+          { label: 'Hospedes ativos', data: hospedesPorDia, borderColor: '#27AE60', backgroundColor: 'rgba(39,174,96,0.15)', fill: true, tension: 0.3 }
+        ]},
+        options: opcoesBase
+      });
+
+      if (_chartTransacoes) _chartTransacoes.destroy();
+      _chartTransacoes = new Chart(document.getElementById('chartTransacoes'), {
+        type: 'bar',
+        data: { labels, datasets: [
+          { label: 'Receita (R$)', data: receitaPorDia, backgroundColor: '#0ea5a4' }
+        ]},
+        options: { ...opcoesBase,
+          plugins: { ...opcoesBase.plugins,
+            tooltip: { callbacks: { label: ctx => 'R$ ' + ctx.parsed.y.toFixed(2) } }
+          }
+        }
+      });
+    }
+
+    async function loadIndicadores() {
+      const hoje = new Date();
+      const periodo = document.getElementById('periodSelector').value;
+      let inicio, fim, diasNoPeriodo;
+
+      if (periodo === 'custom') {
+        inicio = document.getElementById('customStart').value;
+        fim = document.getElementById('customEnd').value;
+        if (!inicio || !fim) return;
+        diasNoPeriodo = Math.ceil((new Date(fim) - new Date(inicio)) / 86400000) + 1;
+        if (diasNoPeriodo < 1) diasNoPeriodo = 1;
+      } else if (periodo === 'today') {
+        inicio = new Date(hoje).toISOString().split('T')[0];
+        fim = inicio;
+        diasNoPeriodo = 1;
+      } else if (periodo === 'yesterday') {
+        const ontem = new Date(hoje);
+        ontem.setDate(ontem.getDate() - 1);
+        inicio = ontem.toISOString().split('T')[0];
+        fim = inicio;
+        diasNoPeriodo = 1;
+      } else if (periodo === 'tomorrow') {
+        const amanha = new Date(hoje);
+        amanha.setDate(amanha.getDate() + 1);
+        inicio = amanha.toISOString().split('T')[0];
+        fim = inicio;
+        diasNoPeriodo = 1;
+      } else if (periodo === 'lastMonth') {
+        inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1).toISOString().split('T')[0];
+        fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0).toISOString().split('T')[0];
+        diasNoPeriodo = new Date(hoje.getFullYear(), hoje.getMonth(), 0).getDate();
+      } else if (periodo === 'quarter') {
+        const qMonth = Math.floor(hoje.getMonth() / 3) * 3;
+        inicio = new Date(hoje.getFullYear(), qMonth, 1).toISOString().split('T')[0];
+        fim = new Date(hoje.getFullYear(), qMonth + 3, 0).toISOString().split('T')[0];
+        diasNoPeriodo = Math.ceil((new Date(hoje.getFullYear(), qMonth + 3, 0) - new Date(hoje.getFullYear(), qMonth, 1)) / 86400000) + 1;
+      } else if (periodo === 'year') {
+        inicio = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0];
+        fim = new Date(hoje.getFullYear(), 11, 31).toISOString().split('T')[0];
+        diasNoPeriodo = 365;
+      } else {
+        // month (default)
+        inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+        fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
+        diasNoPeriodo = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+      }
+
+      const inicioMes = inicio;
+      const fimMes = fim;
+      const diasNoMes = diasNoPeriodo;
+
+      try {
+        // Lógica alinhada com a Hospedin:
+        // - "Novas Reservas" = reservas CRIADAS no período (criado_em)
+        // - "Hóspedes" = soma de num_hospedes das reservas com noites no período
+        // - "Receitas" = rateio diário (valor_diaria * noites_no_período)
+        // - "Diária Média" = receita_no_período / noites_ocupadas_no_período
+        // - "Taxa Ocupação" = noites ocupadas / (13 camas × dias do período)
+
+        const fimMaisDia = new Date(fimMes + 'T12:00:00');
+        fimMaisDia.setDate(fimMaisDia.getDate() + 1);
+        const fimQuery = fimMaisDia.toISOString().split('T')[0];
+
+        // Reservas que TÊM AO MENOS UMA NOITE no período (pra calcular ocupação e receita)
+        const { data: reservasNoPeriodo } = await db
+          .from('reservas')
+          .select('checkin, checkout, valor_total, valor_diaria, noites, num_hospedes, status')
+          .lt('checkin', fimQuery)
+          .gt('checkout', inicioMes)
+          .neq('status', 'cancelada')
+          .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
+
+        const periodoInicio = new Date(inicioMes + 'T12:00:00');
+        const periodoFim = new Date(fimMes + 'T12:00:00');
+        periodoFim.setDate(periodoFim.getDate() + 1);
+
+        let noitesOcupadas = 0;
+        let receita = 0;
+        let totalHospedes = 0;
+
+        (reservasNoPeriodo || []).forEach(r => {
+          const ci = new Date(r.checkin + 'T12:00:00');
+          const co = new Date(r.checkout + 'T12:00:00');
+          const efetivo_ci = ci > periodoInicio ? ci : periodoInicio;
+          const efetivo_co = co < periodoFim ? co : periodoFim;
+          const noitesPeriodo = Math.max(0, Math.ceil((efetivo_co - efetivo_ci) / 86400000));
+
+          if (noitesPeriodo > 0) {
+            noitesOcupadas += noitesPeriodo;
+            // Receita rateada: valor_diaria × noites_no_período
+            // Se não tiver valor_diaria, calcular: valor_total / noites_totais
+            const noitesTotais = r.noites || Math.max(1, Math.ceil((co - ci) / 86400000));
+            const diaria = parseFloat(r.valor_diaria) ||
+                           (parseFloat(r.valor_total || 0) / noitesTotais);
+            receita += diaria * noitesPeriodo;
+            totalHospedes += parseInt(r.num_hospedes || 1);
+          }
+        });
+
+        // "Novas Reservas" = checkin DENTRO do período (alinhado com Hospedin)
+        // Antes filtrava por criado_em mas TODAS as reservas históricas tinham criado_em = data da sincronização
+        const { count: novasReservas } = await db
+          .from('reservas')
+          .select('id', { count: 'exact', head: true })
+          .gte('checkin', inicioMes)
+          .lte('checkin', fimMes)
+          .neq('status', 'cancelada')
+          .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
+
+        const totalCamasDia = 13 * diasNoMes;
+        const taxaOcupacao = totalCamasDia > 0 ? (noitesOcupadas / totalCamasDia * 100) : 0;
+        const revpar = totalCamasDia > 0 ? receita / totalCamasDia : 0;
+        // Diária média = receita / noites ocupadas (não /reservas)
+        const diariaMedia = noitesOcupadas > 0 ? receita / noitesOcupadas : 0;
+
+        const { count: canceladas } = await db
+          .from('reservas')
+          .select('id', { count: 'exact', head: true })
+          .gte('checkin', inicioMes)
+          .lte('checkin', fimMes)
+          .eq('status', 'cancelada');
+
+        document.getElementById('kpiOccupancy').textContent = taxaOcupacao.toFixed(1) + '%';
+        document.getElementById('kpiRevPAR').textContent = 'R$ ' + revpar.toFixed(2);
+        document.getElementById('kpiRevenue').textContent = 'R$ ' + receita.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('kpiNewReservations').textContent = novasReservas || 0;
+        document.getElementById('kpiGuests').textContent = totalHospedes;
+        document.getElementById('kpiAvgDaily').textContent = 'R$ ' + diariaMedia.toFixed(2);
+
+        // Despesas reais — somar lancamentos do tipo despesa no período
+        let despesas = 0;
+        try {
+          const { data: lancs } = await db.from('lancamentos')
+            .select('valor, tipo, data')
+            .gte('data', inicioMes)
+            .lte('data', fimMes)
+            .eq('tipo','despesa');
+          despesas = (lancs||[]).reduce((s,l)=>s+parseFloat(l.valor||0), 0);
+        } catch(e) { /* tabela pode não estar acessível */ }
+        document.getElementById('kpiExpenses').textContent = 'R$ ' + despesas.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+        document.getElementById('kpiCancelled').textContent = canceladas || 0;
+
+        // ===== GRÁFICOS =====
+        try { renderGraficosIndicadores(reservasNoPeriodo || [], inicioMes, fimMes); } catch(e) { console.warn('Grafico erro:', e); }
+
+        // Insights
+        const insightsHtml = `
+          <div class="p-3 bg-domus-azul-claro rounded text-sm text-domus-azul-escuro">
+            📈 Taxa de ocupação de <strong>${taxaOcupacao.toFixed(1)}%</strong> no período
+          </div>
+          <div class="p-3 bg-domus-azul-claro rounded text-sm text-domus-azul-escuro">
+            💰 Receita total: <strong>R$ ${receita.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+          </div>
+          <div class="p-3 bg-domus-azul-claro rounded text-sm text-domus-azul-escuro">
+            🛏️ Diária média de <strong>R$ ${diariaMedia.toFixed(2)}</strong> por noite ocupada
+          </div>
+        `;
+        document.getElementById('insightsContainer').innerHTML = insightsHtml;
+
+        // Sync status
+        try {
+          const { data: lastSync } = await db
+            .from('hospedin_sync_log')
+            .select('criado_em')
+            .order('criado_em', { ascending: false })
+            .limit(1);
+          if (lastSync && lastSync.length > 0) {
+            const agoMin = Math.floor((Date.now() - new Date(lastSync[0].criado_em)) / 60000);
+            document.getElementById('syncTime').textContent = agoMin < 1 ? 'agora' : agoMin + ' min atrás';
+          }
+        } catch(e) {}
+
+      } catch (err) {
+        console.error('Erro ao carregar indicadores:', err);
+      }
+    }
+
+    // ==========================================
+    // MAPA VIEW
+    // ==========================================
+    // Quantos dias o mapa mostra (14 padrão, 30 opcional)
+    var mapaDias = 14;
+
+    async function loadMapa() {
+      const startDate = new Date(mapaStartDate);
+      const endDate = new Date(mapaStartDate);
+      endDate.setDate(endDate.getDate() + (mapaDias - 1));
+
+      try {
+        const { data: reservas } = await db
+          .from('reservas')
+          .select('*')
+          .lt('checkin', endDate.toISOString().split('T')[0])
+          .gt('checkout', startDate.toISOString().split('T')[0])
+          .neq('status', 'cancelada')
+          .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
+
+        // Buscar tarefas de limpeza em andamento (pra colorir cinza)
+        let limpezasAtivas = [];
+        try {
+          const { data: lp } = await db
+            .from('tarefas_limpeza')
+            .select('id, ambiente_id, ambientes(nome), status, data_tarefa')
+            .eq('status', 'em_andamento');
+          limpezasAtivas = lp || [];
+        } catch (e) { /* ok */ }
+
+        renderMapaGrid(startDate, reservas || [], limpezasAtivas);
+      } catch (err) {
+        console.error('Erro ao carregar mapa:', err);
+      }
+    }
+
+    function renderMapaGrid(startDate, reservas, limpezasAtivas) {
+      limpezasAtivas = limpezasAtivas || [];
+      const grid = document.getElementById('mapaGrid');
+      grid.innerHTML = '';
+      const colW = mapaDias === 14 ? 70 : 50;
+      grid.style.gridTemplateColumns = `140px repeat(${mapaDias}, minmax(${colW}px, 1fr))`;
+
+      const todayStr = hojeISO();
+      const MESES_ABR = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+      const DIAS_ABR = ['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+
+      // Período exibido
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + (mapaDias - 1));
+      document.getElementById('mapaPeriodo').textContent =
+        startDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+        '  a  ' +
+        endDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      // Calcular ocupação por dia
+      const dayDates = [];
+      for (let i = 0; i < mapaDias; i++) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
+        dayDates.push(d.toISOString().split('T')[0]);
+      }
+
+      // Header — canto
+      const corner = document.createElement('div');
+      corner.className = 'mapa-header-corner';
+      corner.textContent = 'UHs / Mês';
+      grid.appendChild(corner);
+
+      // Header — datas
+      dayDates.forEach(dateStr => {
+        const d = new Date(dateStr + 'T12:00:00');
+        const dayOfWeek = d.getDay();
+        const isToday = dateStr === todayStr;
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+        // Calcular ocupação do dia
+        const occCount = reservas.filter(r => dateStr >= r.checkin && dateStr < r.checkout).length;
+        const occPct = Math.round((occCount / 13) * 100);
+
+        const cell = document.createElement('div');
+        cell.className = 'mapa-header-cell' + (isToday ? ' is-today' : '') + (isWeekend ? ' is-weekend' : '');
+        cell.innerHTML = `
+          <div class="day-name">${DIAS_ABR[dayOfWeek]}</div>
+          <div class="day-num">${d.getDate().toString().padStart(2,'0')}</div>
+          <div class="day-month">${MESES_ABR[d.getMonth()]}</div>
+          <div class="day-occ" style="background:${occPct >= 80 ? '#fecaca' : occPct >= 50 ? '#fef3c7' : '#d1fae5'};color:${occPct >= 80 ? '#991b1b' : occPct >= 50 ? '#92400e' : '#065f46'};">${occPct}%</div>
+        `;
+        grid.appendChild(cell);
+      });
+
+      // Renderizar quartos
+      QUARTOS.forEach(quarto => {
+        // Saber se este quarto está em limpeza agora (pra cor cinza)
+        const quartoEmLimpeza = limpezasAtivas.some(t => {
+          const nomeAmbiente = (t.ambientes && t.ambientes.nome) || '';
+          return nomeAmbiente.toLowerCase().includes(quarto.label.toLowerCase().split(' ')[0]);
+        });
+
+        // Label
+        const labelCell = document.createElement('div');
+        labelCell.className = 'mapa-room-label';
+        labelCell.innerHTML = `
+          <div class="room-code">${quarto.id.toUpperCase().replace('HOSTEL ','H').replace('INDIVIDUAL ','IND. ').replace('STUDIO ','STD. ')}</div>
+          <div class="room-name">${quarto.label}</div>
+        `;
+        grid.appendChild(labelCell);
+
+        // Cells container (position: relative para as barras)
+        const cellsContainer = document.createElement('div');
+        cellsContainer.className = 'mapa-room-cells';
+        cellsContainer.style.gridTemplateColumns = `repeat(${mapaDias}, minmax(${colW}px, 1fr))`;
+
+        // Background cells (clicáveis para criar reserva)
+        dayDates.forEach((dateStr, colIdx) => {
+          const d = new Date(dateStr + 'T12:00:00');
+          const isToday = dateStr === todayStr;
+          const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+          const cell = document.createElement('div');
+          cell.className = 'mapa-day-cell' + (isToday ? ' is-today' : '') + (isWeekend ? ' is-weekend' : '');
+          cell.title = `${quarto.label} — ${d.toLocaleDateString('pt-BR')} — Clique para nova reserva`;
+          cell.onclick = () => {
+            document.getElementById('nrQuarto').value = quarto.id;
+            document.getElementById('nrCheckin').value = dateStr;
+            document.getElementById('novaReservaModal').classList.remove('hidden');
+          };
+          cellsContainer.appendChild(cell);
+        });
+
+        // Encontrar reservas deste quarto e renderizar barras contínuas
+        const quartoReservas = reservas.filter(r => matchQuarto(r.cama, quarto));
+
+        // Remover duplicatas (mesmo id)
+        const seen = new Set();
+        const uniqueReservas = quartoReservas.filter(r => {
+          if (seen.has(r.id)) return false;
+          seen.add(r.id);
+          return true;
+        });
+
+        uniqueReservas.forEach(reserva => {
+          const startStr = dayDates[0];
+          const endStr = dayDates[dayDates.length - 1];
+
+          // Calcular posição de início e fim dentro da janela visível
+          let barStart = dayDates.indexOf(reserva.checkin);
+          if (barStart < 0 && reserva.checkin < startStr) barStart = 0;
+          if (barStart < 0) return; // começa depois da janela
+
+          let barEnd = dayDates.indexOf(reserva.checkout);
+          if (barEnd < 0 && reserva.checkout > endStr) barEnd = mapaDias;
+          if (barEnd < 0) {
+            for (let i = 0; i < mapaDias; i++) {
+              if (dayDates[i] >= reserva.checkout) { barEnd = i; break; }
+            }
+            if (barEnd < 0) barEnd = mapaDias;
+          }
+
+          if (barEnd <= barStart) return;
+
+          const bar = document.createElement('div');
+          bar.className = 'mapa-reserva-bar';
+
+          // Posicionar: cada coluna é (100/mapaDias)% da largura
+          const colWidth = 100 / mapaDias;
+          bar.style.left = (barStart * colWidth) + '%';
+          bar.style.width = ((barEnd - barStart) * colWidth) + '%';
+
+          // Cor por status (regra solicitada pela Gabi):
+          //   Amarelo = pré-reserva (status pendente / proforma)
+          //   Vermelho = hospedado agora (in-house)
+          //   Azul = paga, ainda vai começar (futura)
+          //   Cinza = em limpeza
+          //   Verde = finalizada (já acabou)
+          const status = (reserva.status || '').toLowerCase().replace('_','-');
+          const cancelada = status === 'cancelada';
+          const finalizada = status === 'check-out' || (reserva.checkout < todayStr && !cancelada);
+          const inHouse = status === 'check-in' || (reserva.checkin <= todayStr && reserva.checkout > todayStr && status !== 'pendente' && status !== 'pre-reserva' && status !== 'proforma');
+          const preReserva = status === 'pendente' || status === 'pre-reserva' || status === 'proforma';
+          const futuraPaga = !inHouse && !finalizada && !preReserva && reserva.checkin > todayStr;
+
+          let cor = '#5B9BD5';      // azul (default — confirmada futura)
+          let extraClass = '';
+          if (cancelada) {
+            cor = '#E5E7EB';        // cancelada vira cinza claro (raramente cai aqui pois filtra)
+            extraClass = 'bar-fim';
+          } else if (preReserva) {
+            cor = '#FBBF24';        // amarelo
+            extraClass = 'bar-pre';
+          } else if (inHouse) {
+            cor = '#EF6F6C';        // vermelho
+          } else if (finalizada) {
+            cor = '#6CC18E';        // verde
+          } else if (futuraPaga) {
+            cor = '#5B9BD5';        // azul
+          }
+
+          // Se o quarto está em limpeza E é a barra mais recente que terminou hoje, marca cinza
+          if (quartoEmLimpeza && finalizada && reserva.checkout === todayStr) {
+            cor = '#9CA3AF';
+            extraClass = '';
+          }
+
+          if (extraClass) bar.classList.add(extraClass);
+          bar.style.background = cor;
+
+          const nome = reserva.hospede_nome || '';
+          const textSpan = document.createElement('span');
+          textSpan.textContent = nome;
+          bar.appendChild(textSpan);
+
+          // Tooltip rico
+          const tipoTxt = preReserva ? 'Pré-reserva'
+            : inHouse ? 'Hospedado agora'
+            : finalizada ? 'Finalizada'
+            : futuraPaga ? 'Confirmada (futura)'
+            : (reserva.status || 'Reserva');
+          bar.title = `${nome}\n${quarto.label}\n${fmtData(reserva.checkin)} → ${fmtData(reserva.checkout)}\nStatus: ${tipoTxt}\nCanal: ${reserva.plataforma || '—'}`;
+
+          bar.onclick = (e) => {
+            e.stopPropagation();
+            abrirAcaoModal(reserva.id);
+          };
+
+          cellsContainer.appendChild(bar);
+        });
+
+        grid.appendChild(cellsContainer);
+      });
+    }
+
+    // ==========================================
+    // MAPA — Botão "Adicionar" (dropdown) e troca de período
+    // ==========================================
+    function abrirNovaReservaDoMapa() {
+      document.getElementById('mapaAddMenu').style.display = 'none';
+      // Limpa pré-seleção de quarto/data
+      try { document.getElementById('nrQuarto').value = ''; } catch(e){}
+      try { document.getElementById('nrCheckin').value = ''; } catch(e){}
+      document.getElementById('novaReservaModal').classList.remove('hidden');
+    }
+    function abrirBloqueioDoMapa() {
+      document.getElementById('mapaAddMenu').style.display = 'none';
+      try { document.getElementById('blQuarto').value = ''; } catch(e){}
+      document.getElementById('bloqueioModal').classList.remove('hidden');
+    }
+
+    // Toggle do menu Adicionar
+    (function(){
+      const btn = document.getElementById('mapaAddBtn');
+      const menu = document.getElementById('mapaAddMenu');
+      if (btn && menu) {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', (e) => {
+          if (!document.getElementById('mapaAddWrap').contains(e.target)) {
+            menu.style.display = 'none';
+          }
+        });
+      }
+    })();
+
+    // Troca de período (14d / 30d)
+    (function(){
+      const b14 = document.getElementById('mapaPeriodo14');
+      const b30 = document.getElementById('mapaPeriodo30');
+      if (!b14 || !b30) return;
+      function setBtnState(active, inactive) {
+        active.style.background = '#5B9BD5';
+        active.style.color = 'white';
+        inactive.style.background = 'white';
+        inactive.style.color = '#6b7280';
+      }
+      b14.addEventListener('click', () => { mapaDias = 14; setBtnState(b14, b30); loadMapa(); });
+      b30.addEventListener('click', () => { mapaDias = 30; setBtnState(b30, b14); loadMapa(); });
+    })();
+
+    // Sincronizar o input date com a data atual do mapa
+    function _atualizarMapaPicker() {
+      var picker = document.getElementById('mapaPicker');
+      if (!picker) return;
+      var d = mapaStartDate;
+      picker.value = d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0');
+    }
+
+    document.getElementById('mapaBack').addEventListener('click', () => {
+      mapaStartDate.setDate(mapaStartDate.getDate() - 7);
+      _atualizarMapaPicker();
+      loadMapa();
+    });
+
+    document.getElementById('mapaNext').addEventListener('click', () => {
+      mapaStartDate.setDate(mapaStartDate.getDate() + 7);
+      _atualizarMapaPicker();
+      loadMapa();
+    });
+
+    document.getElementById('mapaToday').addEventListener('click', () => {
+      mapaStartDate = new Date();
+      _atualizarMapaPicker();
+      loadMapa();
+    });
+
+    // Seletor de data personalizada
+    document.getElementById('mapaPicker').addEventListener('change', (e) => {
+      if (!e.target.value) return;
+      mapaStartDate = new Date(e.target.value + 'T00:00:00');
+      loadMapa();
+    });
+
+    // Inicializar o picker com a data atual ao carregar
+    _atualizarMapaPicker();
+
+    // ==========================================
+    // RESERVAS VIEW
+    // ==========================================
+    // Estado dos filtros e ordenação
+    var _filtroData = 'todas';
+    var _filtroPlat = 'todas';
+    var _filtroCriacao = 'todas';
+    var _filtroPronto = null;      // atalho inteligente ativo (ou null)
+    var _ordemCol = 'criado_em';   // default: mais recentes em cima
+    var _ordemAsc = false;
+
+    function _hojeStr() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+    function _addDias(diasOffset) {
+      var d = new Date();
+      d.setDate(d.getDate() + diasOffset);
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+    function _inicioMes() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-01';
+    }
+
+    // Aplica todos os filtros ativos (regulares + prontos) numa query Supabase
+    function _aplicarTodosFiltros(query) {
+      var hoje = _hojeStr();
+
+      // Status (tab)
+      if (currentFilter !== 'all') {
+        query = query.eq('status', currentFilter);
+      }
+      // Filtro por data de CHECK-IN
+      if (_filtroData === 'hoje') {
+        query = query.eq('checkin', hoje);
+      } else if (_filtroData === 'amanha') {
+        query = query.eq('checkin', _addDias(1));
+      } else if (_filtroData === 'semana') {
+        query = query.gte('checkin', hoje).lte('checkin', _addDias(7));
+      } else if (_filtroData === 'passadas') {
+        query = query.lt('checkin', hoje);
+      }
+      // Filtro por DATA DE CRIAÇÃO
+      if (_filtroCriacao === 'hoje') {
+        query = query.gte('criado_em', hoje + 'T00:00:00').lte('criado_em', hoje + 'T23:59:59');
+      } else if (_filtroCriacao === 'ontem') {
+        var ontem = _addDias(-1);
+        query = query.gte('criado_em', ontem + 'T00:00:00').lte('criado_em', ontem + 'T23:59:59');
+      } else if (_filtroCriacao === 'semana') {
+        query = query.gte('criado_em', _addDias(-7) + 'T00:00:00');
+      } else if (_filtroCriacao === 'mes') {
+        query = query.gte('criado_em', _inicioMes() + 'T00:00:00');
+      }
+      // Plataforma
+      if (_filtroPlat !== 'todas') {
+        query = query.eq('plataforma', _filtroPlat);
+      }
+      // Filtros prontos (sobrescrevem alguns parâmetros se necessário)
+      if (_filtroPronto === 'checkin-semana') {
+        query = query.gte('checkin', hoje).lte('checkin', _addDias(7)).neq('status', 'cancelada');
+      } else if (_filtroPronto === 'checkout-48h') {
+        query = query.gte('checkout', hoje).lte('checkout', _addDias(2)).neq('status', 'cancelada');
+      } else if (_filtroPronto === 'pagto-pendente') {
+        query = query.eq('status', 'em_espera').lte('criado_em', _addDias(-1) + 'T23:59:59');
+      } else if (_filtroPronto === 'estadia-longa') {
+        // > 7 noites — vamos filtrar no client depois pq Supabase não tem subtração de datas direta
+      } else if (_filtroPronto === 'cancelamentos-mes') {
+        query = query.eq('status', 'cancelada').gte('criado_em', _inicioMes() + 'T00:00:00');
+      }
+      // Recorrentes: tratado separadamente (precisa subquery)
+      return query;
+    }
+
+    async function loadReservas() {
+      try {
+        let query = db.from('reservas').select('*', { count: 'exact' });
+        query = _aplicarTodosFiltros(query);
+
+        // Atualizar setas visuais de ordenação
+        document.querySelectorAll('.sort-arrow').forEach(function(s) {
+          s.classList.remove('active');
+          s.textContent = '↕';
+        });
+        var seta = document.querySelector('.sort-arrow[data-col="' + _ordemCol + '"]');
+        if (seta) {
+          seta.classList.add('active');
+          seta.textContent = _ordemAsc ? '↑' : '↓';
+        }
+
+        const { data: reservas, count } = await query
+          .order(_ordemCol, { ascending: _ordemAsc })
+          .range((currentPage - 1) * 20, currentPage * 20 - 1);
+
+        const tbody = document.getElementById('reservasTable');
+        tbody.innerHTML = '';
+
+        // Pré-carrega selo de fidelidade pra todas reservas (1 query batch)
+        await precarregarFidelidade(reservas);
+
+        (reservas || []).forEach(r => {
+          const tr = document.createElement('tr');
+          const statusClass = {
+            'confirmada': 'badge-confirmed',
+            'check-in': 'badge-checkin',
+            'check_in': 'badge-checkin',
+            'check-out': 'badge-checkout',
+            'cancelada': 'badge-cancelled'
+          }[r.status] || 'badge-confirmed';
+
+          tr.innerHTML = `
+            <td>${formatarNomeHospede(r)}</td>
+            <td>${r.cama || '-'}</td>
+            <td>${fmtData(r.checkin)}</td>
+            <td>${fmtData(r.checkout)}</td>
+            <td>${r.plataforma}</td>
+            <td style="text-align: right;">R$ ${parseFloat(r.valor_total).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</td>
+            <td><span class="badge ${statusClass}">${r.status}</span></td>
+            <td style="text-align: center;">
+              <button onclick="abrirAcaoModal('${r.id}')" style="cursor: pointer; background: none; border: none; font-weight: bold;">⋮</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        const totalPages = Math.ceil((count || 0) / 20);
+        document.getElementById('paginationInfo').textContent = `Página ${currentPage} de ${totalPages || 1}`;
+        document.getElementById('prevPage').disabled = currentPage === 1;
+        document.getElementById('nextPage').disabled = currentPage >= totalPages;
+
+        // Atualizar KPIs do filtro ativo (em paralelo, não bloqueia render)
+        atualizarKpisReservas().catch(function(e){ console.warn('Erro KPIs:', e); });
+
+      } catch (err) {
+        console.error('Erro ao carregar reservas:', err);
+      }
+    }
+
+    // Calcula KPIs do conjunto filtrado completo (não só da página)
+    async function atualizarKpisReservas() {
+      try {
+        var qtdeEl = document.getElementById('kpiQtde');
+        var receitaEl = document.getElementById('kpiReceita');
+        var ticketEl = document.getElementById('kpiTicket');
+        var cancelEl = document.getElementById('kpiCancel');
+        if (!qtdeEl) return;
+
+        let q = db.from('reservas').select('valor_total, status, checkin, checkout', { count: 'exact' });
+        q = _aplicarTodosFiltros(q);
+        var { data, count, error } = await q.limit(10000);
+        if (error) { console.warn('KPIs erro:', error); return; }
+
+        var lista = data || [];
+        // Filtro pronto "estadia longa" — aplicado no client
+        if (_filtroPronto === 'estadia-longa') {
+          lista = lista.filter(function(r) {
+            if (!r.checkin || !r.checkout) return false;
+            var d1 = new Date(r.checkin);
+            var d2 = new Date(r.checkout);
+            return Math.round((d2 - d1) / 86400000) >= 7;
+          });
+        }
+
+        var qtde = lista.length;
+        var receita = 0;
+        var canceladas = 0;
+        lista.forEach(function(r){
+          var v = parseFloat(r.valor_total) || 0;
+          if (r.status !== 'cancelada') receita += v;
+          if (r.status === 'cancelada') canceladas++;
+        });
+        var ticket = qtde > 0 ? receita / Math.max(1, qtde - canceladas) : 0;
+        var taxaCancel = qtde > 0 ? (canceladas / qtde) * 100 : 0;
+
+        qtdeEl.textContent = qtde.toLocaleString('pt-BR');
+        receitaEl.textContent = 'R$ ' + receita.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        ticketEl.textContent = 'R$ ' + ticket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        cancelEl.textContent = taxaCancel.toFixed(1) + '%';
+      } catch (e) {
+        console.warn('atualizarKpisReservas:', e);
+      }
+    }
+
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentFilter = e.target.getAttribute('data-status');
+        currentPage = 1;
+        loadReservas();
+      });
+    });
+
+    // Filtros rápidos por data de check-in
+    document.querySelectorAll('.filtro-data-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filtro-data-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        _filtroData = e.target.getAttribute('data-filtro-data');
+        currentPage = 1;
+        loadReservas();
+      });
+    });
+
+    // Filtros rápidos por data de criação (reservada em)
+    document.querySelectorAll('.filtro-criacao-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filtro-criacao-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        _filtroCriacao = e.target.getAttribute('data-filtro-criacao');
+        currentPage = 1;
+        loadReservas();
+      });
+    });
+
+    // Filtros rápidos por plataforma
+    document.querySelectorAll('.filtro-plat-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filtro-plat-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        _filtroPlat = e.target.getAttribute('data-filtro-plat');
+        currentPage = 1;
+        loadReservas();
+      });
+    });
+
+    // Filtros prontos (atalhos inteligentes)
+    document.querySelectorAll('.filtro-pronto-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        var valor = e.target.getAttribute('data-filtro-pronto');
+        // Se já tava ativo, desativa (toggle)
+        if (_filtroPronto === valor) {
+          _filtroPronto = null;
+          document.querySelectorAll('.filtro-pronto-btn').forEach(b => b.classList.remove('active'));
+        } else {
+          _filtroPronto = valor;
+          document.querySelectorAll('.filtro-pronto-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+        }
+        currentPage = 1;
+        loadReservas();
+      });
+    });
+
+    // Ordenação ao clicar nos cabeçalhos
+    function ordenarReservas(coluna) {
+      if (_ordemCol === coluna) {
+        _ordemAsc = !_ordemAsc;
+      } else {
+        _ordemCol = coluna;
+        _ordemAsc = true;
+      }
+      currentPage = 1;
+      loadReservas();
+    }
+
+    document.getElementById('searchReservas').addEventListener('input', (e) => {
+      const search = e.target.value.toLowerCase();
+      document.querySelectorAll('#reservasTable tr').forEach(tr => {
+        const nome = tr.querySelector('td').textContent.toLowerCase();
+        tr.style.display = nome.includes(search) ? '' : 'none';
+      });
+    });
+
+    document.getElementById('prevPage').addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        loadReservas();
+      }
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => {
+      currentPage++;
+      loadReservas();
+    });
+
+    // ==========================================
+    // HOSPEDES VIEW
+    // ==========================================
+    // ============================================================
+    // CRM HOSPEDES — Estado e helpers
+    // ============================================================
+    let _crmTodos = [];        // [{ nome, email, contato, qtde, total, primeira, ultima, hospedadoAgora }]
+    let _crmFiltroAtivo = 'todos';
+
+    function setFiltroCRM(filtro) {
+      _crmFiltroAtivo = filtro;
+      document.querySelectorAll('.crm-filtro').forEach(b => {
+        if (b.dataset.crm === filtro) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+      filtrarHospedes();
+    }
+
+    function filtrarHospedes() {
+      const buscaEl = document.getElementById('searchHospedes');
+      const busca = (buscaEl ? buscaEl.value : '').toLowerCase().trim();
+      const hojeISO = hojeISO_();
+      const seisMesesAtras = new Date(Date.now() - 180*24*3600*1000).toISOString().slice(0,10);
+
+      let lista = _crmTodos.slice();
+
+      // Filtros
+      if (_crmFiltroAtivo === 'vip') lista = lista.filter(h => h.qtde >= 5);
+      else if (_crmFiltroAtivo === 'recorrentes') lista = lista.filter(h => h.qtde >= 2);
+      else if (_crmFiltroAtivo === 'unicos') lista = lista.filter(h => h.qtde === 1);
+      else if (_crmFiltroAtivo === 'risco') lista = lista.filter(h => h.qtde >= 1 && h.ultima < seisMesesAtras);
+      else if (_crmFiltroAtivo === 'ativos') lista = lista.filter(h => h.hospedadoAgora);
+
+      if (busca) lista = lista.filter(h =>
+        (h.nome||'').toLowerCase().includes(busca) ||
+        (h.email||'').toLowerCase().includes(busca) ||
+        (h.contato||'').toLowerCase().includes(busca)
+      );
+
+      // Ordenar por qtde desc (e total desc como tiebreak)
+      lista.sort((a,b) => (b.qtde - a.qtde) || (b.total - a.total));
+
+      const tbody = document.getElementById('hospedesTable');
+      if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">Nenhum hóspede encontrado</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = lista.slice(0, 200).map(h => {
+        const isVip = h.qtde >= 5;
+        const isRecorrente = h.qtde >= 2;
+        const isAtivo = h.hospedadoAgora;
+        const diasUlt = h.ultima ? Math.floor((new Date(hojeISO) - new Date(h.ultima)) / 86400000) : null;
+        const emRisco = h.qtde >= 1 && diasUlt !== null && diasUlt > 180;
+
+        let badge = '';
+        if (isAtivo) badge = '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#dcfce7;color:#166534;">🟢 hospedado</span>';
+        else if (isVip) badge = '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fef3c7;color:#92400e;">⭐ VIP</span>';
+        else if (isRecorrente) badge = '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#dbeafe;color:#1e40af;">💚 recorrente</span>';
+        else if (emRisco) badge = '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b;">⚠️ em risco</span>';
+
+        const inicial = (h.nome||'?').charAt(0).toUpperCase();
+        // Cor do avatar varia por status
+        const corAvatar = isVip ? 'linear-gradient(135deg,#FBBF24,#F59E0B)' : isRecorrente ? 'linear-gradient(135deg,#1BA8B8,#0A6B75)' : '#5B9BD5';
+
+        // Telefone normalizado pro WhatsApp
+        const telWpp = (h.contato || '').replace(/[^0-9]/g, '');
+        const wppBtn = telWpp.length >= 10
+          ? '<a href="https://wa.me/' + telWpp + '" target="_blank" onclick="event.stopPropagation()" title="Abrir WhatsApp" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#25D366;color:white;text-decoration:none;font-size:14px;margin-left:6px;">💬</a>'
+          : '';
+
+        // Indicador de quantidade que se destaca
+        const qtdeBadge = h.qtde >= 5
+          ? '<span style="font-size:13px;font-weight:700;color:#92400E;">' + h.qtde + 'ª</span>'
+          : h.qtde >= 2
+          ? '<span style="font-size:13px;font-weight:700;color:#0A6B75;">' + h.qtde + 'ª</span>'
+          : '<span style="font-size:13px;color:#666;">' + h.qtde + 'ª</span>';
+
+        return `<tr style="cursor:pointer;" onclick="abrirDetalheHospedeNome('${(h.nome||'').replace(/'/g, "\\'")}')">
+          <td><div style="width:36px;height:36px;border-radius:50%;background:${corAvatar};color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">${inicial}</div></td>
+          <td><strong style="color:#2C3E6B;">${h.nome}</strong>${h.email ? '<div style="font-size:10px;color:#999;">'+h.email+'</div>' : ''}</td>
+          <td>${h.contato ? h.contato + wppBtn : '—'}</td>
+          <td>${qtdeBadge}${h.qtde_canceladas > 0 ? '<div style="font-size:9px;color:#999;">'+h.qtde_canceladas+' cancel.</div>' : ''}</td>
+          <td><strong>R$ ${h.total.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2})}</strong></td>
+          <td>${h.ultima ? fmtData(h.ultima) : '—'}${diasUlt !== null ? '<div style="font-size:10px;color:'+(diasUlt > 180 ? '#dc2626' : '#999')+';">há '+diasUlt+'d</div>' : ''}</td>
+          <td>${badge}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // hoje em SP — duplicado pra ficar acessível neste escopo
+    function hojeISO_() {
+      try { return hojeISO(); } catch (e) {
+        return new Date().toISOString().slice(0,10);
+      }
+    }
+
+    function abrirDetalheHospedeNome(nome) {
+      const h = _crmTodos.find(x => x.nome === nome);
+      if (!h) return;
+      const fakeHospede = { nome: h.nome, email: h.email, telefone: h.contato, contato: h.contato };
+      abrirDetalheHospede(fakeHospede, h.reservas || []);
+    }
+
+    async function loadHospedes() {
+      const tbody = document.getElementById('hospedesTable');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">Carregando…</td></tr>';
+
+      try {
+        // Usa a VIEW v_hospedes_consolidados (agrupa por telefone normalizado)
+        // — dedupa Booking automaticamente, mesmo guest com guest_ids diferentes vira 1 hóspede só
+        const { data: vipsConsolidados, error: errCons } = await db
+          .from('v_hospedes_consolidados')
+          .select('*');
+
+        // Fallback: se a view não estiver disponível ou estiver vazia, usa agrupamento por nome
+        let _crmTodosLocal = [];
+        const hojeISO = hojeISO_();
+
+        if (vipsConsolidados && vipsConsolidados.length > 0 && !errCons) {
+          // Buscar reservas ativas hoje pra marcar quem está hospedado agora
+          const { data: ativasHoje } = await db
+            .from('reservas')
+            .select('hospede_contato')
+            .lte('checkin', hojeISO).gte('checkout', hojeISO)
+            .neq('status', 'cancelada');
+          const telefonesAtivos = new Set((ativasHoje || []).map(r =>
+            (r.hospede_contato || '').replace(/[^0-9]/g, '')
+          ).filter(t => t.length >= 10));
+
+          _crmTodosLocal = vipsConsolidados.map(h => ({
+            nome: h.nome || '(sem nome)',
+            email: null,
+            contato: h.telefone || null,
+            telefone: h.telefone || null,
+            tel_norm: h.tel_norm,
+            qtde: h.estadias_concretizadas || 0,
+            qtde_canceladas: h.estadias_canceladas || 0,
+            total: parseFloat(h.valor_total_gasto || 0),
+            primeira: h.primeira_estadia,
+            ultima: h.ultima_estadia,
+            hospedadoAgora: telefonesAtivos.has(h.tel_norm),
+            status_fidelidade: h.status_fidelidade,
+            emoji_fidelidade: h.emoji_fidelidade,
+            canais_usados: h.canais_usados || [],
+            reservas: []  // pode ser preenchido sob demanda no detalhe
+          }));
+        } else {
+          // Fallback (caso a view não exista ainda) — agrupamento simples por nome
+          const { data: reservas } = await db
+            .from('reservas')
+            .select('hospede_nome, hospede_contato, checkin, checkout, valor_total, status')
+            .neq('status', 'cancelada')
+            .or('nao_contabilizar.is.null,nao_contabilizar.eq.false')
+            .order('checkin', { ascending: false });
+          const map = {};
+          (reservas||[]).forEach(r => {
+            const nome = (r.hospede_nome||'').trim();
+            if (!nome) return;
+            const k = nome.toLowerCase();
+            if (!map[k]) map[k] = {
+              nome, email: null, contato: r.hospede_contato || null,
+              qtde: 0, total: 0, primeira: null, ultima: null, hospedadoAgora: false, reservas: []
+            };
+            map[k].qtde++;
+            map[k].total += parseFloat(r.valor_total || 0);
+            if (!map[k].contato && r.hospede_contato) map[k].contato = r.hospede_contato;
+            const ci = r.checkin, co = r.checkout;
+            if (ci) {
+              if (!map[k].primeira || ci < map[k].primeira) map[k].primeira = ci;
+              if (!map[k].ultima || ci > map[k].ultima) map[k].ultima = ci;
+            }
+            if (ci && co && ci <= hojeISO && co > hojeISO) map[k].hospedadoAgora = true;
+          });
+          _crmTodosLocal = Object.values(map);
+        }
+
+        _crmTodos = _crmTodosLocal;
+
+        // KPIs
+        const total = _crmTodos.length;
+        const vips = _crmTodos.filter(h => h.qtde >= 5).length;
+        const recorrentes = _crmTodos.filter(h => h.qtde >= 2).length;
+        const unicos = _crmTodos.filter(h => h.qtde === 1).length;
+        const ativos = _crmTodos.filter(h => h.hospedadoAgora).length;
+        const seisMesesAtras = new Date(Date.now() - 180*24*3600*1000).toISOString().slice(0,10);
+        const emRisco = _crmTodos.filter(h => h.qtde >= 1 && h.ultima < seisMesesAtras).length;
+
+        const kpisHtml = [
+          { label: 'Total', valor: total, cor: 'bg-slate-50 text-slate-800 border-slate-200' },
+          { label: 'Hospedados', valor: ativos, cor: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+          { label: 'VIP (5+)', valor: vips, cor: 'bg-amber-50 text-amber-700 border-amber-200' },
+          { label: 'Recorrentes', valor: recorrentes, cor: 'bg-blue-50 text-blue-700 border-blue-200' },
+          { label: 'Só 1x', valor: unicos, cor: 'bg-violet-50 text-violet-700 border-violet-200' },
+          { label: 'Em risco', valor: emRisco, cor: 'bg-rose-50 text-rose-700 border-rose-200' }
+        ].map(k => `<div class="rounded-lg p-3 border ${k.cor} text-center">
+          <div class="text-2xl font-bold">${k.valor}</div>
+          <div class="text-[10px] uppercase tracking-wide opacity-80 font-semibold mt-1">${k.label}</div>
+        </div>`).join('');
+
+        const kpisEl = document.getElementById('crmKpis');
+        if (kpisEl) kpisEl.innerHTML = kpisHtml;
+
+        filtrarHospedes();
+
+      } catch (err) {
+        console.error('Erro ao carregar hospedes:', err);
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#dc2626;padding:24px;">Erro: '+err.message+'</td></tr>';
+      }
+    }
+
+    function abrirDetalheHospede(hospede, reservas) {
+      const container = document.getElementById('detalheHospedeContent');
+      const resHtml = reservas.length > 0
+        ? reservas.slice(0, 10).map(r => `
+          <tr>
+            <td>${fmtData(r.checkin)}</td>
+          </tr>
+        `).join('')
+        : '<tr><td colspan="1" style="text-align:center;color:#999;">Nenhuma reserva encontrada</td></tr>';
+
+      container.innerHTML = `
+        <div class="flex items-start gap-4 mb-6">
+          <div class="w-14 h-14 rounded-full bg-domus-azul flex items-center justify-center text-white text-xl font-bold">
+            ${hospede.nome.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h4 class="text-lg font-bold text-domus-texto">${hospede.nome}</h4>
+            <p class="text-sm text-domus-texto-suave">${hospede.email || 'Sem e-mail'}</p>
+            <p class="text-sm text-domus-texto-suave">${hospede.telefone || 'Sem telefone'}</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div class="bg-domus-azul-claro rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-domus-azul-escuro">${reservas.length}</div>
+            <div class="text-xs text-domus-texto-suave">Reservas</div>
+          </div>
+          <div class="bg-domus-azul-claro rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-domus-azul-escuro">${hospede.nacionalidade || '-'}</div>
+            <div class="text-xs text-domus-texto-suave">Nacionalidade</div>
+          </div>
+          <div class="bg-domus-azul-claro rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-domus-azul-escuro">${hospede.documento || '-'}</div>
+            <div class="text-xs text-domus-texto-suave">Documento</div>
+          </div>
+        </div>
+
+        ${hospede.observacoes ? `
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <p class="text-xs font-semibold text-amber-700 mb-1">Observações privadas</p>
+            <p class="text-sm text-amber-900">${hospede.observacoes}</p>
+          </div>
+        ` : ''}
+
+        <div class="flex gap-2">
+          ${hospede.email ? `<a href="mailto:${hospede.email}" class="flex-1 px-3 py-2 bg-white border border-domus-borda rounded text-sm text-center hover:bg-gray-50">✉️ E-mail</a>` : ''}
+          ${(hospede.telefone || hospede.contato) ? `<a href="https://wa.me/${normalizarTelefone(hospede.telefone || hospede.contato)}" target="_blank" class="flex-1 px-3 py-2 bg-green-600 text-white rounded text-sm text-center hover:bg-green-700">💬 WhatsApp</a>` : ''}
+        </div>
+      `;
+
+      document.getElementById('detalheHospedeModal').classList.remove('hidden');
+    }
+
+    function closeDetalheHospede() {
+      document.getElementById('detalheHospedeModal').classList.add('hidden');
+    }
+
+    document.getElementById('searchHospedes').addEventListener('input', (e) => {
+      const search = e.target.value.toLowerCase();
+      document.querySelectorAll('#hospedesTable tr').forEach(tr => {
+        const nome = tr.querySelector('td').textContent.toLowerCase();
+        tr.style.display = nome.includes(search) ? '' : 'none';
+      });
+    });
+
+    // ==========================================
+    // CUPONS VIEW
+    // ==========================================
+    async function loadCupons() {
+      try {
+        const { data: cupons } = await db
+          .from('cupons')
+          .select('*')
+          .order('criado_em', { ascending: false });
+
+        const tbody = document.getElementById('cuponsTable');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        (cupons || []).forEach(c => {
+          const tr = document.createElement('tr');
+          const link = `https://domusgardencoliving.com/reservar.html?cupom=${c.codigo}`;
+          var valorTxt = c.desconto_pct ? c.desconto_pct + '%' : ('R$ ' + (c.valor_fixo || 0));
+          var usoMaxTxt = c.uso_maximo == null ? '∞' : c.uso_maximo;
+          tr.innerHTML = `
+            <td><strong>${c.codigo}</strong></td>
+            <td>${c.tipo || '-'}</td>
+            <td>${valorTxt}</td>
+            <td>${fmtData(c.validade)}</td>
+            <td>${c.uso_atual || 0}/${usoMaxTxt}</td>
+            <td><span class="badge ${c.ativo ? 'badge-confirmed' : 'badge-cancelled'}">${c.ativo ? 'Ativo' : 'Inativo'}</span></td>
+            <td><a href="javascript:void(0)" onclick="navigator.clipboard.writeText('${link}');mostrarToast('Link copiado!')" style="color: #5B9BD5; text-decoration: underline; font-size: 12px;">📋 copiar link</a></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // Calcular KPIs e sugestões em paralelo
+        atualizarKpisCupons(cupons || []);
+        gerarSugestoesCupons(cupons || []);
+      } catch (err) { console.error('Erro ao carregar cupons:', err); }
+    }
+
+    // KPIs dos cupons (calculados a partir da lista carregada)
+    function atualizarKpisCupons(cupons) {
+      try {
+        var ativos = cupons.filter(function(c){ return c.ativo; }).length;
+        var usosTotais = cupons.reduce(function(s,c){ return s + (parseInt(c.uso_atual)||0); }, 0);
+        // Estimativa de desconto dado: uso_atual * valor_fixo (ou aproximação pra %)
+        var descontoTotal = cupons.reduce(function(s,c){
+          var usos = parseInt(c.uso_atual) || 0;
+          var v = parseFloat(c.valor_fixo) || 0;
+          return s + (usos * v);
+        }, 0);
+        // Top cupom por uso
+        var top = cupons.slice().sort(function(a,b){ return (b.uso_atual||0) - (a.uso_atual||0); })[0];
+
+        var qtdeEl = document.getElementById('kpiCupAtivos');
+        var usosEl = document.getElementById('kpiCupUsos');
+        var descontoEl = document.getElementById('kpiCupDesconto');
+        var topEl = document.getElementById('kpiCupTop');
+        if (qtdeEl) qtdeEl.textContent = ativos;
+        if (usosEl) usosEl.textContent = usosTotais.toLocaleString('pt-BR');
+        if (descontoEl) descontoEl.textContent = 'R$ ' + descontoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (topEl) topEl.textContent = top && (top.uso_atual||0) > 0 ? top.codigo + ' (' + top.uso_atual + ')' : '— sem usos ainda';
+      } catch (e) { console.warn('atualizarKpisCupons:', e); }
+    }
+
+    // Sugestões da Gabi~ia — análise local sem chamar IA externa (rápido e gratis)
+    function gerarSugestoesCupons(cupons) {
+      try {
+        var el = document.getElementById('cuponsSugestoes');
+        if (!el) return;
+        if (!cupons) cupons = [];
+
+        var sugestoes = [];
+        var hoje = new Date();
+        var ativos = cupons.filter(function(c){ return c.ativo; });
+        var inativos = cupons.filter(function(c){ return !c.ativo; });
+        var semUso = ativos.filter(function(c){ return (c.uso_atual||0) === 0; });
+        var queVaoExpirar = ativos.filter(function(c){
+          if (!c.validade) return false;
+          var dias = Math.round((new Date(c.validade) - hoje) / 86400000);
+          return dias > 0 && dias <= 14;
+        });
+        var jaExpirados = ativos.filter(function(c){
+          if (!c.validade) return false;
+          return new Date(c.validade) < hoje;
+        });
+
+        if (cupons.length === 0) {
+          sugestoes.push('Nenhum cupom criado ainda. Quer começar com um cupom de boas-vindas pro Instagram? Tipo <strong>BOASVINDAS-DG26</strong> com 10% de desconto, válido por 30 dias.');
+        } else {
+          if (jaExpirados.length > 0) {
+            sugestoes.push('⚠️ Você tem <strong>' + jaExpirados.length + ' cupom(ns) ativo(s) já expirado(s)</strong>: ' + jaExpirados.map(function(c){ return c.codigo; }).join(', ') + '. Vale desativar pra não confundir hóspedes.');
+          }
+          if (queVaoExpirar.length > 0) {
+            sugestoes.push('⏰ <strong>' + queVaoExpirar.length + ' cupom(ns) expira(m) em até 14 dias</strong>: ' + queVaoExpirar.map(function(c){ return c.codigo; }).join(', ') + '. Considere divulgar nas redes ou criar versão estendida.');
+          }
+          if (semUso.length >= 3) {
+            sugestoes.push('💤 <strong>' + semUso.length + ' cupons ativos sem nenhum uso</strong>. Talvez não estejam sendo divulgados? Vale revisar o canal de distribuição.');
+          }
+          var topCupom = ativos.slice().sort(function(a,b){ return (b.uso_atual||0) - (a.uso_atual||0); })[0];
+          if (topCupom && (topCupom.uso_atual||0) >= 3) {
+            sugestoes.push('🏆 O cupom <strong>' + topCupom.codigo + '</strong> tá performando bem (' + topCupom.uso_atual + ' usos). Vale criar versão sazonal/anual desse modelo.');
+          }
+          if (ativos.filter(function(c){return c.tipo === 'indicacao';}).length === 0) {
+            sugestoes.push('💡 Você não tem nenhum cupom de <strong>indicação</strong> ativo. Cupons "amigo indica amigo" costumam trazer ótimos hóspedes pelo boca-a-boca.');
+          }
+          if (ativos.filter(function(c){return c.tipo === 'recorrencia';}).length === 0) {
+            sugestoes.push('🔁 Considere criar um cupom de <strong>recorrência</strong> pra hóspedes que já ficaram na Domus voltarem (ex: 15% off na 2ª estadia).');
+          }
+        }
+
+        if (sugestoes.length === 0) {
+          sugestoes.push('✨ Tudo nos trinques! Seus cupons estão bem distribuídos por tipo, com prazos saudáveis e bom volume de uso. Continue assim 💚');
+        }
+
+        el.innerHTML = '<ul style="margin:0;padding-left:18px;">' + sugestoes.map(function(s){ return '<li style="margin-bottom:6px;">' + s + '</li>'; }).join('') + '</ul>';
+      } catch (e) { console.warn('gerarSugestoesCupons:', e); }
+    }
+
+    document.getElementById('newCouponBtn')?.addEventListener('click', () => {
+      document.getElementById('novoCupomModal')?.classList.remove('hidden');
+      gerarCodigoCupom();
+    });
+
+    // ==========================================
+    // FORMS
+    // ==========================================
+    document.getElementById('novaReservaForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('nrNome').value.trim();
+      const quarto = document.getElementById('nrQuarto').value;
+      const checkin = document.getElementById('nrCheckin').value;
+      const checkout = document.getElementById('nrCheckout').value;
+      const plataforma = document.getElementById('nrPlataforma').value;
+      const valor = document.getElementById('nrValor').value;
+
+      try {
+        const { error } = await db.from('reservas').insert({
+          hospede_nome: nome, cama: quarto, checkin, checkout, plataforma,
+          valor_total: parseFloat(valor), status: 'confirmada'
+        });
+        if (error) throw error;
+        closeNovaReservaModal();
+        mostrarToast('Reserva criada com sucesso!');
+        if (currentView === 'home') loadHome();
+        else if (currentView === 'reservas') loadReservas();
+      } catch (err) { console.error('Erro:', err); mostrarToast('Erro ao criar reserva'); }
+    });
+
+    document.getElementById('novoCupomForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const codigo = document.getElementById('ncCodigo').value.toUpperCase().trim();
+      const tipo = document.getElementById('ncTipo').value;
+      const valor = document.getElementById('ncValor').value;
+      const validade = document.getElementById('ncValidade').value;
+      const observacao = document.getElementById('ncObservacao')?.value || '';
+
+      try {
+        const insertData = {
+          codigo, tipo, valor: parseFloat(valor), validade,
+          usos_max: parseInt(document.getElementById('ncUsosMax').value) || 1,
+          usos: 0, ativo: true
+        };
+        if (observacao) insertData.observacao = observacao;
+        const { error } = await db.from('cupons').insert(insertData);
+        if (error) {
+          if (error.code === '42P01' || error.message?.includes('does not exist')) {
+            mostrarToast('Tabela de cupons não existe no banco. Precisa criar no Supabase.');
+          } else {
+            mostrarToast('Erro: ' + (error.message || 'Erro ao criar cupom'));
+          }
+          return;
+        }
+        closeNovoCupomModal();
+        mostrarToast('Cupom criado!');
+        if (currentView === 'cupons') loadCupons();
+      } catch (err) { console.error('Erro:', err); mostrarToast('Erro: ' + (err.message || 'Erro ao criar cupom')); }
+    });
+
+    // ==========================================
+    // ROOM FILTERS
+    // ==========================================
+    let currentRoomFilter = 'all';
+    function filterRooms(filter) {
+      currentRoomFilter = filter;
+      // Atualizar botões ativos
+      document.querySelectorAll('.status-filter').forEach(btn => {
+        if (btn.dataset.filter === filter) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+      // Mostrar/esconder cards conforme o filtro
+      document.querySelectorAll('.room-card').forEach(card => {
+        const tags = (card.getAttribute('data-room-filter') || '').split(/\s+/);
+        if (filter === 'all' || tags.indexOf(filter) >= 0) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // ==========================================
+    // FUNÇÕES PRINCIPAIS — modais, ações, helpers
+    // (reconstituídas após truncamento)
+    // ==========================================
+    let _currentReservaId = null;
+
+    function mostrarToast(msg, tipo) {
+      tipo = tipo || 'success';
+      const cores = {
+        success: 'linear-gradient(135deg, #27AE60, #219a52)',
+        error:   'linear-gradient(135deg, #E74C3C, #c0392b)',
+        info:    'linear-gradient(135deg, #5B9BD5, #4a8ac4)'
+      };
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:${cores[tipo]||cores.success};color:white;padding:12px 24px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:9999;font-size:14px;font-weight:500;animation:slideDown 0.3s ease;`;
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    async function abrirAcaoModal(reservaId) {
+      _currentReservaId = reservaId;
+      try {
+        const { data: r } = await db.from('reservas').select('*').eq('id', reservaId).maybeSingle();
+        if (!r) { mostrarToast('Reserva não encontrada', 'error'); return; }
+        const badge = document.getElementById('acaoStatusBadge');
+        if (badge) badge.textContent = (r.status || '—').toUpperCase();
+        // Habilita/desabilita botões conforme status
+        const status = (r.status || '').toLowerCase().replace('_','-');
+        const setDisabled = (id, disabled) => { const el = document.getElementById(id); if (el) el.disabled = !!disabled; };
+        setDisabled('btnCheckin', status === 'check-in' || status === 'check-out' || status === 'cancelada');
+        setDisabled('btnCheckout', status !== 'check-in');
+        setDisabled('btnCancelar', status === 'cancelada' || status === 'check-out');
+        document.getElementById('acaoModal').classList.remove('hidden');
+      } catch (e) { console.error(e); mostrarToast('Erro ao abrir reserva', 'error'); }
+    }
+
+    function closeAcaoModal() {
+      document.getElementById('acaoModal').classList.add('hidden');
+      _currentReservaId = null;
+    }
+
+    // ============================================================
+    // CHECK-OUT — muda status + abre WhatsApp com mensagem certa
+    // 3 templates: padrão (studio/individual), compartilhado (H6/H7), frequente (recorrente)
+    // ============================================================
+    async function fazerCheckoutComMensagem() {
+      if (!_currentReservaId) return;
+      if (!confirm('Fazer check-out desta reserva? Vai abrir o WhatsApp do hóspede pra você enviar a mensagem.')) return;
+
+      const reservaIdLocal = _currentReservaId;
+
+      // 1) Buscar dados da reserva
+      let reserva;
+      try {
+        const { data, error } = await db.from('reservas').select('*').eq('id', reservaIdLocal).maybeSingle();
+        if (error) throw error;
+        reserva = data;
+      } catch (e) {
+        mostrarToast('Erro ao buscar reserva: ' + e.message, 'error');
+        return;
+      }
+      if (!reserva) { mostrarToast('Reserva não encontrada', 'error'); return; }
+
+      // 2) Atualizar status pra check-out (SEMPRE primeiro)
+      const { data: upd, error: errStatus } = await db
+        .from('reservas')
+        .update({ status: 'check-out' })
+        .eq('id', reservaIdLocal)
+        .select('id, status');
+      if (errStatus) {
+        mostrarToast('Erro ao fazer check-out: ' + (errStatus.message || ''), 'error');
+        return;
+      }
+      if (!upd || !upd.length) {
+        mostrarToast('Mudança bloqueada (sem permissão).', 'error');
+        return;
+      }
+
+      // 3) Detectar tipo de hóspede pra escolher mensagem
+      const cama = (reserva.cama || '').toLowerCase();
+      const eCompartilhado = cama.includes('hostel 6') || cama.includes('hostel 7') || cama.includes('h6') || cama.includes('h7');
+
+      // Conta estadias do hospede pra detectar recorrente
+      let qtdeEstadias = 1;
+      if (reserva.hospede_nome) {
+        try {
+          const { count } = await db.from('reservas')
+            .select('id', { count: 'exact', head: true })
+            .eq('hospede_nome', reserva.hospede_nome)
+            .neq('status', 'cancelada');
+          qtdeEstadias = count || 1;
+        } catch(e) { /* ok */ }
+      }
+      const eFrequente = qtdeEstadias >= 2;
+
+      // 4) Escolher mensagem
+      const nomePrimeiro = (reserva.hospede_nome || '').split(' ')[0] || '';
+      const msgPadrao = `*Oi, tudo bem?*\n\nAdoramos ter você com a gente na Domus. Esperamos que tenha aproveitado ao máximo a experiência.\n\nSe puder dar aquela força para a gente (e ajudar outros hóspedes a nos encontrarem), o link para avaliação está aqui:\nhttps://g.page/r/CSfDqfrq_hOEEBM/review\n\n*Sobre a saída:* nosso check-out acontece até às 13h, tá bem?\n\nVolte quando quiser — a casa é sua.\n\nUm abraço, *Equipe Domus Garden* 🌿`;
+
+      const msgCompartilhado = `*Oi!*\n\nFoi um prazer receber você na Domus. Esperamos que sua estadia tenha sido exatamente como a gente gosta: confortável e com total sensação de casa.\n\nPara nos ajudar com a organização, você poderia nos confirmar *qual cama utilizou?* (Pode ser uma descrição simples: "a da janela", "a debaixo", etc.) Isso ajuda muito nossa equipe a deixar tudo impecável para o próximo hóspede.\n\nSe tiver um minuto, deixe sua avaliação no link abaixo. Seu feedback é fundamental para nós:\nhttps://g.page/r/CSfDqfrq_hOEEBM/review\n\n*Lembrete:* o check-out é até às 13h.\n\nPortas sempre abertas para sua volta.\n\n*Até logo,* *Equipe Domus Garden* 🌿`;
+
+      const msgFrequente = `Oi, oi! 😄\n\nA gente adora quando você volta pra Domus — sério, tem coisa melhor do que receber quem já faz parte da nossa história?\n\nSe ainda não deixou sua avaliação por lá, ou se quiser atualizar contando como tem sido suas experiências com a gente, isso ajudaria demais outras pessoas a conhecerem esse cantinho especial 💙\n\nDeixar a avaliação é rapidinho e faz muita diferença:\nhttps://g.page/r/CSfDqfrq_hOEEBM/review ⬅️\n\nAh! E só lembrando que o check-out é até às 13h 😊\n\nSempre que quiser voltar, a gente tá aqui — com o mesmo carinho de sempre (e às vezes até com um café novo no mercadinho 😄).\n\nCom afeto,\n*Equipe Domus Garden* 🌿💙`;
+
+      let msg;
+      let tipoMsg;
+      if (eFrequente) { msg = msgFrequente; tipoMsg = 'frequente (' + qtdeEstadias + ' estadias)'; }
+      else if (eCompartilhado) { msg = msgCompartilhado; tipoMsg = 'compartilhado'; }
+      else { msg = msgPadrao; tipoMsg = 'padrão'; }
+
+      // 5) Abrir WhatsApp
+      const tel = normalizarTelefone(reserva.hospede_contato || reserva.hospede_telefone || '');
+      if (!tel) {
+        mostrarToast('Check-out feito, mas sem telefone do hóspede. Copie a mensagem do console.', 'info');
+        console.log('===== MENSAGEM CHECK-OUT (' + tipoMsg + ') =====\n' + msg.replace(/\\n/g,'\n'));
+      } else {
+        const url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(msg.replace(/\\n/g,'\n'));
+        window.open(url, '_blank');
+        mostrarToast('Check-out feito! WhatsApp aberto (' + tipoMsg + ')');
+      }
+
+      // 6) Recarregar
+      closeAcaoModal();
+      if (typeof currentView !== 'undefined') {
+        if (currentView === 'home') loadHome();
+        else if (currentView === 'mapa') loadMapa();
+        else if (currentView === 'reservas') loadReservas();
+      }
+    }
+
+    async function mudarStatusReserva(novoStatus) {
+      if (!_currentReservaId) return;
+      const reservaIdLocal = _currentReservaId;
+      try {
+        // Update + select pra confirmar que mudou (se RLS bloquear, data vem [])
+        const { data, error } = await db
+          .from('reservas')
+          .update({ status: novoStatus })
+          .eq('id', reservaIdLocal)
+          .select('id, status');
+        if (error) throw error;
+        if (!data || !data.length) {
+          mostrarToast('Mudança bloqueada (sem permissão). Avisa a Gabi.', 'error');
+          return;
+        }
+        mostrarToast('Status: ' + novoStatus);
+        closeAcaoModal();
+        if (typeof currentView !== 'undefined') {
+          if (currentView === 'home') loadHome();
+          else if (currentView === 'mapa') loadMapa();
+          else if (currentView === 'reservas') loadReservas();
+        }
+      } catch (e) {
+        console.error(e);
+        mostrarToast('Erro: ' + (e.message || 'desconhecido'), 'error');
+      }
+    }
+
+    async function cancelarReserva() {
+      if (!_currentReservaId) return;
+      // Abre o modal de motivo (não cancela direto)
+      try { document.getElementById('cancMotivo').value = ''; } catch(e){}
+      try { document.getElementById('cancObs').value = ''; } catch(e){}
+      try { document.getElementById('cancEnganoAviso').classList.add('hidden'); } catch(e){}
+      document.getElementById('cancelarReservaModal').classList.remove('hidden');
+    }
+
+    function fecharCancelarReservaModal() {
+      document.getElementById('cancelarReservaModal').classList.add('hidden');
+    }
+
+    function onMotivoCancelamentoChange() {
+      const sel = document.getElementById('cancMotivo');
+      const aviso = document.getElementById('cancEnganoAviso');
+      if (sel.value === 'por_engano') aviso.classList.remove('hidden');
+      else aviso.classList.add('hidden');
+    }
+
+    // Submit do form de cancelamento (versão robusta — 2 updates separados)
+    document.addEventListener('DOMContentLoaded', function() {
+      const f = document.getElementById('cancelarReservaForm');
+      if (!f) return;
+      f.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!_currentReservaId) return;
+        const reservaIdLocal = _currentReservaId;
+        const motivo = document.getElementById('cancMotivo').value;
+        const obs = document.getElementById('cancObs').value.trim();
+        const porEngano = motivo === 'por_engano';
+        if (!motivo) { mostrarToast('Escolha um motivo', 'error'); return; }
+
+        // PASSO 1 — sempre marcar status = cancelada (operação que NUNCA falha em coluna)
+        const { error: errStatus } = await db
+          .from('reservas')
+          .update({ status: 'cancelada' })
+          .eq('id', reservaIdLocal);
+
+        if (errStatus) {
+          console.error('Erro ao cancelar (status):', errStatus);
+          mostrarToast('Erro ao cancelar: ' + (errStatus.message || 'desconhecido'), 'error');
+          return;
+        }
+
+        // PASSO 2 — best-effort: setar motivo e flag (se as colunas existirem)
+        let extrasOk = false;
+        try {
+          const { error: errExtras } = await db
+            .from('reservas')
+            .update({
+              motivo_cancelamento: motivo + (obs ? ' — ' + obs : ''),
+              nao_contabilizar: porEngano,
+              cancelado_em: new Date().toISOString()
+            })
+            .eq('id', reservaIdLocal);
+          if (errExtras) {
+            console.warn('Não salvou motivo (rode adicionar_motivo_cancelamento.sql):', errExtras.message);
+          } else {
+            extrasOk = true;
+          }
+        } catch (e) {
+          console.warn('Não salvou motivo:', e);
+        }
+
+        // Mostrar feedback e recarregar
+        if (extrasOk) {
+          mostrarToast(porEngano ? 'Reserva removida (não contabiliza)' : 'Reserva cancelada');
+        } else {
+          mostrarToast('Reserva cancelada (rode adicionar_motivo_cancelamento.sql pra salvar motivo)', 'info');
+        }
+        fecharCancelarReservaModal();
+        closeAcaoModal();
+
+        // Recarregar a vista atual
+        if (typeof currentView !== 'undefined') {
+          if (currentView === 'home') loadHome();
+          else if (currentView === 'mapa') loadMapa();
+          else if (currentView === 'reservas') loadReservas();
+          else if (currentView === 'hospedes') loadHospedes();
+        }
+      });
+    });
+
+    function closeNovaReservaModal() {
+      document.getElementById('novaReservaModal').classList.add('hidden');
+      try { document.getElementById('novaReservaForm').reset(); } catch(e){}
+    }
+    function closeNovoCupomModal() {
+      document.getElementById('novoCupomModal').classList.add('hidden');
+      try { document.getElementById('novoCupomForm').reset(); } catch(e){}
+    }
+    function closeBloqueioModal() {
+      document.getElementById('bloqueioModal').classList.add('hidden');
+      try { document.getElementById('bloqueioForm').reset(); } catch(e){}
+    }
+    function closeDetalheHospede() {
+      document.getElementById('detalheHospedeModal').classList.add('hidden');
+    }
+    function closePagamentoModal() {
+      document.getElementById('pagamentoModal').classList.add('hidden');
+      try { document.getElementById('pagamentoForm').reset(); } catch(e){}
+    }
+    function abrirBloqueioModal() {
+      try { document.getElementById('blQuarto').value = ''; } catch(e){}
+      document.getElementById('bloqueioModal').classList.remove('hidden');
+    }
+    async function abrirPagamentoModal() {
+      if (!_currentReservaId) return;
+      try {
+        const { data: r } = await db.from('reservas').select('*').eq('id', _currentReservaId).maybeSingle();
+        if (!r) return;
+        document.getElementById('pagResumoNome').textContent = r.hospede_nome || '—';
+        document.getElementById('pagResumoDatas').textContent =
+          fmtData(r.checkin) + ' → ' + fmtData(r.checkout);
+        const total = parseFloat(r.valor_total || 0);
+        document.getElementById('pagResumoTotal').textContent = 'R$ ' + total.toFixed(2);
+        // Recebido (soma de pagamentos)
+        let recebido = 0;
+        try {
+          const { data: pgs } = await db.from('pagamentos').select('valor').eq('reserva_id', _currentReservaId);
+          recebido = (pgs||[]).reduce((s,p) => s + parseFloat(p.valor || 0), 0);
+        } catch(e){}
+        document.getElementById('pagResumoRecebido').textContent = 'R$ ' + recebido.toFixed(2);
+        document.getElementById('pagResumoSaldo').textContent = 'R$ ' + (total - recebido).toFixed(2);
+        document.getElementById('pagamentoModal').classList.remove('hidden');
+      } catch (e) { console.error(e); mostrarToast('Erro ao abrir pagamento', 'error'); }
+    }
+
+    function atualizarLabelValor() {
+      const tipo = document.getElementById('ncTipo').value;
+      const lbl = document.getElementById('ncValorLabel');
+      if (!lbl) return;
+      lbl.textContent = tipo === 'percentual' ? 'Valor do Desconto (%) *' : 'Valor do Desconto (R$) *';
+    }
+
+    function gerarCodigoCupom() {
+      const r = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const el = document.getElementById('ncCodigo');
+      if (el) el.value = 'DOMUS-' + r;
+    }
+
+    function normalizarTelefone(t) {
+      if (!t) return '';
+      let s = String(t).replace(/\D/g, '');
+      if (s.length === 11) return '55' + s;
+      if (s.length === 13 && s.startsWith('55')) return s;
+      return s;
+    }
+
+    function aplicarFiltrosReservas() {
+      if (typeof loadReservas === 'function') loadReservas();
+    }
+
+    // Stubs pra ações que dependem de implementação completa (evita console errors)
+    async function gerarVoucherPDF() {
+      mostrarToast('Voucher: abra o PMS em tela cheia (pms.html) — funcionalidade completa só lá', 'info');
+    }
+    async function gerarReciboPDF() {
+      mostrarToast('Recibo: abra o PMS em tela cheia (pms.html)', 'info');
+    }
+    async function enviarVoucherEmail() {
+      mostrarToast('Envio por e-mail: abra o PMS em tela cheia (pms.html)', 'info');
+    }
+    async function enviarVoucherWhatsApp() {
+      try {
+        var rid = _currentReservaId || (typeof reservaAtualId !== 'undefined' && reservaAtualId) || (window.reservaAtualId || null);
+        if (!rid) { mostrarToast('Reserva não selecionada', 'erro'); return; }
+        var { data: r, error } = await db.from('reservas')
+          .select('hospede_nome, hospede_contato, checkin, checkout, valor_total, canal_codigo, quarto')
+          .eq('id', rid).single();
+        if (error || !r) { mostrarToast('Erro ao carregar reserva', 'erro'); return; }
+        var tel = (r.hospede_contato || '').replace(/\D/g, '');
+        if (!tel || tel.length < 10) { mostrarToast('Hóspede sem telefone válido', 'erro'); return; }
+        if (tel.length === 10 || tel.length === 11) tel = '55' + tel;
+        var fmtData = function(d){ if(!d) return ''; var p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
+        var nome = (r.hospede_nome || '').split(' ')[0] || 'Hóspede';
+        var msg = 'Oi, ' + nome + '! 💛\n\n' +
+          'Sua reserva na Domus Garden está confirmada:\n\n' +
+          '🏡 ' + (r.quarto || 'Acomodação a definir') + '\n' +
+          '📅 Check-in: ' + fmtData(r.checkin) + ' às 16h\n' +
+          '📅 Check-out: ' + fmtData(r.checkout) + ' até 13h\n' +
+          (r.valor_total ? '💰 Total: R$ ' + Number(r.valor_total).toLocaleString('pt-BR', {minimumFractionDigits:2}) + '\n' : '') +
+          '\n📍 Endereço: você recebe um dia antes do check-in.\n' +
+          '\nQualquer dúvida, é só responder por aqui! 🌿';
+        var url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(msg);
+        window.open(url, '_blank');
+      } catch(e) {
+        console.error(e);
+        mostrarToast('Erro ao abrir WhatsApp: ' + (e.message || e), 'erro');
+      }
+    }
+
+    // ==========================================
+    // INIT — verifica sessão (localStorage) e mostra app
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Tenta restaurar sessão imediatamente (sem esperar nada)
+      try { tentarRestaurarSessao(); } catch(e) { console.error('init session:', e); mostrarFormularioLogin(); }
+
+      // Listeners do filtro de Reservas
+      try {
+        document.querySelectorAll('.tab-button[data-status]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-button[data-status]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (typeof aplicarFiltrosReservas === 'function') aplicarFiltrosReservas();
+          });
+        });
+      } catch (e) { console.warn('init tab-button:', e); }
+    });
+
+    // Fallback: se o DOMContentLoaded já passou (ex: iframe), chama agora
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      try { tentarRestaurarSessao(); } catch(e) { console.error('init session (fallback):', e); mostrarFormularioLogin(); }
+    }
+  </script>
+  <!-- Modal Cancelar Reserva (com motivo) -->
+  <div id="cancelarReservaModal" class="hidden">
+    <div class="modal-overlay" onclick="fecharCancelarReservaModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full pointer-events-auto max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-semibold text-domus-texto mb-4">Cancelar Reserva</h3>
+        <p class="text-sm text-domus-texto-suave mb-4">Por que essa reserva está sendo cancelada?</p>
+
+        <form id="cancelarReservaForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Motivo *</label>
+            <select id="cancMotivo" required onchange="onMotivoCancelamentoChange()"
+              class="w-full px-3 py-2 border border-domus-borda rounded text-sm">
+              <option value="">Selecione um motivo</option>
+              <option value="hospede_desistiu">Hóspede desistiu</option>
+              <option value="sem_pagamento">Sem pagamento (no-show)</option>
+              <option value="reserva_duplicada">Reserva duplicada</option>
+              <option value="erro_de_digitacao">Erro de digitação</option>
+              <option value="por_engano">Reserva por engano (não contabilizar nas estatísticas)</option>
+              <option value="overbooking">Overbooking — remanejada</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+
+          <div id="cancObsWrap">
+            <label class="block text-sm font-medium text-domus-texto mb-1">Observação (opcional)</label>
+            <textarea id="cancObs" rows="3" placeholder="Detalhes adicionais sobre o cancelamento..."
+              class="w-full px-3 py-2 border border-domus-borda rounded text-sm"></textarea>
+          </div>
+
+          <div id="cancEnganoAviso" class="hidden p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+            ⚠️ Reservas marcadas como "por engano" <strong>não entram nas estatísticas</strong> de receita, ocupação ou taxa de cancelamento. Use somente quando a reserva nunca deveria ter existido (clique acidental, teste, etc.).
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button type="button" onclick="fecharCancelarReservaModal()"
+              class="flex-1 px-4 py-2 bg-gray-100 text-domus-texto rounded text-sm hover:bg-gray-200">
+              Voltar
+            </button>
+            <button type="submit"
+              class="flex-1 px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 font-medium">
+              Confirmar cancelamento
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

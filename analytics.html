@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics — DG Gestão</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --azul: #1BA8B8;
+    --rosa: #FF385C;
+    --dourado: #c9a961;
+    --fundo: #0a0f1a;
+    --fundo2: #141b2a;
+    --borda: #1f2940;
+    --texto: #e8eef5;
+    --texto2: #8b96a8;
+    --verde: #4ade80;
+    --vermelho: #f87171;
+    --laranja: #fb923c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, system-ui, "Segoe UI", sans-serif; background: var(--fundo); color: var(--texto); min-height: 100vh; padding: 20px; line-height: 1.5; }
+  .topo { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--borda); }
+  .topo h1 { font-size: 26px; color: var(--dourado); display: flex; align-items: center; gap: 10px; }
+  .topo .acoes { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { padding: 10px 18px; border: 1px solid var(--borda); background: var(--fundo2); color: var(--texto); border-radius: 8px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
+  .btn:hover { background: #1c2640; border-color: var(--dourado); }
+  .btn.primario { background: var(--azul); border-color: var(--azul); color: white; font-weight: 600; }
+  .btn.primario:hover { background: #1597a6; }
+  .btn.voltar { background: transparent; border-color: var(--borda); color: var(--texto2); }
+
+  .barra-status { background: var(--fundo2); border: 1px solid var(--borda); border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .pulse { width: 10px; height: 10px; background: var(--verde); border-radius: 50%; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .status-info { color: var(--texto2); }
+  .status-info b { color: var(--texto); }
+
+  .grid-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .card { background: var(--fundo2); border: 1px solid var(--borda); border-radius: 12px; padding: 20px; transition: 0.2s; }
+  .card:hover { transform: translateY(-2px); border-color: var(--dourado); }
+  .card .rotulo { color: var(--texto2); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .card .valor { font-size: 32px; font-weight: 700; color: var(--texto); margin-bottom: 4px; }
+  .card .legenda { font-size: 12px; color: var(--texto2); }
+  .card .legenda.bom { color: var(--verde); }
+  .card .legenda.atencao { color: var(--laranja); }
+  .card .legenda.ruim { color: var(--vermelho); }
+
+  .secao { background: var(--fundo2); border: 1px solid var(--borda); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .secao h2 { font-size: 18px; color: var(--dourado); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  .ia-painel { background: linear-gradient(135deg, rgba(27, 168, 184, 0.08), rgba(255, 56, 92, 0.08)); border: 1px solid rgba(201, 169, 97, 0.3); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .ia-painel .ia-titulo { color: var(--dourado); font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .ia-painel .ia-conteudo { line-height: 1.7; color: var(--texto); white-space: pre-wrap; }
+  .ia-painel .ia-conteudo h3 { color: var(--dourado); font-size: 14px; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .ia-painel .ia-loading { color: var(--texto2); font-style: italic; }
+
+  .grafico-wrap { position: relative; height: 280px; }
+
+  .erro { background: rgba(248, 113, 113, 0.1); border: 1px solid var(--vermelho); padding: 14px 18px; border-radius: 10px; color: var(--vermelho); margin-bottom: 20px; }
+  .skeleton { background: linear-gradient(90deg, #1a2238, #243056, #1a2238); background-size: 200% 100%; animation: skel 1.4s infinite; border-radius: 6px; height: 32px; }
+  @keyframes skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .auth-bloqueado { max-width: 480px; margin: 80px auto; background: var(--fundo2); border: 1px solid var(--borda); border-radius: 14px; padding: 40px; text-align: center; }
+  .auth-bloqueado h2 { color: var(--dourado); margin-bottom: 12px; }
+  .auth-bloqueado p { color: var(--texto2); margin-bottom: 20px; }
+
+  @media (max-width: 600px) {
+    body { padding: 14px; }
+    .topo h1 { font-size: 20px; }
+    .card .valor { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="auth-bloqueado" class="auth-bloqueado" style="display:none">
+  <h2>Acesso restrito</h2>
+  <p>Esta página é parte do DG Gestão. Faça login primeiro.</p>
+  <a href="/" class="btn primario">Ir pro DG Gestão</a>
+</div>
+
+<div id="conteudo" style="display:none">
+  <div class="topo">
+    <h1>📊 Analytics — Domus Garden</h1>
+    <div class="acoes">
+      <a href="/" class="btn voltar">← DG Gestão</a>
+      <a href="https://clarity.microsoft.com/projects/view/wo4u2c5a1h" target="_blank" class="btn">🔗 Painel completo</a>
+      <button class="btn primario" id="btnRefresh" onclick="forcarRefresh()">🔄 Atualizar agora</button>
+    </div>
+  </div>
+
+  <div class="barra-status">
+    <span><span class="pulse"></span><b id="statusTexto">Carregando dados...</b></span>
+    <span class="status-info">Última atualização: <b id="ultimaAtt">--</b> · Próximo refresh automático: <b id="proximoRefresh">em 1h</b> · <span style="color: var(--laranja)">⚠️ Limite: 10 chamadas/dia</span></span>
+  </div>
+
+  <div id="erro" class="erro" style="display:none"></div>
+
+  <div class="grid-kpis" id="grid-kpis">
+    <div class="card"><div class="rotulo">👥 Usuários únicos</div><div class="valor"><div class="skeleton"></div></div><div class="legenda">últimas 24h</div></div>
+    <div class="card"><div class="rotulo">📱 Sessões</div><div class="valor"><div class="skeleton"></div></div><div class="legenda">últimas 24h</div></div>
+    <div class="card"><div class="rotulo">📜 Páginas por sessão</div><div class="valor"><div class="skeleton"></div></div><div class="legenda">média</div></div>
+    <div class="card"><div class="rotulo">⏱️ Tempo médio</div><div class="valor"><div class="skeleton"></div></div><div class="legenda">por sessão</div></div>
+    <div class="card"><div class="rotulo">📐 Scroll médio</div><div class="valor"><div class="skeleton"></div></div><div class="legenda">% da página</div></div>
+    <div class="card"><div class="rotulo">💀 Dead clicks</div><div class="valor"><div class="skeleton"></div></div><div class="legenda">cliques sem resposta</div></div>
+    <div class="card"><div class="rotulo">😡 Rage clicks</div><div class="valor"><div class="skeleton"></div></div><div class="legenda">cliques de frustração</div></div>
+    <div class="card"><div class="rotulo">↩️ Quick backs</div><div class="valor"><div class="skeleton"></div></div><div class="legenda">voltas rápidas</div></div>
+  </div>
+
+  <div class="ia-painel">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div class="ia-titulo" style="margin:0">🧠 Análise da IA Domus</div>
+      <button onclick="reanalisarIA()" id="btnReanalisarIA" class="btn" style="font-size:12px;padding:6px 12px">🔄 Re-rodar análise</button>
+    </div>
+    <div class="ia-conteudo" id="iaConteudo">
+      <div class="ia-loading">Aguardando dados pra fazer a análise...</div>
+    </div>
+  </div>
+
+  <div class="secao">
+    <h2>📄 Páginas mais visitadas</h2>
+    <div id="topPaginas" style="line-height:2"><div class="skeleton" style="height:20px;margin:8px 0"></div></div>
+  </div>
+
+  <div class="secao">
+    <h2>🌍 De onde vêm os visitantes (top 5 países)</h2>
+    <div id="topPaises" style="line-height:2"><div class="skeleton" style="height:20px;margin:8px 0"></div></div>
+  </div>
+
+  <div class="secao">
+    <h2>💻 Dispositivos</h2>
+    <div class="grafico-wrap"><canvas id="graficoDispositivos"></canvas></div>
+  </div>
+
+  <div class="secao">
+    <h2>🌐 Navegadores</h2>
+    <div id="navegadores" style="line-height:2"><div class="skeleton" style="height:20px;margin:8px 0"></div></div>
+  </div>
+</div>
+
+<script>
+// ============================================
+// CONFIG
+// ============================================
+const CLARITY_TOKEN = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjQ4M0FCMDhFNUYwRDMxNjdEOTRFMTQ3M0FEQTk2RTcyRDkwRUYwRkYiLCJ0eXAiOiJKV1QifQ.eyJqdGkiOiJlYTBjZTE3OS05OWYwLTQ5OTMtOGI2Mi0xYzNiMzA2YjAxYTQiLCJzdWIiOiIzMzE4MDA0MTUyNjI4NzU3Iiwic2NvcGUiOiJEYXRhLkV4cG9ydCIsIm5iZiI6MTc3ODI4NDkyNywiZXhwIjo0OTMxODg0OTI3LCJpYXQiOjE3NzgyODQ5MjcsImlzcyI6ImNsYXJpdHkiLCJhdWQiOiJjbGFyaXR5LmRhdGEtZXhwb3J0ZXIifQ.GNCm8BNgqdsR2jUaDXKTKm-UuElRT9Y6UxzaS6FhAQ2fOMusn87rLuQ24wVScP-ZFlLs2LfvoZcfgKzaEX7AvHttmRJeCVsAI_jLBzukVSMRcuhF--lxJEonYN2ASQqUQQp9j_Q-n4OBd3l_dEn10vlfuiqw03Pz8hBRijdOZgK_QiPi6ovED91FIcMbgwkIhZjstS4XiTp_LzjP67hAWvKczHt2nhfrMvafYznkOcZr69s8grjoZ1GEUGICbZ1Bfisbj2-IKaqAIlKnA7kcq8eCG-tM6-CGkcZ5xHib1n-NqEPmcBssLlsSovXrkaCNcOqlhcA5pD5ocyuvip-2UQ';
+const CLARITY_API = 'https://www.clarity.ms/export-data/api/v1/project-live-insights';
+const CACHE_KEY = 'dg_clarity_cache_v1';
+const CACHE_HORAS = 1; // 1 chamada por hora = 24/dia... mas o limite é 10. Só roda se passar de 2.5h. Pra ser conservador: 3h.
+const CACHE_MIN_INTERVALO_MS = 3 * 60 * 60 * 1000; // 3h
+
+// ============================================
+// AUTH
+// ============================================
+function checarAuth() {
+  // Mesmo padrão do DG Gestão (memória: Supabase Auth quebrado, usa localStorage)
+  const sessao = localStorage.getItem('dg_admin_session');
+  if (!sessao) {
+    document.getElementById('auth-bloqueado').style.display = 'block';
+    return false;
+  }
+  document.getElementById('conteudo').style.display = 'block';
+  return true;
+}
+
+// ============================================
+// FETCH COM CACHE
+// ============================================
+async function buscarMetrica(numOfDays, dimension) {
+  // dimension pode ser undefined ou um nome (Country, Device, Browser, OS, URL, etc)
+  let url = CLARITY_API + '?numOfDays=' + numOfDays;
+  if (dimension) url += '&dimension1=' + dimension;
+  const r = await fetch(url, {
+    headers: { 'Authorization': 'Bearer ' + CLARITY_TOKEN }
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error('Clarity API erro ' + r.status + ': ' + t.substring(0, 200));
+  }
+  return r.json();
+}
+
+async function buscarTudo(forcado) {
+  const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+  const agora = Date.now();
+  if (!forcado && cache && (agora - cache.timestamp) < CACHE_MIN_INTERVALO_MS) {
+    document.getElementById('statusTexto').textContent = 'Mostrando dados em cache (atualizado ' + tempoRelativo(cache.timestamp) + ')';
+    return cache.dados;
+  }
+
+  document.getElementById('statusTexto').textContent = forcado ? 'Forçando atualização...' : 'Buscando dados frescos...';
+
+  // Vamos fazer 5 chamadas estratégicas:
+  // 1. Geral 1 dia (sem dimensão) — KPIs principais
+  // 2. Geral 1 dia, dimensão URL — top páginas
+  // 3. Geral 1 dia, dimensão Country — top países
+  // 4. Geral 1 dia, dimensão Device — dispositivos
+  // 5. Geral 1 dia, dimensão Browser — navegadores
+  // Total: 5 chamadas. Sobram 5 pro resto do dia (refresh manual).
+
+  const [geral, porUrl, porPais, porDispositivo, porNavegador] = await Promise.all([
+    buscarMetrica(1).catch(e => ({ erro: e.message })),
+    buscarMetrica(1, 'URL').catch(e => ({ erro: e.message })),
+    buscarMetrica(1, 'Country').catch(e => ({ erro: e.message })),
+    buscarMetrica(1, 'Device').catch(e => ({ erro: e.message })),
+    buscarMetrica(1, 'Browser').catch(e => ({ erro: e.message }))
+  ]);
+
+  // Detectar se TODAS as chamadas falharam (provavelmente limite diario)
+  const todasFalharam = [geral, porUrl, porPais, porDispositivo, porNavegador].every(d => d && d.erro);
+  const algumas429 = [geral, porUrl, porPais, porDispositivo, porNavegador].some(d => d && d.erro && d.erro.includes('429'));
+
+  if (todasFalharam) {
+    // Se temos cache antigo, usa ele e mostra aviso
+    if (cache && cache.dados) {
+      const horas = Math.floor((agora - cache.timestamp) / 3600000);
+      const aviso = algumas429
+        ? 'Limite diario da API atingido. Mostrando dados de ' + (horas > 0 ? horas + 'h' : 'minutos') + ' atras. Reseta em 24h.'
+        : 'Nao consegui buscar dados frescos. Mostrando dados em cache de ' + (horas > 0 ? horas + 'h' : 'minutos') + ' atras.';
+      document.getElementById('statusTexto').textContent = aviso;
+      // Marca o cache como "velho" pra renderizar aviso amarelo no topo
+      const dadosVelhos = Object.assign({}, cache.dados, { _stale: true, _staleHoras: horas, _erroNovo: algumas429 ? '429' : 'erro' });
+      return dadosVelhos;
+    }
+    // Sem cache: retorna os erros pra renderizar mostrar mensagem
+    return { geral, porUrl, porPais, porDispositivo, porNavegador, timestamp: agora, _semDados: true, _erroNovo: algumas429 ? '429' : 'erro' };
+  }
+
+  const dados = { geral, porUrl, porPais, porDispositivo, porNavegador, timestamp: agora };
+  localStorage.setItem(CACHE_KEY, JSON.stringify({ dados, timestamp: agora }));
+  document.getElementById('statusTexto').textContent = 'Dados atualizados agora';
+  return dados;
+}
+
+// ============================================
+// PARSE / RENDER
+// ============================================
+function pegarMetrica(geral, nome) {
+  // A API retorna array de objetos { metricName, information: [{ metricName, ...campos }] }
+  if (!Array.isArray(geral)) return null;
+  const m = geral.find(x => x.metricName === nome);
+  if (!m || !m.information || !m.information.length) return null;
+  return m.information[0];
+}
+
+function fmtNum(n) {
+  if (n === null || n === undefined) return '—';
+  const v = parseFloat(n);
+  if (isNaN(v)) return '—';
+  if (v >= 1000) return (v/1000).toFixed(1) + 'k';
+  return Math.round(v).toString();
+}
+
+function fmtPct(n) {
+  if (n === null || n === undefined) return '—';
+  const v = parseFloat(n);
+  if (isNaN(v)) return '—';
+  return v.toFixed(1) + '%';
+}
+
+function fmtTempo(seg) {
+  if (seg === null || seg === undefined) return '—';
+  const s = Math.round(parseFloat(seg));
+  if (isNaN(s)) return '—';
+  if (s < 60) return s + 's';
+  return Math.floor(s/60) + 'min ' + (s%60) + 's';
+}
+
+function tempoRelativo(ts) {
+  const d = Math.floor((Date.now() - ts) / 60000);
+  if (d < 1) return 'agora';
+  if (d < 60) return 'há ' + d + 'min';
+  return 'há ' + Math.floor(d/60) + 'h ' + (d%60) + 'min';
+}
+
+function renderizar(dados) {
+  const elErro = document.getElementById('erro');
+
+  // Sem dados nenhum (nem cache antigo) — sai cedo
+  if (dados._semDados) {
+    elErro.style.display = 'block';
+    if (dados._erroNovo === '429') {
+      elErro.innerHTML = '⚠️ <b>Limite diário da API Clarity atingido (10 chamadas/dia).</b><br><small>O contador reseta em 24h a partir da primeira chamada do ciclo. Tenta de novo amanhã, ou abre o painel completo do Clarity.</small>';
+    } else {
+      elErro.innerHTML = '⚠️ <b>Não consegui buscar dados frescos.</b> ' + (dados.geral && dados.geral.erro ? dados.geral.erro : '') + '<br><small>Pode ser limite diário (10 chamadas) atingido. Tenta de novo amanhã.</small>';
+    }
+    return;
+  }
+
+  // Tem dados (frescos ou em cache antigo). Se for cache velho, mostra aviso amarelo no topo
+  if (dados._stale) {
+    elErro.style.display = 'block';
+    elErro.style.borderColor = 'var(--laranja)';
+    elErro.style.background = 'rgba(251, 146, 60, 0.1)';
+    elErro.style.color = 'var(--laranja)';
+    if (dados._erroNovo === '429') {
+      elErro.innerHTML = '🟡 <b>Limite diário da API atingido (10 chamadas).</b> Mostrando os últimos dados que consegui buscar (' + (dados._staleHoras > 0 ? 'há ' + dados._staleHoras + 'h' : 'há minutos') + ' atrás). Reseta em 24h.';
+    } else {
+      elErro.innerHTML = '🟡 <b>Sem dados frescos.</b> Mostrando cache de ' + (dados._staleHoras > 0 ? 'há ' + dados._staleHoras + 'h' : 'há minutos') + ' atrás. Tenta de novo mais tarde.';
+    }
+  } else {
+    elErro.style.display = 'none';
+  }
+
+  const g = dados.geral;
+  if (g && g.erro && !dados._stale) {
+    elErro.style.display = 'block';
+    elErro.innerHTML = '⚠️ <b>Não consegui buscar dados:</b> ' + g.erro + '<br><small>Pode ser limite diário (10 chamadas) atingido. Tenta de novo amanhã.</small>';
+    return;
+  }
+
+  // KPIs
+  const traffic = pegarMetrica(g, 'Traffic') || {};
+  const engaged = pegarMetrica(g, 'EngagementTime') || {};
+  const scroll = pegarMetrica(g, 'ScrollDepth') || {};
+  const dead = pegarMetrica(g, 'DeadClickCount') || {};
+  const rage = pegarMetrica(g, 'RageClickCount') || {};
+  const quickback = pegarMetrica(g, 'QuickbackClick') || {};
+  const pps = pegarMetrica(g, 'PagesPerSession') || {};
+
+  const kpis = [
+    { rotulo: '👥 Usuários únicos', valor: fmtNum(traffic.distinctUserCount || traffic.totalDistinctUsers), legenda: 'últimas 24h' },
+    { rotulo: '📱 Sessões', valor: fmtNum(traffic.totalSessionCount || traffic.totalSessions), legenda: 'últimas 24h' },
+    { rotulo: '📜 Páginas/sessão', valor: parseFloat(pps.pagesPerSession || pps.averagePagesPerSession || 0).toFixed(1), legenda: 'média' },
+    { rotulo: '⏱️ Tempo médio', valor: fmtTempo(engaged.totalTime || engaged.activeTime), legenda: 'engajado' },
+    { rotulo: '📐 Scroll médio', valor: fmtPct(scroll.averageScrollDepth || scroll.scrollDepth), legenda: '% da página' },
+    { rotulo: '💀 Dead clicks', valor: fmtNum(dead.subTotal || dead.totalCount), legenda: 'cliques sem resposta', cor: parseInt(dead.subTotal || 0) > 5 ? 'atencao' : 'bom' },
+    { rotulo: '😡 Rage clicks', valor: fmtNum(rage.subTotal || rage.totalCount), legenda: 'frustração', cor: parseInt(rage.subTotal || 0) > 3 ? 'ruim' : 'bom' },
+    { rotulo: '↩️ Quick backs', valor: fmtNum(quickback.subTotal || quickback.totalCount), legenda: 'voltas rápidas', cor: parseInt(quickback.subTotal || 0) > 5 ? 'atencao' : 'bom' }
+  ];
+
+  const grid = document.getElementById('grid-kpis');
+  grid.innerHTML = '';
+  kpis.forEach(k => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = '<div class="rotulo">' + k.rotulo + '</div><div class="valor">' + k.valor + '</div><div class="legenda ' + (k.cor||'') + '">' + k.legenda + '</div>';
+    grid.appendChild(div);
+  });
+
+  // Top páginas
+  renderListaDimensao('topPaginas', dados.porUrl, 'Página', 5);
+  renderListaDimensao('topPaises', dados.porPais, 'País', 5);
+  renderListaDimensao('navegadores', dados.porNavegador, 'Navegador', 6);
+
+  // Gráfico dispositivos
+  renderGraficoDispositivos(dados.porDispositivo);
+
+  document.getElementById('ultimaAtt').textContent = new Date(dados.timestamp).toLocaleTimeString('pt-BR') + ' · ' + new Date(dados.timestamp).toLocaleDateString('pt-BR');
+  const proximo = new Date(dados.timestamp + CACHE_MIN_INTERVALO_MS);
+  document.getElementById('proximoRefresh').textContent = proximo.toLocaleTimeString('pt-BR');
+}
+
+function renderListaDimensao(elementoId, dados, nomeColuna, limite) {
+  const el = document.getElementById(elementoId);
+  if (!dados || dados.erro) {
+    el.innerHTML = '<div style="color:var(--texto2)">Sem dados disponíveis</div>';
+    return;
+  }
+  // dados é array de métricas. Pegamos a primeira (Traffic) e listamos suas information ordenadas
+  const traffic = pegarMetricaArray(dados, 'Traffic');
+  if (!traffic || !traffic.length) {
+    el.innerHTML = '<div style="color:var(--texto2)">Sem dados ainda</div>';
+    return;
+  }
+  const ord = traffic.slice().sort((a,b) => parseFloat(b.totalSessionCount||b.distinctUserCount||0) - parseFloat(a.totalSessionCount||a.distinctUserCount||0)).slice(0, limite);
+  let html = '';
+  ord.forEach((item, i) => {
+    const dim = Object.values(item).find(v => typeof v === 'string' && !v.match(/^\d/)) || '?';
+    const cnt = item.totalSessionCount || item.distinctUserCount || 0;
+    html += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--borda)"><span><b>' + (i+1) + '.</b> ' + dim + '</span><span style="color:var(--dourado);font-weight:600">' + fmtNum(cnt) + '</span></div>';
+  });
+  el.innerHTML = html || '<div style="color:var(--texto2)">Sem dados ainda</div>';
+}
+
+function pegarMetricaArray(arr, nome) {
+  if (!Array.isArray(arr)) return null;
+  const m = arr.find(x => x.metricName === nome);
+  return m && m.information ? m.information : null;
+}
+
+let chartDispositivos = null;
+function renderGraficoDispositivos(dados) {
+  const ctx = document.getElementById('graficoDispositivos');
+  if (!ctx) return;
+  const traffic = pegarMetricaArray(dados, 'Traffic');
+  if (!traffic || !traffic.length) {
+    ctx.parentElement.innerHTML = '<div style="color:var(--texto2);text-align:center;padding:40px">Sem dados de dispositivo ainda</div>';
+    return;
+  }
+  const labels = traffic.map(t => Object.values(t).find(v => typeof v === 'string' && !v.match(/^\d/)) || '?');
+  const valores = traffic.map(t => parseFloat(t.totalSessionCount || t.distinctUserCount || 0));
+  if (chartDispositivos) chartDispositivos.destroy();
+  chartDispositivos = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: valores,
+        backgroundColor: ['#1BA8B8', '#FF385C', '#c9a961', '#4ade80', '#fb923c', '#a78bfa'],
+        borderColor: '#0a0f1a',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#e8eef5', font: { size: 13 } }
+        }
+      }
+    }
+  });
+}
+
+// ============================================
+// IA DOMUS — análise dos dados
+// ============================================
+async function analisarComIA(dados) {
+  const apiKey = localStorage.getItem('domus_ocr_api_key');
+  const el = document.getElementById('iaConteudo');
+  if (!apiKey) {
+    el.innerHTML = '<div class="ia-loading">Chave Anthropic não configurada nesta página. <button onclick="configurarChaveIA()" class="btn primario" style="margin-top:10px">🔑 Configurar chave agora</button></div>';
+    return;
+  }
+
+  el.innerHTML = '<div class="ia-loading">A IA Domus está analisando os números... ⏳</div>';
+
+  // Preparar resumo dos dados pra mandar pro Claude
+  const g = dados.geral;
+  const traffic = pegarMetrica(g, 'Traffic') || {};
+  const engaged = pegarMetrica(g, 'EngagementTime') || {};
+  const scroll = pegarMetrica(g, 'ScrollDepth') || {};
+  const dead = pegarMetrica(g, 'DeadClickCount') || {};
+  const rage = pegarMetrica(g, 'RageClickCount') || {};
+  const quickback = pegarMetrica(g, 'QuickbackClick') || {};
+
+  const topPaginas = pegarMetricaArray(dados.porUrl, 'Traffic') || [];
+  const paginasResumo = topPaginas.slice(0, 5).map(p => {
+    const url = Object.values(p).find(v => typeof v === 'string' && !v.match(/^\d/)) || '?';
+    return url + ': ' + (p.totalSessionCount || 0) + ' sessões';
+  }).join('\n');
+
+  const prompt = `Você é a IA Domus, assistente analítica do site domusgardencoliving.com (coliving feminino + hostel em São Paulo). Analise os dados de comportamento das últimas 24 horas e dê insights práticos pra Gabi (gestora). Responda em português brasileiro tradicional, tom direto e útil.
+
+DADOS DAS ÚLTIMAS 24H:
+- Usuários únicos: ${traffic.distinctUserCount || traffic.totalDistinctUsers || 'sem dados'}
+- Sessões totais: ${traffic.totalSessionCount || traffic.totalSessions || 'sem dados'}
+- Tempo de engajamento: ${engaged.totalTime || engaged.activeTime || 'sem dados'}s
+- Scroll médio: ${scroll.averageScrollDepth || scroll.scrollDepth || 'sem dados'}%
+- Dead clicks (cliques sem resposta): ${dead.subTotal || 0}
+- Rage clicks (frustração): ${rage.subTotal || 0}
+- Quick backs (voltas rápidas): ${quickback.subTotal || 0}
+
+TOP PÁGINAS:
+${paginasResumo || 'sem dados'}
+
+FORMATO DA RESPOSTA (use exatamente assim, com ### como cabeçalho):
+### Visão geral
+(1 frase resumindo o momento do site)
+
+### Pontos positivos
+- (bullet 1)
+- (bullet 2)
+
+### Pontos de atenção
+- (bullet 1, se houver)
+- (bullet 2, se houver)
+
+### Sugestão de próxima ação
+(1 ou 2 ações práticas e concretas)
+
+Se algum dado estiver "sem dados" ou for muito baixo (menos de 5 sessões), reconheça que ainda é cedo pra conclusões e sugira aguardar mais tráfego. Não invente números.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!resp.ok) {
+      const t = await resp.text();
+      el.innerHTML = '<div class="erro" style="margin:0">⚠️ IA falhou: ' + t.substring(0, 300) + '</div>';
+      return;
+    }
+    const data = await resp.json();
+    const texto = (data.content && data.content[0] && data.content[0].text) || 'Sem resposta';
+    // Converter ### Cabeçalho em <h3>
+    const html = texto
+      .replace(/### (.+)/g, '<h3>$1</h3>')
+      .replace(/^- (.+)$/gm, '• $1')
+      .replace(/\n/g, '<br>');
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = '<div class="erro" style="margin:0">⚠️ Erro IA: ' + e.message + '</div>';
+  }
+}
+
+// ============================================
+// AÇÕES
+// ============================================
+async function carregar(forcado) {
+  try {
+    const dados = await buscarTudo(forcado);
+    renderizar(dados);
+    analisarComIA(dados);
+  } catch (e) {
+    document.getElementById('erro').style.display = 'block';
+    document.getElementById('erro').innerHTML = '⚠️ <b>Erro ao carregar:</b> ' + e.message + '<br><small>Pode ser limite diário (10 chamadas). Tenta de novo daqui algumas horas.</small>';
+    document.getElementById('statusTexto').textContent = 'Erro';
+  }
+}
+
+function forcarRefresh() {
+  if (!confirm('Forçar atualização vai consumir 5 das 10 chamadas diárias da API. Confirma?')) return;
+  carregar(true);
+}
+
+function configurarChaveIA() {
+  const atual = localStorage.getItem('domus_ocr_api_key') || '';
+  const nova = prompt('Cola aqui a chave Anthropic (começa com sk-ant-api03-...):\n\nVocê pode pegar a mesma que está salva no PMS. Vai ficar guardada neste navegador.', atual);
+  if (nova === null) return;
+  const limpa = nova.trim();
+  if (!limpa) { alert('Chave vazia. Nenhuma alteração feita.'); return; }
+  if (!limpa.startsWith('sk-ant-api')) {
+    if (!confirm('A chave não parece ser uma chave Anthropic válida (deveria começar com sk-ant-api). Salvar mesmo assim?')) return;
+  }
+  localStorage.setItem('domus_ocr_api_key', limpa);
+  alert('Chave salva! Vou rodar a análise IA agora.');
+  // Re-rodar análise com cache existente
+  const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+  if (cache && cache.dados) {
+    analisarComIA(cache.dados);
+  } else {
+    carregar(false);
+  }
+}
+
+function reanalisarIA() {
+  // Roda só a análise IA com os dados em cache (não consome chamada Clarity)
+  const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+  if (!cache || !cache.dados) {
+    alert('Sem dados em cache pra analisar. Tenta atualizar primeiro.');
+    return;
+  }
+  analisarComIA(cache.dados);
+}
+
+// ============================================
+// INIT
+// ============================================
+window.addEventListener('DOMContentLoaded', () => {
+  if (!checarAuth()) return;
+  carregar(false);
+});
+</script>
+</body>
+</html>

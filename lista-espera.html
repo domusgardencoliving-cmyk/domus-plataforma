@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lista de Espera — Domus Garden Coliving</title>
+  <meta name="description" content="Entre na lista de espera da Domus Garden Coliving. Quando um quarto abrir, te avisamos pelo WhatsApp." />
+  <meta property="og:title" content="Lista de Espera — Domus Garden" />
+  <meta property="og:description" content="Seu quarto na Domus pode estar a um passo. Quando abrir, te avisamos pelo WhatsApp." />
+  <meta property="og:image" content="https://domusgardencoliving.com/images/og-reservar.jpg" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏡</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'domus-azul': '#1BA8B8',
+            'domus-azul-escuro': '#0A6B75',
+            'domus-azul-claro': '#4DC5D0',
+            'domus-rosa': '#FF385C',
+            'domus-rosa-escuro': '#E11D48',
+            'domus-texto': '#222222',
+            'domus-texto-suave': '#717171',
+            'domus-borda': '#EBEBEB',
+            'domus-creme': '#FFF8F0',
+            'domus-bege': '#F5E9D7'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            serif: ['Instrument Serif', 'Georgia', 'serif']
+          }
+        }
+      }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; background: #FFF8F0; }
+    .font-serif { font-family: 'Instrument Serif', Georgia, serif; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <div class="min-h-screen bg-gradient-to-b from-domus-bege via-white to-white pb-20">
+
+    <!-- Header -->
+    <div class="max-w-2xl mx-auto px-6 pt-16 pb-8 text-center">
+      <a href="/" class="inline-block mb-6">
+        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-domus-azul-escuro to-domus-azul-claro flex items-center justify-center mx-auto">
+          <span class="text-white font-bold text-2xl font-serif">D</span>
+        </div>
+      </a>
+      <h1 class="font-serif text-4xl sm:text-5xl text-domus-azul-escuro leading-tight mb-4">Seu quarto na Domus<br>pode estar a um passo.</h1>
+      <p class="text-domus-texto-suave text-lg max-w-md mx-auto mb-2">Quando um quarto abrir, a gente te avisa pelo WhatsApp. Sem compromisso, sem estresse — só uma conversa pra ver se faz sentido pra você.</p>
+      <p class="text-xs text-domus-texto-suave/70 mt-3">⏱ Leva menos de 3 minutos pra preencher</p>
+    </div>
+
+    <!-- Card do Formulário -->
+    <div class="max-w-lg mx-auto px-6">
+      <div class="bg-white rounded-3xl shadow-xl p-8 sm:p-10">
+
+        <!-- Progresso -->
+        <div class="flex items-center gap-1 mb-8">
+          <div id="fila-step-ind-1" class="flex-1 h-1.5 rounded-full bg-domus-rosa transition-all"></div>
+          <div id="fila-step-ind-2" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+          <div id="fila-step-ind-3" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+        </div>
+
+        <!-- ETAPA 1 -->
+        <div id="fila-step-1" class="fila-step">
+          <h2 class="text-sm font-semibold text-domus-rosa uppercase tracking-wider mb-1">Etapa 1 de 3</h2>
+          <p class="font-serif text-xl text-domus-azul-escuro mb-5">Antes de tudo, conta um pouco sobre você!</p>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-domus-texto-suave">Seu nome completo *</label>
+              <input id="fila-nome" type="text" placeholder="Como a gente te chama?" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-rosa outline-none text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-domus-texto-suave">Idade *</label>
+                <input id="fila-idade" type="number" placeholder="Ex: 25" min="18" max="99" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-rosa outline-none text-sm" />
+              </div>
+              <div>
+                <label class="text-xs text-domus-texto-suave">Telefone com DDD *</label>
+                <input id="fila-telefone" type="tel" placeholder="(11) 99999-9999" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-rosa outline-none text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="text-xs text-domus-texto-suave">E-mail *</label>
+              <input id="fila-email" type="email" placeholder="seu@email.com" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-rosa outline-none text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-domus-texto-suave">Qual o motivo da sua mudança? *</label>
+              <textarea id="fila-motivo" rows="3" placeholder="Ex: 'Vou começar a trabalhar na Vila Olímpia', 'Quero morar com outras pessoas', 'Vou estudar em SP'..." class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-rosa outline-none text-sm resize-none"></textarea>
+            </div>
+            <div>
+              <label class="text-xs text-domus-texto-suave">Conta um pouco sobre você 💛</label>
+              <textarea id="fila-sobre" rows="3" placeholder="Hobbies, profissão, personalidade... fique à vontade!" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-rosa outline-none text-sm resize-none"></textarea>
+            </div>
+          </div>
+          <button onclick="mostrarFilaStep(2)" class="w-full mt-6 py-3 rounded-xl bg-domus-rosa text-white font-medium hover:bg-domus-rosa-escuro transition">Bora pro próximo! →</button>
+        </div>
+
+        <!-- ETAPA 2 -->
+        <div id="fila-step-2" class="fila-step hidden">
+          <h2 class="text-sm font-semibold text-domus-rosa uppercase tracking-wider mb-1">Etapa 2 de 3</h2>
+          <p class="font-serif text-xl text-domus-azul-escuro mb-5">Agora, sobre o quarto dos sonhos...</p>
+          <div class="space-y-4">
+            <div>
+              <label class="text-xs text-domus-texto-suave">Qual tipo de quarto você prefere? *</label>
+              <div class="grid grid-cols-2 gap-3 mt-2">
+                <label class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-domus-borda hover:border-domus-rosa cursor-pointer transition text-center">
+                  <input type="radio" name="fila-quarto" value="individual" class="accent-domus-rosa" />
+                  <span class="text-2xl">🛏️</span>
+                  <span class="text-sm font-medium">Individual</span>
+                  <span class="text-xs text-domus-texto-suave">Seu espaço, só seu</span>
+                </label>
+                <label class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-domus-borda hover:border-domus-rosa cursor-pointer transition text-center">
+                  <input type="radio" name="fila-quarto" value="compartilhado" class="accent-domus-rosa" />
+                  <span class="text-2xl">🛏️🛏️</span>
+                  <span class="text-sm font-medium">Compartilhado</span>
+                  <span class="text-xs text-domus-texto-suave">Dividir é multiplicar</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-domus-rosa/5 border border-domus-rosa/15">
+              <span class="text-sm">♀</span>
+              <p class="text-xs text-domus-rosa/80">Lembrando: Domus Garden é um coliving exclusivamente feminino.</p>
+            </div>
+
+            <div>
+              <label class="text-xs text-domus-texto-suave">Qual unidade te interessa mais?</label>
+              <div class="grid grid-cols-3 gap-2 mt-2">
+                <label class="flex items-center gap-2 p-3 rounded-xl border border-domus-borda hover:border-domus-rosa cursor-pointer transition">
+                  <input type="radio" name="fila-unidade" value="ap" class="accent-domus-rosa" />
+                  <span class="text-xs font-medium">Andrade Pertence</span>
+                </label>
+                <label class="flex items-center gap-2 p-3 rounded-xl border border-domus-borda hover:border-domus-rosa cursor-pointer transition">
+                  <input type="radio" name="fila-unidade" value="rib" class="accent-domus-rosa" />
+                  <span class="text-xs font-medium">Ribeirão Claro</span>
+                </label>
+                <label class="flex items-center gap-2 p-3 rounded-xl border border-domus-borda hover:border-domus-rosa cursor-pointer transition">
+                  <input type="radio" name="fila-unidade" value="tanto-faz" class="accent-domus-rosa" />
+                  <span class="text-xs font-medium">Sem preferência</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs text-domus-texto-suave">Até quanto pretende investir no aluguel? *</label>
+              <select id="fila-faixa-valor" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-rosa outline-none text-sm bg-white">
+                <option value="">Selecione uma faixa</option>
+                <option>R$ 1.100 a R$ 1.300</option>
+                <option>R$ 1.300 a R$ 1.600</option>
+                <option>R$ 1.600 a R$ 2.000</option>
+                <option>Acima de R$ 2.000</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-xs text-domus-texto-suave">Data prevista para a mudança *</label>
+              <input id="fila-data-mudanca" type="date" required class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-rosa outline-none text-sm" />
+            </div>
+          </div>
+          <div class="flex gap-3 mt-6">
+            <button onclick="mostrarFilaStep(1)" class="flex-1 py-3 rounded-xl border border-domus-borda text-domus-texto-suave font-medium hover:bg-gray-50 transition">← Voltar</button>
+            <button onclick="mostrarFilaStep(3)" class="flex-1 py-3 rounded-xl bg-domus-rosa text-white font-medium hover:bg-domus-rosa-escuro transition">Quase lá! →</button>
+          </div>
+        </div>
+
+        <!-- ETAPA 3 -->
+        <div id="fila-step-3" class="fila-step hidden">
+          <h2 class="text-sm font-semibold text-domus-rosa uppercase tracking-wider mb-1">Etapa 3 de 3</h2>
+          <p class="font-serif text-xl text-domus-azul-escuro mb-5">Últimas perguntinhas, prometemos!</p>
+          <div class="space-y-4">
+
+            <div class="p-4 rounded-xl bg-domus-bege/40 border border-domus-borda/50">
+              <p class="text-sm font-medium text-domus-azul-escuro mb-3">Se não rolar exatamente o que você pediu, topa reconsiderar? 🤔</p>
+              <div class="space-y-3">
+                <div>
+                  <label class="text-xs text-domus-texto-suave">Se vagou um quarto de outra categoria, quer que a gente te avise?</label>
+                  <div class="flex gap-3 mt-2">
+                    <label class="flex items-center gap-2 px-4 py-2 rounded-xl border border-domus-borda hover:border-domus-rosa cursor-pointer transition">
+                      <input type="radio" name="fila-flex-cat" value="sim" class="accent-domus-rosa" />
+                      <span class="text-sm">Sim, me avisa!</span>
+                    </label>
+                    <label class="flex items-center gap-2 px-4 py-2 rounded-xl border border-domus-borda hover:border-domus-rosa cursor-pointer transition">
+                      <input type="radio" name="fila-flex-cat" value="nao" class="accent-domus-rosa" />
+                      <span class="text-sm">Não, só o que escolhi</span>
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs text-domus-texto-suave">Se vagou um quarto um pouco acima do orçamento, quer saber mesmo assim?</label>
+                  <div class="flex gap-3 mt-2">
+                    <label class="flex items-center gap-2 px-4 py-2 rounded-xl border border-domus-borda hover:border-domus-rosa cursor-pointer transition">
+                      <input type="radio" name="fila-flex-valor" value="sim" class="accent-domus-rosa" />
+                      <span class="text-sm">Sim, me conta!</span>
+                    </label>
+                    <label class="flex items-center gap-2 px-4 py-2 rounded-xl border border-domus-borda hover:border-domus-rosa cursor-pointer transition">
+                      <input type="radio" name="fila-flex-valor" value="nao" class="accent-domus-rosa" />
+                      <span class="text-sm">Não, só na minha faixa</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-domus-azul/5 border border-domus-azul/20">
+              <p class="text-sm font-medium text-domus-azul-escuro mb-1">📝 Bom saber antes de continuar:</p>
+              <ul class="text-xs text-domus-texto-suave space-y-1 ml-4">
+                <li>• Contrato mínimo de <strong>3 meses</strong>, renovável.</li>
+                <li>• <strong>Caução de 50%</strong> do primeiro aluguel (parcela em até 2×).</li>
+                <li>• Conversamos antes pra ver se faz sentido dos dois lados.</li>
+              </ul>
+            </div>
+
+            <div>
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input id="fila-aceite" type="checkbox" class="mt-1 accent-domus-rosa" />
+                <span class="text-xs text-domus-texto-suave">Li e entendi as condições. Quero entrar na lista de espera e ser avisada quando uma vaga abrir! 🎉</span>
+              </label>
+            </div>
+          </div>
+          <div class="flex gap-3 mt-6">
+            <button onclick="mostrarFilaStep(2)" class="flex-1 py-3 rounded-xl border border-domus-borda text-domus-texto-suave font-medium hover:bg-gray-50 transition">← Voltar</button>
+            <button onclick="finalizarFila()" id="btn-finalizar" class="flex-1 py-3 rounded-xl bg-domus-rosa text-white font-medium hover:bg-domus-rosa-escuro transition">Entrar na fila! 🙌</button>
+          </div>
+        </div>
+
+        <!-- ETAPA 4 - SUCESSO -->
+        <div id="fila-step-4" class="fila-step hidden text-center py-8">
+          <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5 text-4xl">✓</div>
+          <h2 class="font-serif text-2xl text-domus-azul-escuro mb-3">Obrigada por se cadastrar!</h2>
+          <p class="text-sm text-domus-texto-suave mb-6 max-w-md mx-auto">Eu vou ficar feliz em te avisar quando surgir uma vaga com as características que você procura. Assim que rolar, te chamo pelo WhatsApp ou e-mail!</p>
+          <div class="bg-domus-creme/50 rounded-2xl p-5 max-w-sm mx-auto border border-domus-borda">
+            <p class="text-sm text-domus-texto-suave mb-4">Enquanto isso, conheça mais da Domus pelo nosso Instagram:</p>
+            <a href="https://instagram.com/domusgardencoliving" target="_blank" rel="noopener"
+               class="flex items-center gap-3 px-5 py-3 rounded-xl bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white font-medium hover:opacity-90 transition text-sm justify-center">
+              <svg viewBox="0 0 24 24" fill="white" class="w-5 h-5 flex-shrink-0">
+                <path d="M12 2.163c3.204 0 3.584.012 4.849.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.849.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+              </svg>
+              @domusgardencoliving
+            </a>
+          </div>
+          <a href="/" class="inline-block mt-5 text-sm text-domus-azul hover:underline">← Voltar para o site</a>
+        </div>
+
+        <!-- Erro -->
+        <div id="fila-erro" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 mt-4">
+          <p id="fila-erro-texto" class="text-sm text-red-700"></p>
+        </div>
+
+      </div>
+      <p class="text-center text-xs text-domus-texto-suave/60 mt-6">Domus Garden Coliving · Vila Olímpia, SP · Desde 2021</p>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL  = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    function mostrarFilaStep(n) {
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById('fila-step-' + i);
+        if (el) el.classList.toggle('hidden', i !== n);
+      }
+      // Indicadores
+      for (let i = 1; i <= 3; i++) {
+        const ind = document.getElementById('fila-step-ind-' + i);
+        if (ind) ind.className = 'flex-1 h-1.5 rounded-full transition-all ' + (i <= n ? 'bg-domus-rosa' : 'bg-gray-200');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function finalizarFila() {
+      const btn = document.getElementById('btn-finalizar');
+      const erroEl = document.getElementById('fila-erro');
+      const erroTxt = document.getElementById('fila-erro-texto');
+      erroEl.classList.add('hidden');
+
+      const nome = document.getElementById('fila-nome').value.trim();
+      const idade = document.getElementById('fila-idade').value;
+      const telefone = document.getElementById('fila-telefone').value.trim();
+      const email = document.getElementById('fila-email').value.trim().toLowerCase();
+      const motivo = document.getElementById('fila-motivo').value.trim();
+      const sobre = document.getElementById('fila-sobre').value.trim();
+      const tipoQuarto = document.querySelector('input[name="fila-quarto"]:checked')?.value || '';
+      const unidade = document.querySelector('input[name="fila-unidade"]:checked')?.value || 'tanto-faz';
+      const faixaValor = document.getElementById('fila-faixa-valor').value;
+      const dataMudanca = document.getElementById('fila-data-mudanca').value;
+      const flexCat = document.querySelector('input[name="fila-flex-cat"]:checked')?.value || '';
+      const flexValor = document.querySelector('input[name="fila-flex-valor"]:checked')?.value || '';
+      const aceite = document.getElementById('fila-aceite').checked;
+
+      if (!nome || !idade || !telefone || !email) {
+        erroTxt.textContent = 'Preenche todos os campos da etapa 1 (nome, idade, telefone e e-mail).';
+        erroEl.classList.remove('hidden');
+        mostrarFilaStep(1);
+        return;
+      }
+      if (!tipoQuarto || !faixaValor || !dataMudanca) {
+        erroTxt.textContent = 'Preenche todos os campos da etapa 2 (tipo de quarto, faixa de valor e data).';
+        erroEl.classList.remove('hidden');
+        mostrarFilaStep(2);
+        return;
+      }
+      if (!aceite) {
+        erroTxt.textContent = 'Você precisa aceitar as condições pra entrar na lista de espera.';
+        erroEl.classList.remove('hidden');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+
+      try {
+        const { error } = await db.from('lista_espera').insert({
+          nome: nome,
+          idade: parseInt(idade),
+          telefone: telefone,
+          email: email,
+          motivo_mudanca: motivo,
+          sobre_voce: sobre,
+          tipo_quarto: tipoQuarto,
+          unidade_preferida: unidade || 'tanto-faz',
+          faixa_valor: faixaValor,
+          data_mudanca: dataMudanca,
+          flex_categoria: flexCat === 'sim',
+          flex_valor: flexValor === 'sim',
+          aceite_termos: true,
+          status: 'ativa'
+        });
+
+        if (error) {
+          console.error('Erro ao salvar:', error);
+          erroTxt.textContent = 'Ops, deu um erro. Tenta de novo em instantes.';
+          erroEl.classList.remove('hidden');
+          btn.disabled = false;
+          btn.textContent = 'Entrar na fila! 🙌';
+          return;
+        }
+
+        // Cruzamento com vagas reais (mesma lógica do site)
+        const VAGAS = [
+          { tipo: 'compartilhado', unidade: 'ap',  valor: 1250 },
+          { tipo: 'compartilhado', unidade: 'rib', valor: 1198 }
+        ];
+        function valorOK(valor, faixa, flex) {
+          let min = 0, max = 99999;
+          if (faixa === 'R$ 1.100 a R$ 1.300') { min = 1100; max = 1300; }
+          else if (faixa === 'R$ 1.300 a R$ 1.600') { min = 1300; max = 1600; }
+          else if (faixa === 'R$ 1.600 a R$ 2.000') { min = 1600; max = 2000; }
+          else if (faixa === 'Acima de R$ 2.000') { min = 2000; }
+          if (flex) max += 200;
+          return valor >= min && valor <= max;
+        }
+        const matches = VAGAS.filter(v => {
+          const tipoOk = v.tipo === tipoQuarto || flexCat === 'sim';
+          const unOk = unidade === 'tanto-faz' || unidade === v.unidade;
+          const valOk = valorOK(v.valor, faixaValor, flexValor === 'sim');
+          return tipoOk && unOk && valOk;
+        });
+
+        if (matches.length > 0) {
+          const primeiroNome = nome.split(' ')[0];
+          window.location.href = 'tem-vaga.html?nome=' + encodeURIComponent(primeiroNome);
+          return;
+        }
+
+        mostrarFilaStep(4);
+      } catch (err) {
+        console.error('Erro inesperado:', err);
+        erroTxt.textContent = 'Erro de conexão. Tenta de novo.';
+        erroEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Entrar na fila! 🙌';
+      }
+    }
+  </script>
+
+</body>
+</html>

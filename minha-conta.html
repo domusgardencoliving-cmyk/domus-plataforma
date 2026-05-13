@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha Conta — Domus Garden</title>
+  <meta name="description" content="Acesse sua conta no Domus Garden. Veja suas reservas, pontos de fidelidade e dados pessoais." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏡</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'domus-azul': '#1BA8B8',
+            'domus-azul-escuro': '#0A6B75',
+            'domus-azul-claro': '#4DC5D0',
+            'domus-azul-medio': '#2DB6C2',
+            'domus-rosa': '#FF385C',
+            'domus-texto': '#222222',
+            'domus-texto-suave': '#717171',
+            'domus-borda': '#EBEBEB',
+            'domus-creme': '#FFF8F0'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            serif: ['Instrument Serif', 'Georgia', 'serif']
+          }
+        }
+      }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .font-serif { font-family: 'Instrument Serif', Georgia, serif; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up { animation: fadeUp 0.5s ease-out; }
+    .bg-domus-gradient {
+      background: linear-gradient(135deg, #0A6B75 0%, #1BA8B8 50%, #4DC5D0 100%);
+    }
+    .tab-active { border-color: #1BA8B8; color: #0A6B75; background: rgba(27, 168, 184, 0.05); }
+    .senha-wrapper { position: relative; }
+    .senha-wrapper input { padding-right: 2.5rem; }
+    .btn-olhinho { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #717171; padding: 4px; }
+    .btn-olhinho:hover { color: #0A6B75; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md border-b border-domus-borda/50 sticky top-0 z-50">
+    <div class="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="reservar.html" class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-domus-gradient flex items-center justify-center">
+          <span class="text-white text-sm font-bold">D</span>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-domus-azul-escuro leading-tight">Domus Garden</p>
+          <p class="text-[10px] text-domus-texto-suave leading-tight flex items-center gap-1">
+            <span>Minha Conta</span>
+            <span class="hidden sm:inline" title="Tempo agora na Vila Olímpia">
+              · <span id="clima-mc-icone">🌤️</span> <span id="clima-mc-temp" class="font-medium">—</span>
+            </span>
+          </p>
+        </div>
+      </a>
+      <div class="flex items-center gap-2">
+        <a href="reservar.html" class="px-3 py-1.5 rounded-full text-xs font-medium text-domus-azul hover:bg-domus-azul/5 transition">Nova reserva</a>
+        <button id="btn-logout" onclick="fazerLogout()" class="hidden px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-medium hover:bg-red-100 transition">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-lg mx-auto px-4 py-6">
+
+    <!-- ==================== TELA DE LOGIN ==================== -->
+    <div id="tela-login" class="animate-fade-up">
+      <div class="bg-white rounded-2xl shadow-lg border border-domus-borda/30 p-6">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 rounded-full bg-domus-gradient flex items-center justify-center text-3xl mx-auto mb-4">👤</div>
+          <h1 class="font-serif text-2xl text-domus-azul-escuro mb-1">Acesse sua conta</h1>
+          <p class="text-sm text-domus-texto-suave">Entre com seu CPF ou e-mail e sua senha</p>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-domus-texto-suave">CPF, passaporte ou e-mail</label>
+            <input id="login-busca" type="text" placeholder="Digite aqui" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-domus-texto-suave">Senha</label>
+            <div class="senha-wrapper mt-1">
+              <input id="login-senha" type="password" placeholder="Sua senha" class="w-full px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" onkeypress="if(event.key==='Enter')fazerLogin()" />
+              <button type="button" class="btn-olhinho" onclick="toggleSenha('login-senha', this)" aria-label="Mostrar senha">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </button>
+            </div>
+          </div>
+          <div id="login-erro" class="hidden p-3 rounded-xl bg-red-50 border border-red-200">
+            <p class="text-sm text-red-700">Login ou senha incorretos. Verifique seus dados.</p>
+          </div>
+          <button id="btn-login" onclick="fazerLogin()" class="w-full py-3 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition">Entrar</button>
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-domus-borda/50 text-center">
+          <p class="text-xs text-domus-texto-suave">Ainda não tem conta? <button type="button" onclick="mostrarCadastro()" class="text-domus-azul font-medium hover:underline">Quero me cadastrar</button></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TELA DE CADASTRO ==================== -->
+    <div id="tela-cadastro" class="hidden animate-fade-up">
+      <div class="bg-white rounded-2xl shadow-lg border border-domus-borda/30 p-6">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 rounded-full bg-domus-gradient flex items-center justify-center text-3xl mx-auto mb-4">✨</div>
+          <h1 class="font-serif text-2xl text-domus-azul-escuro mb-1">Crie sua conta</h1>
+          <p class="text-sm text-domus-texto-suave">Acesse o Clube Domus e acompanhe suas estadias</p>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-domus-texto-suave">Nome completo</label>
+            <input id="cad-nome" type="text" placeholder="Como você gosta de ser chamada(o)" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-domus-texto-suave">E-mail</label>
+            <input id="cad-email" type="email" placeholder="seuemail@exemplo.com" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-domus-texto-suave">Telefone (com DDD)</label>
+            <input id="cad-tel" type="tel" placeholder="(11) 99999-9999" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-domus-texto-suave">Crie uma senha (mínimo 6 caracteres)</label>
+            <div class="senha-wrapper mt-1">
+              <input id="cad-senha" type="password" placeholder="Mínimo 6 caracteres" class="w-full px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+              <button type="button" class="btn-olhinho" onclick="toggleSenha('cad-senha', this)" aria-label="Mostrar senha">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-domus-texto-suave">Confirme a senha</label>
+            <input id="cad-senha2" type="password" placeholder="Digite a senha novamente" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" onkeypress="if(event.key==='Enter')fazerCadastro()" />
+          </div>
+          <div id="cad-erro" class="hidden p-3 rounded-xl bg-red-50 border border-red-200">
+            <p class="text-sm text-red-700" id="cad-erro-msg">Erro</p>
+          </div>
+          <button id="btn-cadastro" onclick="fazerCadastro()" class="w-full py-3 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition">Criar minha conta</button>
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-domus-borda/50 text-center">
+          <p class="text-xs text-domus-texto-suave">Já tem conta? <button type="button" onclick="voltarLogin()" class="text-domus-azul font-medium hover:underline">Fazer login</button></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PAINEL DO HOSPEDE ==================== -->
+    <div id="tela-painel" class="hidden animate-fade-up">
+
+      <!-- Boas-vindas -->
+      <div class="bg-domus-gradient rounded-2xl p-5 text-white mb-4">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-2xl flex-shrink-0">👋</div>
+          <div>
+            <p class="font-serif text-xl flex items-center gap-2">Olá, <span id="painel-nome">—</span>! <img src="images/logo-icone-branco.png" alt="Domus" class="inline-block w-5 h-5 opacity-90" /></p>
+            <div class="flex items-center gap-3 mt-1">
+              <span class="flex items-center gap-1 text-sm text-white/80">
+                <span>⭐</span> <span id="painel-pontos">0</span> pontos
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" id="painel-nivel-badge" style="background: rgba(255,255,255,0.2);">Bronze</span>
+            </div>
+          </div>
+        </div>
+        <!-- Barra de progresso do nivel -->
+        <div class="mt-3">
+          <div class="flex justify-between text-[10px] text-white/60 mb-1">
+            <span id="painel-nivel-atual">Bronze</span>
+            <span id="painel-nivel-proximo">Prata (500 pts)</span>
+          </div>
+          <div class="w-full h-1.5 rounded-full bg-white/20">
+            <div id="painel-nivel-barra" class="h-1.5 rounded-full bg-white/80 transition-all" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-1 mb-4 bg-white rounded-xl p-1 border border-domus-borda/30">
+        <button onclick="trocarTab('reservas')" id="tab-reservas" class="flex-1 py-2.5 rounded-lg text-xs font-medium border-2 border-transparent transition tab-active">Reservas</button>
+        <button onclick="trocarTab('pontos')" id="tab-pontos" class="flex-1 py-2.5 rounded-lg text-xs font-medium border-2 border-transparent text-domus-texto-suave transition">Fidelidade</button>
+        <button onclick="trocarTab('dados')" id="tab-dados" class="flex-1 py-2.5 rounded-lg text-xs font-medium border-2 border-transparent text-domus-texto-suave transition">Meus Dados</button>
+      </div>
+
+      <!-- ===== TAB: RESERVAS ===== -->
+      <div id="conteudo-reservas" class="space-y-3">
+        <div id="reservas-loading" class="text-center py-8">
+          <div class="inline-flex items-center gap-2 text-sm text-domus-azul">
+            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Carregando reservas...
+          </div>
+        </div>
+        <div id="reservas-lista"></div>
+        <div id="reservas-vazio" class="hidden text-center py-8">
+          <div class="text-4xl mb-3">🏠</div>
+          <p class="text-sm text-domus-texto-suave mb-3">Você ainda não tem reservas.</p>
+          <a href="reservar.html" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-domus-azul text-white text-sm font-medium hover:bg-domus-azul-escuro transition">Reserve agora</a>
+        </div>
+      </div>
+
+      <!-- ===== TAB: FIDELIDADE ===== -->
+      <div id="conteudo-pontos" class="hidden space-y-3">
+        <!-- Card de nivel -->
+        <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div id="fidelidade-icone" class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-2xl">🥉</div>
+            <div>
+              <p class="font-semibold text-domus-azul-escuro" id="fidelidade-nivel">Bronze</p>
+              <p class="text-xs text-domus-texto-suave"><span id="fidelidade-pontos-total">0</span> pontos acumulados</p>
+            </div>
+          </div>
+
+          <div class="space-y-2 mb-4">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-domus-texto-suave">Total de reservas</span>
+              <span class="font-medium text-domus-azul-escuro" id="fidelidade-total-reservas">0</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-domus-texto-suave">Total de noites</span>
+              <span class="font-medium text-domus-azul-escuro" id="fidelidade-total-noites">0</span>
+            </div>
+          </div>
+
+          <!-- Niveis -->
+          <div class="border-t border-domus-borda/50 pt-4">
+            <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold mb-3">Níveis de fidelidade</p>
+            <div class="space-y-2">
+              <div class="flex items-start gap-3 p-3 rounded-lg border border-transparent" id="nivel-row-bronze">
+                <span class="text-xl flex-shrink-0">🥉</span>
+                <div class="flex-1">
+                  <p class="text-xs font-medium text-domus-azul-escuro">Bronze · 0 — 499 pts</p>
+                  <p class="text-[10px] text-domus-texto-suave mt-0.5">10 pontos por noite + código de indicação (100 pts cada)</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 p-3 rounded-lg border border-transparent" id="nivel-row-prata">
+                <span class="text-xl flex-shrink-0">🥈</span>
+                <div class="flex-1">
+                  <p class="text-xs font-medium text-domus-azul-escuro">Prata · 500 — 1.499 pts</p>
+                  <p class="text-[10px] text-domus-texto-suave mt-0.5"><strong>5% de desconto</strong> · Late check-out grátis (1×) · 15 pts/noite (1.5×)</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 p-3 rounded-lg border border-transparent" id="nivel-row-ouro">
+                <span class="text-xl flex-shrink-0">🥇</span>
+                <div class="flex-1">
+                  <p class="text-xs font-medium text-domus-azul-escuro">Ouro · 1.500 — 3.999 pts</p>
+                  <p class="text-[10px] text-domus-texto-suave mt-0.5"><strong>10% de desconto</strong> + upgrade · Late check-out + early check-in · 20 pts/noite (2×) · 1 noite no Studio a cada 10 reservas</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 p-3 rounded-lg border border-transparent" id="nivel-row-diamante">
+                <span class="text-xl flex-shrink-0">💎</span>
+                <div class="flex-1">
+                  <p class="text-xs font-medium text-domus-azul-escuro">Diamante · 4.000+ pts <span class="text-[9px] uppercase tracking-wider text-purple-700 font-bold ml-1">embaixadora</span></p>
+                  <p class="text-[10px] text-domus-texto-suave mt-0.5"><strong>15% de desconto</strong> · Prioridade mesmo lotado · 25 pts/noite (2.5×) · Noite grátis a cada 10 reservas · Convites pra eventos exclusivos</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Domus Frequente (Multiplicador mensal) -->
+        <div class="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 rounded-2xl border border-orange-200 p-5">
+          <p class="text-[10px] text-orange-700 uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+            <span>🔥</span> <span>Domus Frequente</span>
+          </p>
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm text-orange-900">
+              <strong id="frequente-contador">0</strong> de 8 reservas neste mês
+            </p>
+            <span id="frequente-status" class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-orange-100 text-orange-700">a caminho</span>
+          </div>
+          <div class="w-full bg-white/60 rounded-full h-2 overflow-hidden mb-2">
+            <div id="frequente-barra" class="h-full bg-gradient-to-r from-orange-400 to-amber-500 transition-all" style="width:0%"></div>
+          </div>
+          <p class="text-[10px] text-orange-700/80 leading-relaxed">
+            Quando você atinge <strong>8 reservas no mesmo mês</strong>, todos os pontos do mês são <strong>dobrados</strong> automaticamente! 🚀
+          </p>
+        </div>
+
+        <!-- Catálogo de Mimos -->
+        <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
+          <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold mb-3 flex items-center gap-1.5">
+            <span>🎁</span> <span>Catálogo de mimos</span>
+          </p>
+          <p class="text-[10px] text-domus-texto-suave mb-3">Troque seus pontos por benefícios reais:</p>
+          <div id="catalogo-lista" class="space-y-2">
+            <p class="text-xs text-domus-texto-suave text-center py-4">Carregando...</p>
+          </div>
+        </div>
+
+        <!-- Seu código de indicação -->
+        <div class="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl border border-emerald-200 p-5">
+          <p class="text-[10px] text-emerald-700 uppercase tracking-wider font-semibold mb-3 flex items-center gap-1.5">
+            <span>💚</span> <span>Seu código de indicação</span>
+          </p>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 px-4 py-3 bg-white rounded-xl border-2 border-dashed border-emerald-300 text-center">
+              <p id="indicacao-codigo" class="font-mono text-base font-bold text-emerald-800 tracking-wider">—</p>
+            </div>
+            <button onclick="copiarCodigoIndicacao()" id="btn-copiar-codigo"
+              class="px-3 py-3 rounded-xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition flex-shrink-0">
+              📋 Copiar
+            </button>
+          </div>
+          <p class="text-[10px] text-emerald-700/80 mt-2 leading-relaxed">
+            Compartilhe esse código com amigos. Quando eles fecharem uma reserva usando ele, <strong>vocês dois ganham 100 pontos</strong> 🌿
+          </p>
+        </div>
+
+        <!-- Como ganhar pontos -->
+        <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
+          <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold mb-3">Como ganhar pontos</p>
+          <div class="space-y-2">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-full bg-domus-azul/10 flex items-center justify-center text-sm">🛏️</span>
+              <div>
+                <p class="text-xs font-medium text-domus-azul-escuro">10 pontos por noite</p>
+                <p class="text-[10px] text-domus-texto-suave">Cada noite na Domus vale pontos</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-full bg-domus-azul/10 flex items-center justify-center text-sm">⭐</span>
+              <div>
+                <p class="text-xs font-medium text-domus-azul-escuro">50 pontos por avaliação</p>
+                <p class="text-[10px] text-domus-texto-suave">Avalie sua estadia e ganhe bonus</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-full bg-domus-azul/10 flex items-center justify-center text-sm">👥</span>
+              <div>
+                <p class="text-xs font-medium text-domus-azul-escuro">100 pontos por indicação</p>
+                <p class="text-[10px] text-domus-texto-suave">Indique um amigo que feche reserva</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: MEUS DADOS ===== -->
+      <div id="conteudo-dados" class="hidden">
+        <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold">Dados pessoais</p>
+            <button id="btn-editar-dados" onclick="toggleEditarDados()" class="text-xs text-domus-azul font-medium hover:underline">Editar</button>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-[10px] text-domus-texto-suave">Nome</label>
+              <input id="dados-nome" type="text" disabled class="w-full mt-0.5 px-3 py-2.5 rounded-xl border border-domus-borda text-sm bg-gray-50 disabled:opacity-70" />
+            </div>
+            <div>
+              <label class="text-[10px] text-domus-texto-suave">Sobrenome</label>
+              <input id="dados-sobrenome" type="text" disabled class="w-full mt-0.5 px-3 py-2.5 rounded-xl border border-domus-borda text-sm bg-gray-50 disabled:opacity-70" />
+            </div>
+            <div>
+              <label class="text-[10px] text-domus-texto-suave">E-mail</label>
+              <input id="dados-email" type="email" disabled class="w-full mt-0.5 px-3 py-2.5 rounded-xl border border-domus-borda text-sm bg-gray-50 disabled:opacity-70" />
+            </div>
+            <div>
+              <label class="text-[10px] text-domus-texto-suave">Telefone</label>
+              <input id="dados-telefone" type="text" disabled class="w-full mt-0.5 px-3 py-2.5 rounded-xl border border-domus-borda text-sm bg-gray-50 disabled:opacity-70" />
+            </div>
+            <div>
+              <label class="text-[10px] text-domus-texto-suave">Documento (CPF/Passaporte)</label>
+              <input id="dados-documento" type="text" disabled class="w-full mt-0.5 px-3 py-2.5 rounded-xl border border-domus-borda text-sm bg-gray-50 opacity-50 cursor-not-allowed" />
+            </div>
+          </div>
+          <div id="dados-acoes" class="hidden mt-4 flex gap-2">
+            <button onclick="cancelarEdicao()" class="flex-1 py-2.5 rounded-xl border border-domus-borda text-domus-texto-suave text-sm font-medium hover:bg-gray-50 transition">Cancelar</button>
+            <button onclick="salvarDados()" class="flex-1 py-2.5 rounded-xl bg-domus-azul text-white text-sm font-medium hover:bg-domus-azul-escuro transition">Salvar</button>
+          </div>
+          <p id="dados-sucesso" class="hidden mt-3 text-xs text-green-600 font-medium text-center">Dados atualizados com sucesso!</p>
+        </div>
+
+        <!-- Alterar senha -->
+        <div class="bg-white rounded-2xl border border-domus-borda/30 p-5 mt-3">
+          <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold mb-3">Alterar senha</p>
+          <div class="space-y-3">
+            <div>
+              <label class="text-[10px] text-domus-texto-suave">Senha atual</label>
+              <div class="senha-wrapper mt-0.5">
+                <input id="senha-atual" type="password" placeholder="Sua senha atual" class="w-full px-3 py-2.5 rounded-xl border border-domus-borda text-sm focus:border-domus-azul outline-none" />
+                <button type="button" class="btn-olhinho" onclick="toggleSenha('senha-atual', this)" aria-label="Mostrar senha">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-domus-texto-suave">Nova senha</label>
+              <div class="senha-wrapper mt-0.5">
+                <input id="senha-nova" type="password" placeholder="Minimo 6 caracteres" class="w-full px-3 py-2.5 rounded-xl border border-domus-borda text-sm focus:border-domus-azul outline-none" />
+                <button type="button" class="btn-olhinho" onclick="toggleSenha('senha-nova', this)" aria-label="Mostrar senha">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-domus-texto-suave">Confirme a nova senha</label>
+              <div class="senha-wrapper mt-0.5">
+                <input id="senha-confirma" type="password" placeholder="Repita a nova senha" class="w-full px-3 py-2.5 rounded-xl border border-domus-borda text-sm focus:border-domus-azul outline-none" />
+                <button type="button" class="btn-olhinho" onclick="toggleSenha('senha-confirma', this)" aria-label="Mostrar senha">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </button>
+              </div>
+            </div>
+            <button onclick="alterarSenha()" class="w-full py-2.5 rounded-xl border-2 border-domus-azul text-domus-azul text-sm font-medium hover:bg-domus-azul hover:text-white transition">Alterar senha</button>
+            <p id="senha-erro" class="hidden text-xs text-red-600 text-center"></p>
+            <p id="senha-sucesso" class="hidden text-xs text-green-600 font-medium text-center">Senha alterada com sucesso!</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <p class="text-center text-xs text-domus-texto-suave/50 py-6">Domus Garden · Vila Olimpia, SP · Desde 2021</p>
+
+  <!-- WhatsApp flutuante -->
+  <a href="https://wa.me/5511943330911?text=Oi!%20Preciso%20de%20ajuda%20com%20minha%20conta%20%F0%9F%8F%A1" target="_blank" rel="noopener"
+     class="fixed bottom-5 right-5 w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg hover:bg-green-600 hover:scale-110 transition-all z-50">
+    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.648-1.517A11.937 11.937 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75c-2.213 0-4.263-.726-5.919-1.954l-.424-.32-2.756.9.879-2.684-.346-.452A9.71 9.71 0 012.25 12 9.75 9.75 0 0112 2.25 9.75 9.75 0 0121.75 12 9.75 9.75 0 0112 21.75z"/></svg>
+  </a>
+
+  <script>
+    // ==========================================
+    // CLIMA DA VILA OLÍMPIA — Open-Meteo (gratuito, sem chave)
+    // ==========================================
+    var WMO_ICONES_MC = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',61:'🌧️',63:'🌧️',65:'🌧️',66:'🌧️',67:'🌧️',71:'❄️',73:'❄️',75:'❄️',77:'🌨️',80:'🌧️',81:'🌧️',82:'⛈️',85:'🌨️',86:'🌨️',95:'⛈️',96:'⛈️',99:'⛈️'};
+    (async function carregarClimaMC() {
+      var iconeEl = document.getElementById('clima-mc-icone');
+      var tempEl = document.getElementById('clima-mc-temp');
+      if (!iconeEl || !tempEl) return;
+      try {
+        var cache = JSON.parse(localStorage.getItem('clima_vila_olimpia') || 'null');
+        if (cache && (Date.now() - cache.ts) < 30 * 60 * 1000) {
+          iconeEl.textContent = cache.icone;
+          tempEl.textContent = cache.temp + '°C';
+          return;
+        }
+        var resp = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-23.6045&longitude=-46.6759&current=temperature_2m,weather_code&timezone=America%2FSao_Paulo');
+        if (!resp.ok) return;
+        var data = await resp.json();
+        var temp = Math.round(data.current.temperature_2m);
+        var icone = WMO_ICONES_MC[data.current.weather_code] || '🌤️';
+        iconeEl.textContent = icone;
+        tempEl.textContent = temp + '°C';
+        localStorage.setItem('clima_vila_olimpia', JSON.stringify({ ts: Date.now(), icone: icone, temp: temp }));
+      } catch (e) { console.warn('Clima:', e); }
+    })();
+
+    // ==========================================
+    // SUPABASE
+    // ==========================================
+    var SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+    var db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ==========================================
+    // TOGGLE SENHA (OLHINHO)
+    // ==========================================
+    function toggleSenha(inputId, btn) {
+      var input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12c1.292 4.338 5.31 7.5 10.066 7.5.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>';
+      } else {
+        input.type = 'password';
+        btn.innerHTML = '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>';
+      }
+    }
+
+    // ==========================================
+    // ESTADO
+    // ==========================================
+    var _hospede = null; // dados do hospede logado
+    var _reservas = []; // reservas carregadas
+    var _dadosOriginais = {}; // backup para cancelar edicao
+
+    // ==========================================
+    // CADASTRO (sem precisar reservar)
+    // ==========================================
+    function mostrarCadastro() {
+      document.getElementById('tela-login').classList.add('hidden');
+      document.getElementById('tela-cadastro').classList.remove('hidden');
+      var erro = document.getElementById('cad-erro');
+      if (erro) erro.classList.add('hidden');
+    }
+    function voltarLogin() {
+      document.getElementById('tela-cadastro').classList.add('hidden');
+      document.getElementById('tela-login').classList.remove('hidden');
+    }
+    async function fazerCadastro() {
+      var nome = (document.getElementById('cad-nome')?.value || '').trim();
+      var email = (document.getElementById('cad-email')?.value || '').trim();
+      var tel = (document.getElementById('cad-tel')?.value || '').trim();
+      var senha = (document.getElementById('cad-senha')?.value || '').trim();
+      var senha2 = (document.getElementById('cad-senha2')?.value || '').trim();
+      var erroEl = document.getElementById('cad-erro');
+      var erroMsg = document.getElementById('cad-erro-msg');
+      var btn = document.getElementById('btn-cadastro');
+
+      function mostrarErro(msg) {
+        if (erroMsg) erroMsg.textContent = msg;
+        if (erroEl) erroEl.classList.remove('hidden');
+      }
+
+      if (erroEl) erroEl.classList.add('hidden');
+
+      if (!nome || nome.length < 3) return mostrarErro('Por favor, preencha seu nome completo.');
+      if (!email || !email.match(/^[^@]+@[^@]+\.[^@]+$/)) return mostrarErro('Por favor, preencha um e-mail válido.');
+      if (!tel || tel.replace(/\D/g, '').length < 10) return mostrarErro('Por favor, preencha um telefone válido com DDD.');
+      if (!senha || senha.length < 6) return mostrarErro('A senha precisa ter pelo menos 6 caracteres.');
+      if (senha !== senha2) return mostrarErro('As senhas não conferem.');
+
+      if (btn) { btn.disabled = true; btn.textContent = 'Criando conta...'; }
+
+      try {
+        var { data, error } = await db.rpc('criar_hospede_clube', {
+          p_nome: nome,
+          p_email: email,
+          p_telefone: tel,
+          p_senha: senha
+        });
+        if (error) throw error;
+        if (!data || !data.sucesso) {
+          mostrarErro(data?.erro || 'Erro ao criar conta. Tente novamente.');
+          if (btn) { btn.disabled = false; btn.textContent = 'Criar minha conta'; }
+          return;
+        }
+
+        // Conta criada — fazer login automático
+        document.getElementById('login-busca').value = email;
+        document.getElementById('login-senha').value = senha;
+        voltarLogin();
+        await fazerLogin();
+      } catch (err) {
+        console.error('Erro cadastro:', err);
+        mostrarErro('Erro ao criar conta. Tente novamente.');
+        if (btn) { btn.disabled = false; btn.textContent = 'Criar minha conta'; }
+      }
+    }
+
+    // ==========================================
+    // LOGIN
+    // ==========================================
+    async function fazerLogin() {
+      var busca = (document.getElementById('login-busca')?.value || '').trim();
+      var senha = (document.getElementById('login-senha')?.value || '').trim();
+      if (!busca || !senha) { alert('Preencha seu CPF/e-mail e sua senha.'); return; }
+
+      var erroEl = document.getElementById('login-erro');
+      var btnLogin = document.getElementById('btn-login');
+      if (erroEl) erroEl.classList.add('hidden');
+      if (btnLogin) { btnLogin.disabled = true; btnLogin.textContent = 'Entrando...'; }
+
+      try {
+        var { data, error } = await db.rpc('verificar_login', { p_busca: busca, p_senha: senha });
+
+        if (error || !data || data.length === 0) {
+          if (erroEl) erroEl.classList.remove('hidden');
+          if (btnLogin) { btnLogin.disabled = false; btnLogin.textContent = 'Entrar'; }
+          return;
+        }
+
+        _hospede = data[0];
+
+        // verificar_login retorna campos com prefixo hospede_ — normalizar
+        if (_hospede.hospede_nome && !_hospede.nome) {
+          _hospede.id = _hospede.hospede_id || _hospede.id;
+          _hospede.nome = _hospede.hospede_nome;
+          _hospede.sobrenome = _hospede.hospede_sobrenome;
+          _hospede.email = _hospede.hospede_email;
+          _hospede.telefone = _hospede.hospede_telefone;
+          _hospede.documento = _hospede.hospede_documento;
+          _hospede.pontos_fidelidade = _hospede.hospede_pontos || 0;
+        }
+
+        // Buscar código de indicação atualizado direto da tabela (não vem no verificar_login)
+        try {
+          var { data: hData } = await db.from('hospedes')
+            .select('codigo_indicacao,nivel_fidelidade,total_reservas,total_noites,pontos_fidelidade')
+            .eq('id', _hospede.id || _hospede.hospede_id)
+            .single();
+          if (hData) {
+            _hospede.codigo_indicacao = hData.codigo_indicacao;
+            _hospede.nivel_fidelidade = hData.nivel_fidelidade || _hospede.nivel_fidelidade;
+            _hospede.total_reservas = hData.total_reservas || 0;
+            _hospede.total_noites = hData.total_noites || 0;
+            _hospede.pontos_fidelidade = hData.pontos_fidelidade || _hospede.pontos_fidelidade || 0;
+          }
+        } catch (e) { console.warn('Erro ao buscar código indicação:', e); }
+
+        // Salvar sessao no localStorage
+        localStorage.setItem('domus_hospede', JSON.stringify(_hospede));
+        localStorage.setItem('domus_hospede_senha', senha);
+
+        mostrarPainel();
+      } catch (err) {
+        console.error('Erro no login:', err);
+        if (erroEl) erroEl.classList.remove('hidden');
+        if (btnLogin) { btnLogin.disabled = false; btnLogin.textContent = 'Entrar'; }
+      }
+    }
+
+    function copiarCodigoIndicacao() {
+      var codigo = document.getElementById('indicacao-codigo')?.textContent || '';
+      if (!codigo || codigo === '—') return;
+      var btn = document.getElementById('btn-copiar-codigo');
+      var textoOriginal = btn ? btn.innerHTML : '';
+      navigator.clipboard.writeText(codigo).then(function() {
+        if (btn) {
+          btn.innerHTML = '✅ Copiado!';
+          setTimeout(function() { btn.innerHTML = textoOriginal; }, 2000);
+        }
+      }).catch(function() {
+        // Fallback pra navegadores antigos
+        var textArea = document.createElement('textarea');
+        textArea.value = codigo;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(textArea);
+        if (btn) {
+          btn.innerHTML = '✅ Copiado!';
+          setTimeout(function() { btn.innerHTML = textoOriginal; }, 2000);
+        }
+      });
+    }
+
+    async function carregarDomusFrequente() {
+      if (!_hospede || !_hospede.id) return;
+      try {
+        var { data } = await db.rpc('contar_reservas_mes_corrente', { p_hospede_id: _hospede.id });
+        var qtd = parseInt(data) || 0;
+        var pct = Math.min(100, (qtd / 8) * 100);
+        var contadorEl = document.getElementById('frequente-contador');
+        var barraEl = document.getElementById('frequente-barra');
+        var statusEl = document.getElementById('frequente-status');
+        if (contadorEl) contadorEl.textContent = qtd;
+        if (barraEl) barraEl.style.width = pct + '%';
+        if (statusEl) {
+          if (qtd >= 8) {
+            statusEl.textContent = '🔥 ATIVO — pontos dobrados!';
+            statusEl.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-orange-500 text-white';
+          } else {
+            statusEl.textContent = 'a caminho';
+            statusEl.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-orange-100 text-orange-700';
+          }
+        }
+      } catch (e) { console.warn('Erro Domus Frequente:', e); }
+    }
+
+    async function carregarCatalogoMimos() {
+      var listaEl = document.getElementById('catalogo-lista');
+      if (!listaEl) return;
+      try {
+        var { data: itens } = await db.from('catalogo_recompensas')
+          .select('*').eq('ativo', true).order('ordem');
+        if (!itens || !itens.length) {
+          listaEl.innerHTML = '<p class="text-xs text-domus-texto-suave text-center py-4">Em breve novos mimos por aqui ✨</p>';
+          return;
+        }
+        var pontosAtual = _hospede.pontos_fidelidade || 0;
+        listaEl.innerHTML = itens.map(function(item) {
+          var podeResgatar = pontosAtual >= item.pontos_necessarios;
+          var falta = item.pontos_necessarios - pontosAtual;
+          return '<div class="flex items-center gap-3 p-3 rounded-xl border ' +
+            (podeResgatar ? 'border-emerald-300 bg-emerald-50' : 'border-domus-borda bg-gray-50') + '">' +
+            '<span class="text-2xl flex-shrink-0">' + (item.emoji || '🎁') + '</span>' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="text-xs font-medium text-domus-azul-escuro">' + item.nome + '</p>' +
+              '<p class="text-[10px] text-domus-texto-suave mt-0.5">' + (item.descricao || '') + '</p>' +
+              '<p class="text-[10px] mt-1 ' + (podeResgatar ? 'text-emerald-700 font-semibold' : 'text-domus-texto-suave') + '">' +
+                '⭐ ' + item.pontos_necessarios + ' pontos' +
+                (podeResgatar ? ' · pode resgatar!' : ' · faltam ' + falta) +
+              '</p>' +
+            '</div>' +
+            (podeResgatar
+              ? '<button onclick="resgatarMimo(\'' + item.id + '\', \'' + item.nome.replace(/'/g, "\\'") + '\')" class="px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition flex-shrink-0">Resgatar</button>'
+              : '<button disabled class="px-3 py-2 rounded-lg bg-gray-200 text-gray-400 text-xs font-medium cursor-not-allowed flex-shrink-0">Resgatar</button>') +
+          '</div>';
+        }).join('');
+      } catch (e) {
+        console.warn('Erro catálogo:', e);
+        listaEl.innerHTML = '<p class="text-xs text-red-600 text-center py-4">Erro ao carregar mimos.</p>';
+      }
+    }
+
+    async function resgatarMimo(itemId, itemNome) {
+      if (!confirm('Confirma resgate de "' + itemNome + '"?\n\nA equipe Domus vai entrar em contato pra combinar.')) return;
+      try {
+        var { data } = await db.rpc('resgatar_recompensa', {
+          p_hospede_id: _hospede.id, p_recompensa_id: itemId
+        });
+        if (data && data.success) {
+          alert('🎉 Resgate confirmado! A Domus vai te chamar no WhatsApp pra combinar a entrega.');
+          // Recarregar dados
+          var { data: hData } = await db.from('hospedes')
+            .select('pontos_fidelidade,nivel_fidelidade').eq('id', _hospede.id).single();
+          if (hData) {
+            _hospede.pontos_fidelidade = hData.pontos_fidelidade;
+            _hospede.nivel_fidelidade = hData.nivel_fidelidade;
+            mostrarPainel();
+          }
+        } else {
+          alert('Não foi possível resgatar: ' + (data && data.erro || 'erro desconhecido'));
+        }
+      } catch (e) {
+        console.error('Erro resgate:', e);
+        alert('Erro ao resgatar. Tente novamente.');
+      }
+    }
+
+    function destacarNivelAtual() {
+      ['bronze','prata','ouro','diamante'].forEach(function(n) {
+        var el = document.getElementById('nivel-row-' + n);
+        if (el) el.className = el.className.replace(/bg-\S+|border-domus-azul/g, '').trim() + ' p-3 rounded-lg border border-transparent';
+      });
+      var nivel = (_hospede.nivel_fidelidade || 'bronze').toLowerCase();
+      var elAtual = document.getElementById('nivel-row-' + nivel);
+      if (elAtual) {
+        elAtual.className = 'flex items-start gap-3 p-3 rounded-lg bg-domus-azul-claro/40 border border-domus-azul/40';
+      }
+    }
+
+    function fazerLogout() {
+      _hospede = null;
+      _reservas = [];
+      localStorage.removeItem('domus_hospede');
+      localStorage.removeItem('domus_hospede_senha');
+      document.getElementById('tela-login').classList.remove('hidden');
+      document.getElementById('tela-painel').classList.add('hidden');
+      document.getElementById('btn-logout').classList.add('hidden');
+      // Limpar campos
+      document.getElementById('login-busca').value = '';
+      document.getElementById('login-senha').value = '';
+    }
+
+    // ==========================================
+    // PAINEL
+    // ==========================================
+    async function mostrarPainel() {
+      if (!_hospede) return;
+
+      document.getElementById('tela-login').classList.add('hidden');
+      document.getElementById('tela-painel').classList.remove('hidden');
+      document.getElementById('btn-logout').classList.remove('hidden');
+
+      // Preencher dados de boas-vindas (só primeiro nome pra ficar mais íntimo)
+      var primeiroNome = (_hospede.nome || '').split(' ')[0] || 'Hóspede';
+      document.getElementById('painel-nome').textContent = primeiroNome;
+      document.getElementById('painel-pontos').textContent = _hospede.pontos_fidelidade || 0;
+
+      var nivel = (_hospede.nivel_fidelidade || 'bronze').toLowerCase();
+      var nivelNome = nivel.charAt(0).toUpperCase() + nivel.slice(1);
+      document.getElementById('painel-nivel-badge').textContent = nivelNome;
+
+      // Barra de progresso
+      var pontos = _hospede.pontos_fidelidade || 0;
+      var nivelAtual = 'Bronze', nivelProximo = 'Prata (500 pts)', progresso = 0;
+      if (pontos >= 1500) {
+        nivelAtual = 'Ouro'; nivelProximo = 'Nível máximo!'; progresso = 100;
+      } else if (pontos >= 500) {
+        nivelAtual = 'Prata'; nivelProximo = 'Ouro (1.500 pts)'; progresso = ((pontos - 500) / 1000) * 100;
+      } else {
+        nivelAtual = 'Bronze'; nivelProximo = 'Prata (500 pts)'; progresso = (pontos / 500) * 100;
+      }
+      document.getElementById('painel-nivel-atual').textContent = nivelAtual;
+      document.getElementById('painel-nivel-proximo').textContent = nivelProximo;
+      document.getElementById('painel-nivel-barra').style.width = Math.min(100, progresso) + '%';
+
+      // Cor do badge
+      var badgeColors = { bronze: 'rgba(205,127,50,0.3)', prata: 'rgba(192,192,192,0.3)', ouro: 'rgba(255,215,0,0.3)', diamante: 'rgba(185,242,255,0.3)' };
+      var nivelKey = nivelAtual.toLowerCase();
+      var badgeEl = document.getElementById('painel-nivel-badge');
+      if (badgeEl) badgeEl.style.background = badgeColors[nivelKey] || badgeColors['bronze'];
+    }
+
+    // ==========================================
+    // FUNÇÕES PERDIDAS NO TRUNCAMENTO — RECONSTITUÍDAS
+    // ==========================================
+
+    // Trocar entre as abas Reservas / Fidelidade / Meus Dados
+    function trocarTab(tab) {
+      ['reservas', 'pontos', 'dados'].forEach(function(t) {
+        var btn = document.getElementById('tab-' + t);
+        var conteudo = document.getElementById('conteudo-' + t);
+        if (btn && conteudo) {
+          if (t === tab) {
+            btn.classList.add('tab-active');
+            btn.classList.remove('text-domus-texto-suave');
+            conteudo.classList.remove('hidden');
+          } else {
+            btn.classList.remove('tab-active');
+            btn.classList.add('text-domus-texto-suave');
+            conteudo.classList.add('hidden');
+          }
+        }
+      });
+    }
+
+    // Carregar reservas do hóspede logado (com timeout)
+    async function carregarMinhasReservas() {
+      var loading = document.getElementById('reservas-loading');
+      var lista = document.getElementById('reservas-lista');
+      var vazio = document.getElementById('reservas-vazio');
+
+      // Timeout: se demorar mais de 10s, mostra "vazio"
+      var timeoutId = setTimeout(function() {
+        if (loading) loading.classList.add('hidden');
+        if (vazio) vazio.classList.remove('hidden');
+      }, 10000);
+
+      try {
+        var sessaoStr = localStorage.getItem('hospede_session') || localStorage.getItem('hospede_dados');
+        if (!sessaoStr) {
+          clearTimeout(timeoutId);
+          if (loading) loading.classList.add('hidden');
+          if (vazio) vazio.classList.remove('hidden');
+          return;
+        }
+        var sessao = JSON.parse(sessaoStr);
+        var hospedeId = sessao.id || sessao.hospede_id;
+        var documento = sessao.documento || sessao.cpf || '';
+        var email = sessao.email || '';
+
+        if (!hospedeId && !documento && !email) {
+          clearTimeout(timeoutId);
+          if (loading) loading.classList.add('hidden');
+          if (vazio) vazio.classList.remove('hidden');
+          return;
+        }
+
+        var query = sb.from('reservas').select('id, hospede_nome, cama, checkin, checkout, valor_total, status, plataforma, criado_em');
+        if (hospedeId) query = query.eq('hospede_id', hospedeId);
+        else if (documento) query = query.eq('hospede_documento', documento);
+        else query = query.eq('hospede_email', email);
+
+        var resp = await query.order('checkin', { ascending: false }).limit(50);
+        clearTimeout(timeoutId);
+
+        if (loading) loading.classList.add('hidden');
+
+        if (resp.error || !resp.data || resp.data.length === 0) {
+          if (vazio) vazio.classList.remove('hidden');
+          return;
+        }
+
+        // Renderizar reservas
+        if (lista) {
+          lista.innerHTML = resp.data.map(function(r) {
+            var statusBadge = '';
+            if (r.status === 'confirmada') statusBadge = '<span class="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">CONFIRMADA</span>';
+            else if (r.status === 'em_espera' || r.status === 'pre_reserva') statusBadge = '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">PENDENTE</span>';
+            else if (r.status === 'check-in' || r.status === 'check_in') statusBadge = '<span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">CHECK-IN FEITO</span>';
+            else if (r.status === 'check-out' || r.status === 'check_out') statusBadge = '<span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 font-semibold">FINALIZADA</span>';
+            else if (r.status === 'cancelada') statusBadge = '<span class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold">CANCELADA</span>';
+
+            var dataIn = new Date(r.checkin + 'T12:00:00').toLocaleDateString('pt-BR');
+            var dataOut = new Date(r.checkout + 'T12:00:00').toLocaleDateString('pt-BR');
+            var valor = r.valor_total ? 'R$ ' + Number(r.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '';
+
+            return '<div class="bg-white rounded-2xl border border-domus-borda/30 p-4">'
+              + '<div class="flex items-start justify-between mb-2">'
+              + '<div><p class="font-semibold text-domus-azul-escuro">' + (r.cama || 'Acomodação') + '</p>'
+              + '<p class="text-xs text-domus-texto-suave">' + dataIn + ' - ' + dataOut + '</p></div>'
+              + statusBadge + '</div>'
+              + (valor ? '<p class="text-sm font-medium text-domus-azul mt-2">' + valor + '</p>' : '')
+              + '</div>';
+          }).join('');
+        }
+      } catch (err) {
+        console.error('Erro ao carregar reservas:', err);
+        clearTimeout(timeoutId);
+        if (loading) loading.classList.add('hidden');
+        if (vazio) vazio.classList.remove('hidden');
+      }
+    }
+
+    // Disparar carregamento ao abrir a página (depois do login restaurado)
+    setTimeout(function() {
+      try { carregarMinhasReservas(); } catch(e) { console.warn(e); }
+    }, 500);
+
+  </script>
+</body>
+</html>

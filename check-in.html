@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fila de Check-in/Check-out · Domus Garden</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #FFF8F0; color: #2D3748; }
+    .serif { font-family: 'Instrument Serif', serif; }
+    .azul-domus { background-color: #008B9C; }
+    .azul-domus-text { color: #008B9C; }
+    .azul-profundo { background-color: #0A3142; }
+    .border-azul { border-color: #008B9C; }
+    .hover-azul:hover { background-color: #007684; }
+    .card { background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .tab-active { background: #008B9C; color: white; }
+    .tab-inactive { background: white; color: #0A3142; border: 1px solid #E2E8F0; }
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(10, 49, 66, 0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+  <!-- ====== TELA DE LOGIN ====== -->
+  <div id="loginScreen" class="hidden min-h-screen flex items-center justify-center p-6">
+    <div class="card w-full max-w-md p-8">
+      <div class="text-center mb-6">
+        <h1 class="serif text-4xl azul-domus-text">Domus Garden</h1>
+        <p class="text-sm text-gray-500 mt-2">Fila de Check-in / Check-out</p>
+      </div>
+
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">E-mail</label>
+          <input type="email" id="loginEmail" required
+                 class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-azul"
+                 style="border-color:#E2E8F0" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Senha</label>
+          <input type="password" id="loginSenha" required
+                 class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-azul"
+                 style="border-color:#E2E8F0" />
+        </div>
+        <button type="submit"
+                class="azul-domus hover-azul text-white w-full py-3 rounded-lg font-semibold transition">
+          Entrar
+        </button>
+        <p id="loginErro" class="text-red-600 text-sm hidden text-center"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====== TELA PRINCIPAL ====== -->
+  <div id="mainScreen" class="hidden">
+
+    <!-- Header -->
+    <header class="azul-domus text-white">
+      <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+        <div>
+          <h1 class="serif text-3xl">Domus Garden</h1>
+          <p class="text-sm opacity-90">Fila de Check-in / Check-out</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="userName" class="text-sm hidden md:inline opacity-90"></span>
+          <button onclick="sair()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="max-w-6xl mx-auto px-6 mt-6">
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="trocarAba('checkin')" id="tabCheckin" class="tab-active px-5 py-3 rounded-lg font-semibold transition">
+          Check-ins de hoje <span id="badgeCheckin" class="ml-1 bg-white/30 px-2 py-0.5 rounded-full text-xs"></span>
+        </button>
+        <button onclick="trocarAba('checkout')" id="tabCheckout" class="tab-inactive px-5 py-3 rounded-lg font-semibold transition">
+          Check-outs de hoje <span id="badgeCheckout" class="ml-1 bg-gray-100 px-2 py-0.5 rounded-full text-xs"></span>
+        </button>
+        <button onclick="trocarAba('quartos')" id="tabQuartos" class="tab-inactive px-5 py-3 rounded-lg font-semibold transition">
+          Configurar Quartos
+        </button>
+        <button onclick="recarregar()" class="ml-auto bg-white border px-4 py-3 rounded-lg text-sm hover:bg-gray-50">
+          Atualizar
+        </button>
+      </div>
+    </div>
+
+    <!-- Conteudo -->
+    <main class="max-w-6xl mx-auto px-6 py-6">
+
+      <!-- ABA CHECK-IN -->
+      <section id="abaCheckin">
+        <div id="loadingCheckin" class="text-center py-20 text-gray-400">Carregando...</div>
+        <div id="vazioCheckin" class="hidden card p-12 text-center">
+          <div class="serif text-3xl azul-domus-text mb-2">Hoje sem check-ins</div>
+          <p class="text-gray-500">Tudo tranquilo por aqui.</p>
+        </div>
+        <div id="listaCheckin" class="space-y-4"></div>
+      </section>
+
+      <!-- ABA CHECK-OUT -->
+      <section id="abaCheckout" class="hidden">
+        <div id="loadingCheckout" class="text-center py-20 text-gray-400">Carregando...</div>
+        <div id="vazioCheckout" class="hidden card p-12 text-center">
+          <div class="serif text-3xl azul-domus-text mb-2">Hoje sem check-outs</div>
+          <p class="text-gray-500">Casa cheia.</p>
+        </div>
+        <div id="listaCheckout" class="space-y-4"></div>
+      </section>
+
+      <!-- ABA CONFIGURAR QUARTOS -->
+      <section id="abaQuartos" class="hidden">
+        <div class="card p-6">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h2 class="serif text-2xl azul-domus-text mb-1">Mensagem de check-in de cada quarto</h2>
+              <p class="text-sm text-gray-500">A mensagem aqui é o que o hóspede vai receber no WhatsApp. Use <code class="bg-gray-100 px-1 rounded">{NOME}</code> pra incluir o primeiro nome dele.</p>
+            </div>
+            <button onclick="adicionarQuarto()" class="azul-domus hover-azul text-white px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap">
+              + Novo quarto
+            </button>
+          </div>
+          <div id="loadingQuartos" class="text-center py-10 text-gray-400">Carregando...</div>
+          <div id="listaQuartos" class="space-y-3"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ====== MODAL DE PREVIEW DA MENSAGEM ====== -->
+  <div id="modalMsg" class="hidden modal-overlay" onclick="if(event.target===this)fecharModalMsg()">
+    <div class="card max-w-lg w-full p-6 max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-start mb-4">
+        <h3 class="serif text-2xl azul-domus-text">Mensagem completa</h3>
+        <button onclick="fecharModalMsg()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+      </div>
+      <pre id="msgPreview" class="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded-lg border"></pre>
+    </div>
+  </div>
+
+  <script>
+    let usuario = null;
+
+    // ---------- INICIALIZACAO ----------
+    function init() {
+      const sessao = localStorage.getItem('dg_admin_session');
+      if (sessao) {
+        try {
+          usuario = JSON.parse(sessao);
+          mostrarMain();
+          carregarTudo();
+          return;
+        } catch (e) { localStorage.removeItem('dg_admin_session'); }
+      }
+      mostrarLogin();
+    }
+
+    function mostrarLogin() {
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('mainScreen').classList.add('hidden');
+    }
+
+    function mostrarMain() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('mainScreen').classList.remove('hidden');
+      const nm = document.getElementById('userName');
+      if (nm && usuario && usuario.nome) nm.textContent = String(usuario.nome).split(' ')[0];
+    }
+
+    // ---------- LOGIN ----------
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const senha = document.getElementById('loginSenha').value;
+      const erroEl = document.getElementById('loginErro');
+      erroEl.classList.add('hidden');
+
+      try {
+        const { data, error } = await db.rpc('verificar_admin_login', { p_email: email, p_senha: senha });
+        if (error) throw error;
+        if (!data || !data.success) {
+          erroEl.textContent = (data && data.erro) || 'E-mail ou senha incorretos.';
+          erroEl.classList.remove('hidden');
+          return;
+        }
+        usuario = {
+          admin_id: data.admin_id,
+          id: data.admin_id,
+          nome: data.nome || email.split('@')[0],
+          email: data.email || email,
+          perfil: data.perfil || 'admin',
+          logado_em: new Date().toISOString()
+        };
+        localStorage.setItem('dg_admin_session', JSON.stringify(usuario));
+        mostrarMain();
+        carregarTudo();
+      } catch (err) {
+        erroEl.textContent = 'Erro: ' + (err.message || err);
+        erroEl.classList.remove('hidden');
+      }
+    });
+
+    function sair() {
+      localStorage.removeItem('dg_admin_session');
+      location.reload();
+    }
+
+    // ---------- ABAS ----------
+    function trocarAba(qual) {
+      ['Checkin','Checkout','Quartos'].forEach(n => {
+        document.getElementById('tab'+n).className =
+          'tab-inactive px-5 py-3 rounded-lg font-semibold transition';
+        document.getElementById('aba'+n).classList.add('hidden');
+      });
+      const cap = qual.charAt(0).toUpperCase()+qual.slice(1);
+      document.getElementById('tab'+cap).className =
+        'tab-active px-5 py-3 rounded-lg font-semibold transition';
+      document.getElementById('aba'+cap).classList.remove('hidden');
+      if (qual === 'quartos') carregarQuartos();
+    }
+
+    // ---------- CARREGAMENTO ----------
+    async function carregarTudo() {
+      await Promise.all([carregarCheckin(), carregarCheckout()]);
+    }
+
+    function recarregar() { carregarTudo(); }
+
+    async function carregarCheckin() {
+      document.getElementById('loadingCheckin').classList.remove('hidden');
+      document.getElementById('vazioCheckin').classList.add('hidden');
+      document.getElementById('listaCheckin').innerHTML = '';
+      try {
+        const { data, error } = await db.rpc('gerar_fila_checkin_hoje');
+        if (error) throw error;
+        document.getElementById('loadingCheckin').classList.add('hidden');
+        document.getElementById('badgeCheckin').textContent = (data||[]).length;
+        if (!data || data.length === 0) {
+          document.getElementById('vazioCheckin').classList.remove('hidden');
+          return;
+        }
+        renderLista('listaCheckin', data, 'checkin');
+      } catch (err) {
+        document.getElementById('loadingCheckin').textContent = 'Erro: ' + (err.message || err);
+      }
+    }
+
+    async function carregarCheckout() {
+      document.getElementById('loadingCheckout').classList.remove('hidden');
+      document.getElementById('vazioCheckout').classList.add('hidden');
+      document.getElementById('listaCheckout').innerHTML = '';
+      try {
+        const { data, error } = await db.rpc('gerar_fila_checkout_hoje');
+        if (error) throw error;
+        document.getElementById('loadingCheckout').classList.add('hidden');
+        document.getElementById('badgeCheckout').textContent = (data||[]).length;
+        if (!data || data.length === 0) {
+          document.getElementById('vazioCheckout').classList.remove('hidden');
+          return;
+        }
+        renderLista('listaCheckout', data, 'checkout');
+      } catch (err) {
+        document.getElementById('loadingCheckout').textContent = 'Erro: ' + (err.message || err);
+      }
+    }
+
+    function renderLista(idLista, data, tipo) {
+      const cor = tipo === 'checkin' ? '#008B9C' : '#0A3142';
+      const cont = document.getElementById(idLista);
+      cont.innerHTML = data.map(item => {
+        const tem_link = !!item.link_whatsapp;
+        return `
+          <div class="card p-5 flex flex-col md:flex-row md:items-center gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="azul-domus text-white text-xs px-2 py-1 rounded-full font-bold">${item.ordem}</span>
+                <h3 class="text-lg font-semibold">${escapeHtml(item.hospede_nome || 'Sem nome')}</h3>
+              </div>
+              <p class="text-sm text-gray-600">
+                <span class="font-medium">${escapeHtml(item.cama || '—')}</span>
+                ${item.telefone_normalizado ? ' · ' + formatTel(item.telefone_normalizado) : ''}
+              </p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick='verMensagem(${JSON.stringify(item.mensagem)})'
+                      class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium">
+                Ver mensagem
+              </button>
+              ${tem_link ? `
+                <a href="${item.link_whatsapp}" target="_blank"
+                   class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold flex items-center gap-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.2-.5.1-.2 0-.4 0-.5-.1-.1-.6-1.6-.9-2.2-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3 4.7 4.2.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 4.9L2 22l5.3-1.4c1.4.7 3 1.1 4.7 1.1 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.5 0-3-.4-4.3-1.1l-.3-.2-3.1.8.8-3-.2-.3C4.4 14.9 4 13.5 4 12c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8z"/></svg>
+                  Abrir WhatsApp
+                </a>
+              ` : `
+                <span class="bg-yellow-100 text-yellow-800 px-3 py-2 rounded-lg text-xs flex items-center">
+                  Sem telefone válido
+                </span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function verMensagem(msg) {
+      document.getElementById('msgPreview').textContent = msg;
+      document.getElementById('modalMsg').classList.remove('hidden');
+    }
+    function fecharModalMsg() {
+      document.getElementById('modalMsg').classList.add('hidden');
+    }
+
+    // ---------- CONFIGURAR QUARTOS ----------
+    async function carregarQuartos() {
+      document.getElementById('loadingQuartos').classList.remove('hidden');
+      document.getElementById('listaQuartos').innerHTML = '';
+      try {
+        const { data, error } = await db.from('quartos_info').select('*').order('cama_match');
+        if (error) throw error;
+        document.getElementById('loadingQuartos').classList.add('hidden');
+        const cont = document.getElementById('listaQuartos');
+        cont.innerHTML = data.map(q => {
+          const temMsg = !!q.mensagem_template;
+          return `
+          <details class="border rounded-lg p-4 bg-gray-50">
+            <summary class="font-semibold cursor-pointer flex justify-between items-center">
+              <span>${escapeHtml(q.nome_quarto)}</span>
+              <span class="text-xs ${temMsg ? 'text-green-700' : 'text-yellow-700'} font-medium">
+                ${temMsg ? '✓ Mensagem cadastrada' : '⚠ Sem mensagem'}
+              </span>
+            </summary>
+            <div class="mt-4 space-y-3" data-id="${q.id}">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs font-medium text-gray-600">Identificador (bate com a "cama" da reserva)</label>
+                  <input data-campo="cama_match" value="${escapeAttr(q.cama_match||'')}" class="w-full px-3 py-2 border rounded text-sm font-mono" />
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-gray-600">Nome amigável</label>
+                  <input data-campo="nome_quarto" value="${escapeAttr(q.nome_quarto||'')}" class="w-full px-3 py-2 border rounded text-sm" />
+                </div>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-gray-600">Mensagem completa de check-in (use {NOME} pra incluir o primeiro nome)</label>
+                <textarea data-campo="mensagem_template" rows="14"
+                          class="w-full px-3 py-2 border rounded text-sm font-mono leading-relaxed"
+                          placeholder="*🏠 INSTRUÇÕES DE CHECK-IN | Domus Garden*&#10;Bem-vindo(a)! ...">${escapeHtml(q.mensagem_template||'')}</textarea>
+              </div>
+              <div class="flex justify-between items-center">
+                <button onclick="excluirQuarto('${q.id}', '${escapeAttr(q.nome_quarto||'')}', this)"
+                        class="text-red-600 hover:text-red-800 text-sm">
+                  Excluir
+                </button>
+                <button onclick="salvarQuarto('${q.id}', this)"
+                        class="azul-domus hover-azul text-white px-5 py-2 rounded-lg text-sm font-semibold">
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </details>
+        `;
+        }).join('');
+      } catch (err) {
+        document.getElementById('loadingQuartos').textContent = 'Erro: ' + (err.message || err);
+      }
+    }
+
+    async function salvarQuarto(id, btn) {
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      const grid = btn.closest('[data-id]');
+      const update = {};
+      grid.querySelectorAll('[data-campo]').forEach(inp => {
+        update[inp.dataset.campo] = inp.value || null;
+      });
+      try {
+        const { error } = await db.from('quartos_info').update(update).eq('id', id);
+        if (error) throw error;
+        btn.textContent = 'Salvo!';
+        setTimeout(() => { btn.textContent = 'Salvar'; btn.disabled = false; carregarQuartos(); }, 1200);
+      } catch (err) {
+        btn.textContent = 'Erro';
+        alert('Erro ao salvar: ' + (err.message || err));
+        btn.disabled = false;
+      }
+    }
+
+    async function adicionarQuarto() {
+      const nome = prompt('Nome do quarto (ex: "Hostel 3", "Individual 2"):');
+      if (!nome) return;
+      const cama_match = prompt('Identificador que bate com o campo "cama" da reserva (geralmente igual ao nome):', nome);
+      if (!cama_match) return;
+      try {
+        const { error } = await db.from('quartos_info').insert({
+          cama_match: cama_match.trim(),
+          nome_quarto: nome.trim()
+        });
+        if (error) throw error;
+        carregarQuartos();
+      } catch (err) {
+        alert('Erro ao adicionar: ' + (err.message || err));
+      }
+    }
+
+    async function excluirQuarto(id, nome, btn) {
+      if (!confirm(`Excluir "${nome}"? A mensagem dele vai sumir.`)) return;
+      btn.disabled = true;
+      try {
+        const { error } = await db.from('quartos_info').delete().eq('id', id);
+        if (error) throw error;
+        carregarQuartos();
+      } catch (err) {
+        alert('Erro ao excluir: ' + (err.message || err));
+        btn.disabled = false;
+      }
+    }
+
+    function escapeAttr(s) {
+      return String(s||'').replace(/"/g, '&quot;');
+    }
+
+    // ---------- HELPERS ----------
+    function escapeHtml(s) {
+      if (!s) return '';
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function formatTel(t) {
+      if (!t) return '';
+      if (t.length === 13) return `+${t.slice(0,2)} (${t.slice(2,4)}) ${t.slice(4,9)}-${t.slice(9)}`;
+      if (t.length === 12) return `+${t.slice(0,2)} (${t.slice(2,4)}) ${t.slice(4,8)}-${t.slice(8)}`;
+      return t;
+    }
+
+    init();
+  </script>
+</body>
+</html>

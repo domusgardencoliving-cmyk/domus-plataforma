@@ -1,0 +1,6 @@
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+*.backup-*
+__deploy_now.html

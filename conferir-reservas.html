@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conferir Reservas — Hospedin × Supabase</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+    .serif { font-family: 'Instrument Serif', serif; }
+    .log-line { font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.6; }
+    .log-info { color: #64748b; }
+    .log-ok { color: #16a34a; }
+    .log-warn { color: #ca8a04; }
+    .log-err { color: #dc2626; }
+    .progress-bar { transition: width 0.3s ease; }
+    details > summary { cursor: pointer; user-select: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary::before { content: '▶ '; display: inline-block; transition: transform 0.2s; }
+    details[open] > summary::before { transform: rotate(90deg); }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-slate-800 to-slate-700 text-white p-6 shadow">
+    <div class="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="serif text-3xl">Conferir Reservas</h1>
+        <p class="text-sm text-slate-300 mt-1">Compara o que está na Hospedin com o que está no nosso PMS</p>
+      </div>
+      <a href="index.html" class="text-sm text-slate-300 hover:text-white px-3 py-2 rounded-lg border border-slate-600 hover:border-slate-400 transition">
+        ← Voltar pro DG Gestão
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-6">
+
+    <!-- Setup -->
+    <section id="setup" class="bg-white rounded-2xl shadow p-6 mb-6">
+      <h2 class="serif text-xl text-slate-800 mb-3">1. Conectar na Hospedin</h2>
+      <p class="text-sm text-slate-600 mb-4">As credenciais ficam salvas só no teu navegador (localStorage). Nunca saem daqui.</p>
+
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">E-mail Hospedin</label>
+          <input id="hospEmail" type="email" placeholder="seu@email.com" autocomplete="username"
+            class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Senha Hospedin</label>
+          <input id="hospSenha" type="password" placeholder="senha" autocomplete="current-password"
+            class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+        </div>
+      </div>
+
+      <div class="mt-4 flex items-center gap-3 flex-wrap">
+        <button onclick="iniciarConferencia()" id="btnIniciar"
+          class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          🔍 Conectar e conferir
+        </button>
+        <label class="text-xs text-slate-500 flex items-center gap-2">
+          <input type="checkbox" id="lembrar" checked class="rounded" />
+          Lembrar credenciais neste navegador
+        </label>
+      </div>
+    </section>
+
+    <!-- Log de progresso -->
+    <section id="logSection" class="bg-slate-900 text-slate-100 rounded-2xl shadow p-5 mb-6 hidden">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400 mb-3">Progresso</h2>
+      <div id="log" class="max-h-72 overflow-y-auto space-y-1"></div>
+      <div class="mt-3 bg-slate-800 rounded h-2 overflow-hidden">
+        <div id="progressBar" class="progress-bar bg-blue-500 h-full" style="width:0%;"></div>
+      </div>
+    </section>
+
+    <!-- Relatório -->
+    <section id="relatorio" class="hidden">
+
+      <!-- Cards de números -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+        <div class="bg-white rounded-xl shadow p-4">
+          <div class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Hospedin</div>
+          <div class="text-3xl font-bold text-slate-800 mt-1" id="numHospedin">—</div>
+          <div class="text-xs text-slate-500">reservas</div>
+        </div>
+        <div class="bg-white rounded-xl shadow p-4">
+          <div class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Supabase</div>
+          <div class="text-3xl font-bold text-slate-800 mt-1" id="numSupabase">—</div>
+          <div class="text-xs text-slate-500">reservas</div>
+        </div>
+        <div class="bg-emerald-50 rounded-xl shadow p-4 border border-emerald-200">
+          <div class="text-xs uppercase tracking-wide text-emerald-700 font-semibold">Iguais</div>
+          <div class="text-3xl font-bold text-emerald-700 mt-1" id="numIguais">—</div>
+          <div class="text-xs text-emerald-600">batem em tudo</div>
+        </div>
+        <div class="bg-amber-50 rounded-xl shadow p-4 border border-amber-200">
+          <div class="text-xs uppercase tracking-wide text-amber-700 font-semibold">Divergentes</div>
+          <div class="text-3xl font-bold text-amber-700 mt-1" id="numDivergentes">—</div>
+          <div class="text-xs text-amber-600">existem nos dois mas com dados diferentes</div>
+        </div>
+        <div class="bg-rose-50 rounded-xl shadow p-4 border border-rose-200">
+          <div class="text-xs uppercase tracking-wide text-rose-700 font-semibold">Faltando</div>
+          <div class="text-3xl font-bold text-rose-700 mt-1" id="numFaltando">—</div>
+          <div class="text-xs text-rose-600">só na Hospedin</div>
+        </div>
+      </div>
+
+      <!-- Botão sincronizar -->
+      <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-6">
+        <h3 class="serif text-xl text-slate-800 mb-2">Sincronizar tudo</h3>
+        <p class="text-sm text-slate-600 mb-3">
+          Clica aqui pra trazer as reservas faltantes da Hospedin pro nosso banco e atualizar as divergentes.
+          Reservas criadas direto no PMS (canal_codigo nulo) NÃO são tocadas.
+        </p>
+        <button onclick="sincronizarTudo()" id="btnSync"
+          class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition">
+          ⚙️ Sincronizar tudo agora
+        </button>
+        <span id="syncStatus" class="ml-3 text-sm text-slate-600"></span>
+      </div>
+
+      <!-- Listas detalhadas -->
+      <details class="bg-white rounded-2xl shadow p-5 mb-3">
+        <summary class="font-semibold text-amber-700">Divergências (<span id="cntDiv">0</span>) — datas/status diferentes</summary>
+        <div id="listaDivergentes" class="mt-4 overflow-x-auto"></div>
+      </details>
+
+      <details class="bg-white rounded-2xl shadow p-5 mb-3">
+        <summary class="font-semibold text-rose-700">Só na Hospedin (<span id="cntFalt">0</span>) — precisam ser importadas</summary>
+        <div id="listaFaltando" class="mt-4 overflow-x-auto"></div>
+      </details>
+
+      <details class="bg-white rounded-2xl shadow p-5 mb-3">
+        <summary class="font-semibold text-slate-700">Só no Supabase (<span id="cntExtra">0</span>) — manuais ou órfãs</summary>
+        <div id="listaExtras" class="mt-4 overflow-x-auto"></div>
+      </details>
+
+    </section>
+  </main>
+
+  <script>
+    // ============================================================
+    // CONFIG
+    // ============================================================
+    const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const HOSP_BASE = 'https://pms-api.hospedin.com/api/v2/23949';
+    const HOSP_AUTH = 'https://pms-api.hospedin.com/api/v2/authentication/sessions';
+
+    // Mapa place_id → nome do quarto (pra escrever no campo "cama")
+    const PLACE_MAP = {
+      335187: 'Studio 1',
+      335188: 'Studio 2'
+      // Outros vão ser preenchidos via /places na hora
+    };
+
+    // Mapa sale_channel_id → plataforma do nosso schema
+    const CHANNEL_MAP = {
+      33933: 'Direto',         // VENDA DIRETA
+      32944: 'Booking',        // Booking.com
+      32942: 'Airbnb',
+      91050: 'Airbnb',         // AIRBNBV2
+      91049: 'Booking',
+      88507: 'Outro',          // Expedia
+      91051: 'Outro',          // Hotels.Com
+      33936: 'Direto',         // COLIVING
+      43792: 'Direto',         // Pré-reservas DOMUS
+      211366: 'Direto',        // Widget
+      223477: 'Direto'         // Mobile
+    };
+
+    const STATUS_MAP = {
+      reservation: 'confirmada',
+      pre_reservation: 'pre_reserva',
+      check_in: 'check-in',
+      check_out: 'check-out',
+      canceled: 'cancelada'
+    };
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    let _hospToken = null;
+    let _hospReservas = [];
+    let _supaReservas = [];
+    let _placesById = {};
+    let _guestsById = {};
+    let _channelsById = {};
+    let _diff = { iguais: [], divergentes: [], faltando: [], extras: [] };
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    function log(msg, type) {
+      type = type || 'info';
+      const el = document.createElement('div');
+      el.className = 'log-line log-' + type;
+      el.textContent = '[' + new Date().toLocaleTimeString('pt-BR') + '] ' + msg;
+      const box = document.getElementById('log');
+      box.appendChild(el);
+      box.scrollTop = box.scrollHeight;
+    }
+    function setProgress(pct) {
+      document.getElementById('progressBar').style.width = pct + '%';
+    }
+    function fmtDate(s) {
+      if (!s) return '—';
+      const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return m[3] + '/' + m[2] + '/' + m[1];
+      return s;
+    }
+    function isoDateOnly(s) {
+      if (!s) return null;
+      return String(s).slice(0, 10); // 2026-05-01
+    }
+
+    // ============================================================
+    // CARREGAR/SALVAR CREDENCIAIS
+    // ============================================================
+    (function loadCreds() {
+      try {
+        const raw = localStorage.getItem('hosp_creds');
+        if (raw) {
+          const c = JSON.parse(raw);
+          if (c.email) document.getElementById('hospEmail').value = c.email;
+          if (c.senha) document.getElementById('hospSenha').value = c.senha;
+        }
+      } catch (e) {}
+    })();
+
+    // ============================================================
+    // AUTH HOSPEDIN
+    // ============================================================
+    async function authHospedin(email, senha) {
+      const r = await fetch(HOSP_AUTH, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: senha })
+      });
+      if (!r.ok) {
+        const err = await r.text();
+        throw new Error('Auth Hospedin falhou: ' + r.status + ' ' + err.substring(0, 200));
+      }
+      const data = await r.json();
+      // Token costuma vir em data.token, data.access_token, ou no header Authorization
+      const token = data.token || data.access_token || data.jwt || data.session_token;
+      if (!token) throw new Error('Token não veio na resposta. Resposta: ' + JSON.stringify(data).substring(0, 300));
+      return token;
+    }
+
+    async function hospFetch(path) {
+      const r = await fetch(HOSP_BASE + path, {
+        headers: { 'Authorization': 'Bearer ' + _hospToken, 'Content-Type': 'application/json' }
+      });
+      if (!r.ok) throw new Error('Hospedin GET ' + path + ' falhou: ' + r.status);
+      return r.json();
+    }
+
+    // ============================================================
+    // BUSCAR TODAS AS RESERVAS (paginado)
+    // ============================================================
+    async function buscarReservasHospedin() {
+      // Probe: buscar pagina 1 e logar formato pra entender a paginação
+      log('Sondando endpoint /reservations (pagina 1)...', 'info');
+      let primeira;
+      try { primeira = await hospFetch('/reservations?page=1&per_page=100'); }
+      catch (e) { log('Erro probe: ' + e.message, 'err'); return []; }
+
+      // Detectar formato da resposta
+      let lista1, meta;
+      if (Array.isArray(primeira)) {
+        lista1 = primeira;
+      } else if (primeira.data) {
+        lista1 = primeira.data;
+        meta = primeira.meta || primeira.pagination;
+      } else if (primeira.reservations) {
+        lista1 = primeira.reservations;
+        meta = primeira.meta;
+      } else {
+        log('Formato desconhecido — chaves: ' + Object.keys(primeira).join(', '), 'warn');
+        return [];
+      }
+
+      log('Probe: pagina 1 trouxe ' + lista1.length + ' reservas', 'ok');
+      if (meta) log('Meta: ' + JSON.stringify(meta).substring(0, 200), 'info');
+
+      // Logar 1 reserva pra entender campos disponíveis
+      if (lista1[0]) {
+        const r = lista1[0];
+        log('Sample reserva — keys: ' + Object.keys(r).join(', '), 'info');
+        if (r.guest) log('  Tem guest embarcado: ' + JSON.stringify(r.guest).substring(0, 150), 'info');
+      }
+
+      let todas = [...lista1];
+      let pagina = 2;
+      // Tentar paginação enquanto trouxer dados (até 100 páginas como seguranca)
+      while (pagina <= 100) {
+        let data;
+        try { data = await hospFetch('/reservations?page=' + pagina + '&per_page=100'); }
+        catch (e) { log('Erro pag ' + pagina + ': ' + e.message, 'err'); break; }
+
+        const lista = Array.isArray(data) ? data : (data.data || data.reservations || []);
+        if (!lista.length) { log('Pagina ' + pagina + ' vazia — fim', 'info'); break; }
+
+        // Detectar se a API retornou os mesmos IDs (param ignorado = sem paginação real)
+        if (pagina === 2 && lista[0] && lista1[0] && lista[0].id === lista1[0].id) {
+          log('API ignora ?page= — tentando offset...', 'warn');
+          break;
+        }
+
+        todas = todas.concat(lista);
+        if (pagina % 5 === 0 || lista.length < 100) {
+          log('  ' + todas.length + ' acumuladas (pag ' + pagina + ')', 'info');
+        }
+        setProgress(Math.min(50, 5 + pagina));
+        if (lista.length < 100) break;
+        pagina++;
+      }
+
+      // Se o page= não funcionou e só temos 100, tentar offset
+      if (todas.length <= 100 && pagina <= 2) {
+        log('Tentando paginacao por offset...', 'info');
+        let offset = todas.length;
+        while (offset < 5000) {
+          let data;
+          try { data = await hospFetch('/reservations?offset=' + offset + '&limit=100'); }
+          catch (e) { break; }
+          const lista = Array.isArray(data) ? data : (data.data || data.reservations || []);
+          if (!lista.length) break;
+          // Verifica se trouxe dados novos (id diferente)
+          if (lista[0].id === todas[0].id) { log('Offset tambem ignorado', 'warn'); break; }
+          todas = todas.concat(lista);
+          offset += lista.length;
+          if (lista.length < 100) break;
+        }
+      }
+
+      log('TOTAL Hospedin: ' + todas.length + ' reservas', 'ok');
+      return todas;
+    }
+
+    async function buscarGuests() {
+      log('Pre-carregando guests...', 'info');
+      let todos = [];
+      let pagina = 1;
+      while (pagina <= 100) {
+        let data;
+        try { data = await hospFetch('/guests?page=' + pagina + '&per_page=100'); }
+        catch (e) { log('Erro guests pag ' + pagina + ': ' + e.message, 'err'); break; }
+        const lista = Array.isArray(data) ? data : (data.data || []);
+        if (!lista.length) break;
+        if (pagina === 2 && todos[0] && lista[0].id === todos[0].id) break;
+        todos = todos.concat(lista);
+        if (lista.length < 100) break;
+        pagina++;
+      }
+      const map = {};
+      todos.forEach(g => { map[g.id] = g; });
+      log('Guests: ' + todos.length, 'ok');
+      return map;
+    }
+
+    async function buscarChannels() {
+      try {
+        const data = await hospFetch('/sale_channels');
+        const lista = Array.isArray(data) ? data : (data.data || []);
+        const map = {};
+        lista.forEach(s => { map[s.id] = s.name || s.nome || ('Canal ' + s.id); });
+        return map;
+      } catch (e) { return {}; }
+    }
+
+    async function buscarPlaces() {
+      try {
+        const data = await hospFetch('/places');
+        const lista = Array.isArray(data) ? data : (data.data || []);
+        const map = {};
+        lista.forEach(p => {
+          // O nome do quarto pode vir em varios campos. Logar o primeiro pra debug
+          const nome = p.name || p.nome || p.title || p.label || ('Place ' + p.id);
+          map[p.id] = nome;
+        });
+        log('Places: ' + Object.keys(map).length + ' (' + Object.values(map).slice(0,3).join(', ') + '...)', 'info');
+        return map;
+      } catch (e) {
+        log('Erro ao buscar /places: ' + e.message, 'warn');
+        return {};
+      }
+    }
+
+    async function buscarReservasSupabase() {
+      log('Buscando reservas do Supabase (todas)...', 'info');
+      // Pagina de 1000 em 1000
+      let todas = [];
+      let from = 0;
+      const step = 1000;
+      while (true) {
+        const { data, error } = await db
+          .from('reservas')
+          .select('id, hospedin_id, hospede_nome, cama, checkin, checkout, status, valor_total, plataforma, canal_codigo, criado_em')
+          .range(from, from + step - 1);
+        if (error) throw new Error(error.message);
+        if (!data || !data.length) break;
+        todas = todas.concat(data);
+        log('  ' + todas.length + ' carregadas...', 'info');
+        if (data.length < step) break;
+        from += step;
+      }
+      return todas;
+    }
+
+    // ============================================================
+    // COMPARAR
+    // ============================================================
+    function normalizarHospedin(r) {
+      // Buscar nome via guest_id no mapa pre-carregado
+      let nome = '(sem nome)';
+      if (r.guest && r.guest.name) nome = r.guest.name;
+      else if (r.guest_id && _guestsById[r.guest_id]) nome = _guestsById[r.guest_id].name || _guestsById[r.guest_id].nome || '(sem nome)';
+
+      // Quarto via place_id
+      const cama = _placesById[r.place_id] || PLACE_MAP[r.place_id] || ('Place ' + r.place_id);
+
+      // Valor: tentar varios campos. Hospedin retorna em valor decimal (R$ direto)
+      // total_amount, total_to_receive, total_received, ou em cents (total_daily_cents/daily_cents)
+      let valor = 0;
+      if (typeof r.total_amount === 'number') valor = r.total_amount;
+      else if (typeof r.total_to_receive === 'number') valor = r.total_to_receive;
+      else if (r.total_amount_cents) valor = r.total_amount_cents / 100;
+      else if (r.total_daily_cents) valor = r.total_daily_cents / 100;
+
+      return {
+        hospedin_id: r.id,
+        searchable_code: r.searchable_code,
+        hospede_nome: nome,
+        cama: cama,
+        checkin: isoDateOnly(r.check_in || r.checkin),
+        checkout: isoDateOnly(r.check_out || r.checkout),
+        status: STATUS_MAP[r.status] || r.status,
+        valor_total: parseFloat(valor || 0).toFixed(2),
+        plataforma: CHANNEL_MAP[r.sale_channel_id] || (_channelsById[r.sale_channel_id] || 'Outro')
+      };
+    }
+
+    function compararReservas(hospedin, supabase) {
+      const supaPorId = new Map();
+      supabase.forEach(r => {
+        if (r.hospedin_id) supaPorId.set(String(r.hospedin_id), r);
+      });
+
+      const iguais = [];
+      const divergentes = [];
+      const faltando = [];
+
+      hospedin.forEach(h => {
+        const norm = normalizarHospedin(h);
+        const s = supaPorId.get(String(norm.hospedin_id));
+        if (!s) {
+          faltando.push(norm);
+          return;
+        }
+        // Comparar campos chave
+        const diffs = [];
+        if (s.checkin !== norm.checkin) diffs.push('checkin: ' + s.checkin + ' vs ' + norm.checkin);
+        if (s.checkout !== norm.checkout) diffs.push('checkout: ' + s.checkout + ' vs ' + norm.checkout);
+        if (s.status !== norm.status) diffs.push('status: ' + s.status + ' vs ' + norm.status);
+        if ((s.cama || '').toLowerCase() !== (norm.cama || '').toLowerCase()) diffs.push('cama: "' + s.cama + '" vs "' + norm.cama + '"');
+        if (Math.abs(parseFloat(s.valor_total || 0) - parseFloat(norm.valor_total)) > 0.01) diffs.push('valor: ' + s.valor_total + ' vs ' + norm.valor_total);
+
+        if (diffs.length) divergentes.push({ supa: s, hosp: norm, diffs });
+        else iguais.push({ supa: s, hosp: norm });
+      });
+
+      // Reservas que estão no Supabase mas não vieram da Hospedin
+      const hospIds = new Set(hospedin.map(h => String(h.id)));
+      const extras = supabase.filter(s => !s.hospedin_id || !hospIds.has(String(s.hospedin_id)));
+
+      return { iguais, divergentes, faltando, extras };
+    }
+
+    // ============================================================
+    // RENDERIZAR RELATÓRIO
+    // ============================================================
+    function renderRelatorio() {
+      document.getElementById('numHospedin').textContent = _hospReservas.length;
+      document.getElementById('numSupabase').textContent = _supaReservas.length;
+      document.getElementById('numIguais').textContent = _diff.iguais.length;
+      document.getElementById('numDivergentes').textContent = _diff.divergentes.length;
+      document.getElementById('numFaltando').textContent = _diff.faltando.length;
+      document.getElementById('cntDiv').textContent = _diff.divergentes.length;
+      document.getElementById('cntFalt').textContent = _diff.faltando.length;
+      document.getElementById('cntExtra').textContent = _diff.extras.length;
+
+      // Divergentes
+      const tabDiv = document.getElementById('listaDivergentes');
+      tabDiv.innerHTML = _diff.divergentes.length
+        ? '<table class="w-full text-xs"><thead><tr class="text-left text-slate-500 uppercase border-b"><th class="py-2 pr-3">Hóspede</th><th class="py-2 pr-3">Hospedin ID</th><th class="py-2 pr-3">Datas (Supa)</th><th class="py-2 pr-3">Datas (Hospedin)</th><th class="py-2">Diferenças</th></tr></thead><tbody>'
+          + _diff.divergentes.map(d => `<tr class="border-b last:border-0">
+              <td class="py-2 pr-3 font-medium">${d.hosp.hospede_nome}</td>
+              <td class="py-2 pr-3 text-slate-500">${d.hosp.hospedin_id} <span class="text-slate-400">(${d.hosp.searchable_code || ''})</span></td>
+              <td class="py-2 pr-3">${fmtDate(d.supa.checkin)} → ${fmtDate(d.supa.checkout)}</td>
+              <td class="py-2 pr-3">${fmtDate(d.hosp.checkin)} → ${fmtDate(d.hosp.checkout)}</td>
+              <td class="py-2 text-amber-700">${d.diffs.join('<br>')}</td>
+            </tr>`).join('')
+          + '</tbody></table>'
+        : '<p class="text-sm text-slate-500">Nenhuma divergência. Tudo bate.</p>';
+
+      // Faltando
+      const tabFal = document.getElementById('listaFaltando');
+      tabFal.innerHTML = _diff.faltando.length
+        ? '<table class="w-full text-xs"><thead><tr class="text-left text-slate-500 uppercase border-b"><th class="py-2 pr-3">Hóspede</th><th class="py-2 pr-3">Hospedin ID</th><th class="py-2 pr-3">Datas</th><th class="py-2 pr-3">Quarto</th><th class="py-2 pr-3">Status</th><th class="py-2">Valor</th></tr></thead><tbody>'
+          + _diff.faltando.map(f => `<tr class="border-b last:border-0">
+              <td class="py-2 pr-3 font-medium">${f.hospede_nome}</td>
+              <td class="py-2 pr-3 text-slate-500">${f.hospedin_id} <span class="text-slate-400">(${f.searchable_code || ''})</span></td>
+              <td class="py-2 pr-3">${fmtDate(f.checkin)} → ${fmtDate(f.checkout)}</td>
+              <td class="py-2 pr-3">${f.cama}</td>
+              <td class="py-2 pr-3">${f.status}</td>
+              <td class="py-2">R$ ${f.valor_total}</td>
+            </tr>`).join('')
+          + '</tbody></table>'
+        : '<p class="text-sm text-slate-500">Nada faltando.</p>';
+
+      // Extras
+      const tabExt = document.getElementById('listaExtras');
+      tabExt.innerHTML = _diff.extras.length
+        ? '<table class="w-full text-xs"><thead><tr class="text-left text-slate-500 uppercase border-b"><th class="py-2 pr-3">Hóspede</th><th class="py-2 pr-3">ID Supabase</th><th class="py-2 pr-3">Datas</th><th class="py-2 pr-3">Quarto</th><th class="py-2 pr-3">Status</th><th class="py-2">Origem</th></tr></thead><tbody>'
+          + _diff.extras.map(e => `<tr class="border-b last:border-0">
+              <td class="py-2 pr-3 font-medium">${e.hospede_nome}</td>
+              <td class="py-2 pr-3 text-slate-400 font-mono text-[10px]">${e.id.slice(0,8)}</td>
+              <td class="py-2 pr-3">${fmtDate(e.checkin)} → ${fmtDate(e.checkout)}</td>
+              <td class="py-2 pr-3">${e.cama || '—'}</td>
+              <td class="py-2 pr-3">${e.status}</td>
+              <td class="py-2">${e.canal_codigo ? '<span class="text-amber-600">Era da Hospedin (sumiu lá)</span>' : '<span class="text-emerald-700">Manual / Direto</span>'}</td>
+            </tr>`).join('')
+          + '</tbody></table>'
+        : '<p class="text-sm text-slate-500">Nenhuma reserva extra.</p>';
+    }
+
+    // ============================================================
+    // SINCRONIZAR (Hospedin → Supabase)
+    // ============================================================
+    async function sincronizarTudo() {
+      if (!confirm('Vai inserir ' + _diff.faltando.length + ' reservas novas e atualizar ' + _diff.divergentes.length + ' divergentes. Continuar?')) return;
+
+      const btn = document.getElementById('btnSync');
+      const status = document.getElementById('syncStatus');
+      btn.disabled = true;
+      btn.textContent = '⏳ Sincronizando...';
+      let inseridas = 0, atualizadas = 0, erros = 0;
+
+      // 1) Inserir as faltando
+      for (let i = 0; i < _diff.faltando.length; i++) {
+        const f = _diff.faltando[i];
+        status.textContent = 'Inserindo ' + (i+1) + '/' + _diff.faltando.length + '...';
+        try {
+          const { error } = await db.from('reservas').insert({
+            hospedin_id: f.hospedin_id,
+            canal_codigo: f.searchable_code,
+            hospede_nome: f.hospede_nome,
+            cama: f.cama,
+            checkin: f.checkin,
+            checkout: f.checkout,
+            status: f.status,
+            valor_total: parseFloat(f.valor_total),
+            plataforma: f.plataforma
+          });
+          if (error) throw error;
+          inseridas++;
+        } catch (e) {
+          erros++;
+          log('Erro ao inserir ' + f.hospede_nome + ': ' + (e.message || e), 'err');
+        }
+      }
+
+      // 2) Atualizar as divergentes
+      for (let i = 0; i < _diff.divergentes.length; i++) {
+        const d = _diff.divergentes[i];
+        status.textContent = 'Atualizando ' + (i+1) + '/' + _diff.divergentes.length + '...';
+        try {
+          const { error } = await db.from('reservas').update({
+            hospede_nome: d.hosp.hospede_nome,
+            cama: d.hosp.cama,
+            checkin: d.hosp.checkin,
+            checkout: d.hosp.checkout,
+            status: d.hosp.status,
+            valor_total: parseFloat(d.hosp.valor_total),
+            plataforma: d.hosp.plataforma
+          }).eq('id', d.supa.id);
+          if (error) throw error;
+          atualizadas++;
+        } catch (e) {
+          erros++;
+          log('Erro ao atualizar ' + d.hosp.hospede_nome + ': ' + (e.message || e), 'err');
+        }
+      }
+
+      btn.disabled = false;
+      btn.textContent = '⚙️ Sincronizar tudo agora';
+      status.textContent = '✅ ' + inseridas + ' inseridas, ' + atualizadas + ' atualizadas' + (erros ? ', ' + erros + ' erros' : '');
+      log('Sync completo: ' + inseridas + ' inseridas, ' + atualizadas + ' atualizadas, ' + erros + ' erros', erros ? 'warn' : 'ok');
+
+      if (inseridas + atualizadas > 0) {
+        setTimeout(() => alert('Pronto! ' + inseridas + ' reservas inseridas e ' + atualizadas + ' atualizadas. Recarrega o PMS pra ver as mudanças.'), 200);
+      }
+    }
+
+    // ============================================================
+    // FLUXO PRINCIPAL
+    // ============================================================
+    async function iniciarConferencia() {
+      const email = document.getElementById('hospEmail').value.trim();
+      const senha = document.getElementById('hospSenha').value;
+      if (!email || !senha) { alert('Preenche e-mail e senha da Hospedin.'); return; }
+
+      // Salvar credenciais se marcado
+      try {
+        if (document.getElementById('lembrar').checked) {
+          localStorage.setItem('hosp_creds', JSON.stringify({ email, senha }));
+        }
+      } catch (e) {}
+
+      const btn = document.getElementById('btnIniciar');
+      btn.disabled = true;
+      btn.textContent = '⏳ Trabalhando...';
+      document.getElementById('logSection').classList.remove('hidden');
+      document.getElementById('relatorio').classList.add('hidden');
+      document.getElementById('log').innerHTML = '';
+      setProgress(2);
+
+      try {
+        log('Autenticando na Hospedin...', 'info');
+        _hospToken = await authHospedin(email, senha);
+        log('Token obtido (' + _hospToken.substring(0, 20) + '...)', 'ok');
+        setProgress(8);
+
+        log('Pre-carregando dados auxiliares (places, guests, channels)...', 'info');
+        _placesById = await buscarPlaces();
+        _channelsById = await buscarChannels();
+        log('Channels: ' + Object.keys(_channelsById).length, 'info');
+        _guestsById = await buscarGuests();
+        setProgress(20);
+
+        _hospReservas = await buscarReservasHospedin();
+        log('Total Hospedin: ' + _hospReservas.length + ' reservas', 'ok');
+        setProgress(60);
+
+        _supaReservas = await buscarReservasSupabase();
+        log('Total Supabase: ' + _supaReservas.length + ' reservas', 'ok');
+        setProgress(85);
+
+        log('Comparando os dois lados...', 'info');
+        _diff = compararReservas(_hospReservas, _supaReservas);
+        log('Iguais: ' + _diff.iguais.length, 'ok');
+        log('Divergentes: ' + _diff.divergentes.length, _diff.divergentes.length ? 'warn' : 'ok');
+        log('Faltando no Supabase: ' + _diff.faltando.length, _diff.faltando.length ? 'warn' : 'ok');
+        log('Só no Supabase: ' + _diff.extras.length, 'info');
+        setProgress(95);
+
+        renderRelatorio();
+        document.getElementById('relatorio').classList.remove('hidden');
+        setProgress(100);
+        log('Pronto. Veja o relatório abaixo.', 'ok');
+      } catch (e) {
+        log('ERRO: ' + e.message, 'err');
+        alert('Erro: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Conectar e conferir';
+      }
+    }
+  </script>
+</body>
+</html>

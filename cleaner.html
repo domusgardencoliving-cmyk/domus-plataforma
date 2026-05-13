@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domus Limpeza</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'domus-azul': '#1BA8B8',
+                        'domus-azul-escuro': '#0A6B75',
+                        'domus-azul-claro': '#4DC5D0',
+                        'domus-rosa': '#FF385C',
+                        'domus-texto': '#222222',
+                        'domus-texto-suave': '#717171',
+                        'domus-borda': '#EBEBEB',
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'serif': ['Instrument Serif', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .font-serif {
+            font-family: 'Instrument Serif', serif;
+        }
+
+        body {
+            background-color: #F9F9F9;
+            color: #222222;
+        }
+
+        .status-pendente {
+            background-color: #E8E8E8;
+            color: #717171;
+        }
+
+        .status-em_andamento {
+            background-color: #D1E7EB;
+            color: #0A6B75;
+        }
+
+        .status-concluida {
+            background-color: #D4EDDA;
+            color: #155724;
+        }
+
+        .card-expandivel {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .card-expandivel.expanded {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar {
+            background: linear-gradient(to right, #1BA8B8 0%, #4DC5D0 100%);
+            border-radius: 999px;
+            height: 6px;
+        }
+
+        .checkbox-custom {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #1BA8B8;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: white;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-custom:checked {
+            background-color: #1BA8B8;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-size: 16px 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .checkbox-custom:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(27, 168, 184, 0.1);
+        }
+
+        .blur-bg {
+            backdrop-filter: blur(4px);
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .emoji {
+            font-size: 1.5rem;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        textarea {
+            border: 1px solid #EBEBEB;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s ease;
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #1BA8B8;
+            box-shadow: 0 0 0 3px rgba(27, 168, 184, 0.1);
+        }
+
+        button {
+            transition: all 0.2s ease;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <!-- Script de login isolado (garante que funciona mesmo se o script principal quebrar) -->
+    <script>
+      (function() {
+        var SB_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+        var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+
+        // Toggle olhinho — sempre funciona
+        window.toggleSenhaCleaner = function(e) {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          var inp = document.getElementById('loginPassword');
+          var btn = document.getElementById('togglePassword');
+          if (!inp) return;
+          var visivel = inp.type === 'text';
+          inp.type = visivel ? 'password' : 'text';
+          if (btn) btn.textContent = visivel ? '👁' : '🙈';
+        };
+
+        // Login — usa Supabase JS lib carregado pelo CDN
+        window.fazerLoginCleaner = async function() {
+          var emailEl = document.getElementById('loginEmail');
+          var passEl = document.getElementById('loginPassword');
+          var errEl = document.getElementById('loginError');
+          var btnEl = document.getElementById('loginBtn');
+          if (!emailEl || !passEl) { alert('Erro: campos não encontrados'); return; }
+          if (errEl) errEl.classList.add('hidden');
+          if (btnEl) btnEl.disabled = true;
+          try {
+            // Usa o factory original (window._sbLib) se existe, senão tenta window.supabase
+            var lib = window._sbLib || window.supabase;
+            if (!lib || !lib.createClient) {
+              alert('Supabase não carregou. Recarrega a página.');
+              if (btnEl) btnEl.disabled = false;
+              return;
+            }
+            var sb = lib.createClient(SB_URL, SB_KEY);
+            var resp = await sb.rpc('verificar_cleaner_login', {
+              p_email: emailEl.value.trim(),
+              p_senha: passEl.value
+            });
+            if (resp.error) throw resp.error;
+            var d = Array.isArray(resp.data) ? resp.data[0] : resp.data;
+            if (!d || !d.ok) {
+              if (errEl) {
+                errEl.textContent = 'E-mail ou senha incorretos.';
+                errEl.classList.remove('hidden');
+              }
+              if (btnEl) btnEl.disabled = false;
+              return;
+            }
+            // Sessão local
+            localStorage.setItem('cleaner_session', JSON.stringify({
+              cleaner_id: d.cleaner_id,
+              cleaner_email: d.cleaner_email,
+              cleaner_nome: d.cleaner_nome
+            }));
+            // Mostrar tela principal
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainScreen').classList.remove('hidden');
+            // Tentar inicializar resto da tela (carregar tarefas)
+            try {
+              if (typeof loadData === 'function') loadData();
+              else if (typeof carregarTarefas === 'function') carregarTarefas();
+              else if (typeof init === 'function') init();
+            } catch(e) { console.warn('init falhou:', e); }
+            // Atualizar nome no header se existir
+            var headerEl = document.querySelector('#mainScreen h1');
+            if (headerEl) headerEl.textContent = 'Olá, ' + (d.cleaner_nome || 'Cleaner') + '!';
+            if (btnEl) btnEl.disabled = false;
+          } catch (err) {
+            console.error('Erro login:', err);
+            if (errEl) {
+              errEl.textContent = err.message || 'Erro ao fazer login. Tente novamente.';
+              errEl.classList.remove('hidden');
+            }
+            if (btnEl) btnEl.disabled = false;
+          }
+        };
+
+        // Auto-login se sessão salva
+        document.addEventListener('DOMContentLoaded', function() {
+          try {
+            var saved = localStorage.getItem('cleaner_session');
+            if (saved) {
+              var s = JSON.parse(saved);
+              if (s && s.cleaner_id) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainScreen').classList.remove('hidden');
+                var headerEl = document.querySelector('#mainScreen h1');
+                if (headerEl) headerEl.textContent = 'Olá, ' + (s.cleaner_nome || 'Cleaner') + '!';
+                try {
+                  if (typeof loadData === 'function') loadData();
+                  else if (typeof carregarTarefas === 'function') carregarTarefas();
+                } catch(e) {}
+              }
+            }
+          } catch(e) { console.warn('auto-login:', e); }
+        });
+      })();
+    </script>
+
+    <!-- Container Principal -->
+    <div id="app" class="min-h-screen bg-gray-50">
+        <!-- TELA DE LOGIN -->
+        <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+            <div class="w-full max-w-sm">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <h1 class="font-serif text-4xl font-bold text-domus-azul mb-2">Domus</h1>
+                    <p class="text-domus-texto-suave text-sm">Módulo de Limpeza</p>
+                </div>
+
+                <!-- Card de Login -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                    <h2 class="text-xl font-semibold text-domus-texto mb-6">Faça seu login</h2>
+
+                    <form id="loginForm" class="space-y-4" onsubmit="event.preventDefault(); window.fazerLoginCleaner && window.fazerLoginCleaner();">
+                        <!-- Email ou CPF -->
+                        <div>
+                            <label class="block text-sm font-medium text-domus-texto mb-2">Email ou CPF</label>
+                            <input
+                                type="text"
+                                id="loginEmail"
+                                placeholder="seu email ou CPF (só números)"
+                                autocomplete="username"
+                                inputmode="text"
+                                required
+                                class="w-full"
+                            >
+                        </div>
+
+                        <!-- Senha -->
+                        <div>
+                            <label class="block text-sm font-medium text-domus-texto mb-2">Senha</label>
+                            <div class="relative">
+                                <input
+                                    type="password"
+                                    id="loginPassword"
+                                    placeholder="••••••••"
+                                    required
+                                    class="w-full pr-10"
+                                >
+                                <button
+                                    type="button"
+                                    id="togglePassword"
+                                    onclick="window.toggleSenhaCleaner && window.toggleSenhaCleaner(event)"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-domus-texto-suave hover:text-domus-texto"
+                                >
+                                    👁
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Aviso de Erro -->
+                        <div id="loginError" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700"></div>
+
+                        <!-- Botão de Login -->
+                        <button
+                            type="submit"
+                            id="loginBtn"
+                            class="w-full bg-domus-azul hover:bg-domus-azul-escuro text-white font-semibold py-3 rounded-lg mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Entrar
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Footer -->
+                <p class="text-center text-xs text-domus-texto-suave">
+                    Domus Garden · Vila Olímpia, SP
+                </p>
+            </div>
+        </div>
+
+        <!-- PAINEL DE LIMPEZA (após login) -->
+        <div id="mainScreen" class="hidden pb-20">
+            <!-- Header -->
+            <header class="bg-white border-b border-domus-borda sticky top-0 z-40">
+                <div class="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
+                    <div>
+                        <h1 class="font-serif text-2xl font-bold text-domus-azul">Bom dia!</h1>
+                        <p class="text-sm text-domus-texto-suave" id="headerDate"></p>
+                    </div>
+                    <button
+                        id="logoutBtn"
+                        type="button"
+                        onclick="window.logout && window.logout()"
+                        title="Sair"
+                        class="text-domus-texto-suave hover:text-domus-texto text-2xl cursor-pointer p-2 -m-2 relative z-50"
+                        style="pointer-events: auto;"
+                    >
+                        🚪
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="max-w-lg mx-auto px-4 py-6">
+                <!-- KPIs -->
+                <div class="grid grid-cols-3 gap-3 mb-8">
+                    <div class="bg-white rounded-2xl p-4 text-center shadow-sm border border-domus-borda">
+                        <div class="text-2xl font-bold text-domus-azul" id="kpiCheckout">0</div>
+                        <div class="text-xs text-domus-texto-suave mt-1">Check-outs</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-4 text-center shadow-sm border border-domus-borda">
+                        <div class="text-2xl font-bold text-domus-azul" id="kpiPendentes">0</div>
+                        <div class="text-xs text-domus-texto-suave mt-1">Pendentes</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-4 text-center shadow-sm border border-domus-borda">
+                        <div class="text-2xl font-bold text-domus-azul" id="kpiConcluidas">0</div>
+                        <div class="text-xs text-domus-texto-suave mt-1">Finalizadas</div>
+                    </div>
+                </div>
+
+                <!-- Seção: Check-outs de Hoje -->
+                <section class="mb-8">
+                    <h2 class="text-lg font-semibold text-domus-texto mb-4">Check-outs de Hoje</h2>
+                    <div id="checkoutsContainer" class="space-y-3">
+                        <!-- cards dinâmicos -->
+                    </div>
+                </section>
+
+                <!-- Seção: Tarefas de Limpeza -->
+                <section>
+                    <h2 class="text-lg font-semibold text-domus-texto mb-4">Tarefas de Limpeza</h2>
+                    <div id="tarefasContainer" class="space-y-3">
+                        <!-- cards dinâmicos -->
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal de Tarefa Expandida -->
+    <div id="taskModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="blur-bg absolute inset-0" id="modalBackdrop"></div>
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto relative z-10">
+            <div class="sticky top-0 bg-white border-b border-domus-borda p-4 flex items-center justify-between">
+                <h3 class="font-semibold text-domus-texto" id="modalTitle"></h3>
+                <button
+                    id="closeModalBtn"
+                    class="text-domus-texto-suave hover:text-domus-texto text-xl"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <div class="p-4 space-y-4">
+                <!-- Checklist -->
+                <div id="checklistContainer" class="space-y-3">
+                    <!-- items dinâmicos -->
+                </div>
+
+                <!-- Fichas OMO (tarefa especial) -->
+                <div id="fichasOmoContainer" class="hidden space-y-3">
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <p class="text-sm font-semibold text-domus-azul-escuro mb-1">🧺 Quantas fichas há na gaveta?</p>
+                        <p class="text-xs text-domus-texto-suave">Toque no número correspondente</p>
+                    </div>
+                    <div class="grid grid-cols-5 gap-2" id="fichasGrid">
+                        <!-- botões 1-10 dinâmicos -->
+                    </div>
+                </div>
+
+                <!-- Botão Iniciar (se não começou) -->
+                <button
+                    id="startTaskBtn"
+                    class="hidden w-full bg-domus-azul hover:bg-domus-azul-escuro text-white font-semibold py-3 rounded-lg"
+                >
+                    Iniciar Tarefa
+                </button>
+
+                <!-- Progresso -->
+                <div id="progressContainer" class="hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-domus-texto-suave">Progresso</span>
+                        <span class="text-sm font-semibold text-domus-azul" id="progressText">0/0</span>
+                    </div>
+                    <div class="bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div id="progressBar" class="progress-bar h-full w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div>
+                    <label class="block text-sm font-medium text-domus-texto mb-2">Observações</label>
+                    <textarea
+                        id="taskObservacoes"
+                        placeholder="Algo para anotação?"
+                        class="w-full min-h-20 resize-none"
+                    ></textarea>
+                </div>
+
+                <!-- Fotos -->
+                <div>
+                    <label class="block text-sm font-medium text-domus-texto mb-2">Fotos</label>
+                    <div id="fotosContainer" class="grid grid-cols-3 gap-2 mb-2">
+                        <!-- thumbnails dinâmicos -->
+                    </div>
+                    <input type="file" id="fotoInput" accept="image/*" capture="environment" multiple class="hidden">
+                    <button type="button" id="btnAdicionarFoto"
+                        class="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-domus-texto font-medium py-3 rounded-lg border-2 border-dashed border-gray-300">
+                        <span class="text-xl">📷</span>
+                        <span id="btnAdicionarFotoLabel">Adicionar foto</span>
+                    </button>
+                </div>
+
+                <!-- Botão Finalizar -->
+                <button
+                    id="completeTaskBtn"
+                    class="hidden w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg"
+                >
+                    ✓ Finalizar Tarefa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURAÇÃO SUPABASE
+        // ============================================
+        const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+
+        // IMPORTANTE: window.supabase é o factory do CDN (tem createClient).
+        // Não podemos declarar `const supabase = ...` (conflito de redeclaração lexical).
+        // Salvamos o factory em window._sbLib pra que o script de login isolado continue funcionando,
+        // e sobrescrevemos window.supabase com o CLIENTE (assim `supabase.from(...)` funciona aqui).
+        window._sbLib = window.supabase;
+        window.supabase = window._sbLib.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ============================================
+        // ESTADO GLOBAL
+        // ============================================
+        let currentUser = null;
+        let currentUserProfile = null;
+        let tarefas = [];
+        let checkouts = [];
+        let tarefaAtual = null;
+
+        // ============================================
+        // SENHAS DAS PORTAS (fechadura eletrônica)
+        // Atualize aqui quando trocar uma senha
+        // tecla: '✓' = confirma com check, '#' = confirma com #
+        // ============================================
+        const SENHAS_PORTAS = {
+            'studio 1':         { senha: '2405', tecla: '✓', confirmada: true },
+            'studio 2':         { senha: '1501', tecla: '✓', confirmada: true },
+            'individual 3':     { senha: '2302', tecla: '✓', confirmada: true },
+            'individual 4':     { senha: '1007', tecla: '✓', confirmada: true },
+            'individual 5':     { senha: '1103', tecla: '✓', confirmada: true },
+            'hostel 6':         { senha: '0911', tecla: '✓', confirmada: true },
+            'hostel 7':         { senha: '1234', tecla: '#', confirmada: true },
+            'casa das meninas': { senha: '1403', tecla: '✓', confirmada: true }
+        };
+
+        // Acha a senha da porta com base no nome do ambiente (matching flexível)
+        function obterSenhaPorta(nomeAmbiente) {
+            if (!nomeAmbiente) return null;
+            const lower = nomeAmbiente.toLowerCase();
+            for (const [key, value] of Object.entries(SENHAS_PORTAS)) {
+                if (lower.includes(key)) return value;
+            }
+            return null;
+        }
+
+        // ============================================
+        // ELEMENTOS DO DOM
+        // ============================================
+        const loginScreen = document.getElementById('loginScreen');
+        const mainScreen = document.getElementById('mainScreen');
+        const loginForm = document.getElementById('loginForm');
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const togglePassword = document.getElementById('togglePassword');
+        const loginError = document.getElementById('loginError');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const headerDate = document.getElementById('headerDate');
+        const taskModal = document.getElementById('taskModal');
+        const modalBackdrop = document.getElementById('modalBackdrop');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const checkoutsContainer = document.getElementById('checkoutsContainer');
+        const tarefasContainer = document.getElementById('tarefasContainer');
+        const kpiCheckout = document.getElementById('kpiCheckout');
+        const kpiPendentes = document.getElementById('kpiPendentes');
+        const kpiConcluidas = document.getElementById('kpiConcluidas');
+
+        // ============================================
+        // FUNÇÕES AUXILIARES
+        // ============================================
+
+        function showError(msg) {
+            loginError.textContent = msg;
+            loginError.classList.remove('hidden');
+        }
+
+        function hideError() {
+            loginError.classList.add('hidden');
+        }
+
+        function formatDate(date) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(date).toLocaleDateString('pt-BR', options);
+        }
+
+        function getEmoji(tipo) {
+            const emojis = {
+                'quarto_individual': '🛏️',
+                'quarto_compartilhado': '🛏️',
+                'banheiro': '🚿',
+                'cozinha': '🍳',
+                'area_comum': '🛋️',
+                'lavanderia': '👕'
+            };
+            return emojis[tipo] || '📦';
+        }
+
+        function getTodayDateString() {
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        }
+
+        // ============================================
+        // LOGIN & AUTENTICAÇÃO
+        // ============================================
+
+        // Sistema de login próprio (sem Supabase Auth)
+        async function initializeAuth() {
+            try {
+                const stored = localStorage.getItem('cleaner_session');
+                if (stored) {
+                    const session = JSON.parse(stored);
+                    if (session && session.cleaner_id) {
+                        currentUser = { id: session.cleaner_id, email: session.cleaner_email };
+                        currentUserProfile = { id: session.cleaner_id, nome: session.cleaner_nome, perfil: 'limpeza' };
+                        showMainScreen();
+                    }
+                }
+            } catch (err) {
+                console.error('Erro ao restaurar sessão:', err);
+                localStorage.removeItem('cleaner_session');
+            }
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+            loginBtn.disabled = true;
+
+            try {
+                const { data, error } = await supabase.rpc('verificar_cleaner_login', {
+                    p_email: loginEmail.value.trim(),
+                    p_senha: loginPassword.value
+                });
+
+                if (error) throw error;
+
+                const result = Array.isArray(data) ? data[0] : data;
+
+                if (!result || !result.ok) {
+                    showError('E-mail ou senha incorretos.');
+                    return;
+                }
+
+                // Salvar sessão local
+                const sessionData = {
+                    cleaner_id: result.cleaner_id,
+                    cleaner_email: result.cleaner_email,
+                    cleaner_nome: result.cleaner_nome
+                };
+                localStorage.setItem('cleaner_session', JSON.stringify(sessionData));
+
+                currentUser = { id: result.cleaner_id, email: result.cleaner_email };
+                currentUserProfile = { id: result.cleaner_id, nome: result.cleaner_nome, perfil: 'limpeza' };
+
+                showMainScreen();
+                loginForm.reset();
+            } catch (err) {
+                showError(err.message || 'Erro ao fazer login. Tente novamente.');
+                console.error('Login error:', err);
+            } finally {
+                loginBtn.disabled = false;
+            }
+        });
+
+        function _toggleSenhaCleaner(e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            const visivel = loginPassword.type === 'text';
+            loginPassword.type = visivel ? 'password' : 'text';
+            togglePassword.textContent = visivel ? '👁' : '🙈';
+        }
+        togglePassword.addEventListener('click', _toggleSenhaCleaner);
+        togglePassword.addEventListener('touchstart', _toggleSenhaCleaner, { passive: false });
+
+        async function logout() {
+            try {
+                localStorage.removeItem('cleaner_session');
+                currentUser = null;
+                currentUserProfile = null;
+                showLoginScreen();
+            } catch (err) {
+                console.error('Erro ao fazer logout:', err);
+                // Plano B: recarregar a página força a volta pra tela de login
+                location.reload();
+            }
+        }
+
+        // Expor globalmente pra garantir que o onclick="window.logout()" funcione
+        window.logout = logout;
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', logout);
+            logoutBtn.addEventListener('touchstart', (e) => { e.preventDefault(); logout(); }, { passive: false });
+        }
+
+        // ============================================
+        // NAVEGAÇÃO DE TELAS
+        // ============================================
+
+        function showLoginScreen() {
+            loginScreen.classList.remove('hidden');
+            mainScreen.classList.add('hidden');
+        }
+
+        function showMainScreen() {
+            loginScreen.classList.add('hidden');
+            mainScreen.classList.remove('hidden');
+            // Atualiza saudação com nome
+            const nome = currentUserProfile?.nome || 'Equipe Domus';
+            const h1 = document.querySelector('#mainScreen h1');
+            if (h1) h1.textContent = 'Olá, ' + nome + '!';
+            updateHeader();
+            loadTarefasAndCheckouts();
+        }
+
+        function updateHeader() {
+            headerDate.textContent = formatDate(new Date());
+        }
+
+        // ============================================
+        // CARREGAR DADOS DO SUPABASE
+        // ============================================
+
+        async function loadTarefasAndCheckouts() {
+            console.log('[CLEANER] Iniciando loadTarefasAndCheckouts...');
+            try {
+                const today = getTodayDateString();
+                console.log('[CLEANER] Hoje é:', today);
+
+                // PRIMEIRO: tentar gerar as tarefas do dia (caso o cron das 7h ainda não rodou)
+                try {
+                    const { data: genData, error: genErr } = await supabase.rpc('gerar_tarefas_limpeza_dia', { p_data: today });
+                    if (genErr) console.warn('[CLEANER] Falha ao gerar tarefas do dia:', genErr);
+                    else console.log('[CLEANER] Geração:', genData);
+                } catch (e) {
+                    console.warn('[CLEANER] Erro ao chamar gerar_tarefas_limpeza_dia:', e);
+                }
+
+                const SELECT_FIELDS = `
+                    id, data, ambiente_id, reserva_id, tipo_tarefa, status,
+                    checklist, arrumadeira_id, observacoes, iniciado_em, concluido_em,
+                    fotos, fichas_omo,
+                    ambientes (id, nome, tipo, emoji)
+                `;
+
+                // Query 1: TUDO pendente/em andamento (de qualquer data <= hoje)
+                const { data: pendentesData, error: pendErr } = await supabase
+                    .from('tarefas_limpeza')
+                    .select(SELECT_FIELDS)
+                    .lte('data', today)
+                    .neq('status', 'concluida')
+                    .order('data', { ascending: true });
+
+                if (pendErr) {
+                    console.error('[CLEANER] Erro ao buscar pendentes:', pendErr);
+                }
+                const pendentes = pendentesData || [];
+
+                // Query 2: CONCLUÍDAS de hoje (só pra mostrar no KPI)
+                const { data: feitasData, error: feitasErr } = await supabase
+                    .from('tarefas_limpeza')
+                    .select(SELECT_FIELDS)
+                    .eq('data', today)
+                    .eq('status', 'concluida');
+
+                if (feitasErr) {
+                    console.error('[CLEANER] Erro ao buscar concluídas:', feitasErr);
+                }
+                const feitas = feitasData || [];
+
+                // Merge sem duplicatas
+                const seen = new Set();
+                tarefas = [...pendentes, ...feitas].filter(t => {
+                    if (seen.has(t.id)) return false;
+                    seen.add(t.id);
+                    return true;
+                });
+                console.log('[CLEANER] Total de tarefas:', tarefas.length);
+
+                // Buscar checkouts de HOJE
+                const { data: checkoutsData, error: coErr } = await supabase
+                    .from('reservas')
+                    .select('id, hospede_nome, quarto, checkout, observacoes_internas, status')
+                    .eq('checkout', today);
+
+                if (coErr) console.error('[CLEANER] Erro ao buscar checkouts:', coErr);
+                checkouts = checkoutsData || [];
+                console.log('[CLEANER] Total de checkouts hoje:', checkouts.length);
+
+                // Buscar check-INS de hoje pra marcar quartos urgentes
+                const { data: checkinsData } = await supabase
+                    .from('reservas')
+                    .select('cama, hospede_nome')
+                    .eq('checkin', today)
+                    .not('status', 'in', '(cancelada,cancelado)');
+                const checkinsHoje = (checkinsData || []).filter(r => r.cama && r.cama.trim());
+                // Marcar cada tarefa se o ambiente dela é destino de check-in hoje
+                tarefas.forEach(t => {
+                    if (!t.ambientes || !t.ambientes.nome) { t._checkinHoje = null; return; }
+                    const nomeAmb = t.ambientes.nome.toLowerCase();
+                    const match = checkinsHoje.find(r => {
+                        const cama = r.cama.toLowerCase();
+                        return cama === nomeAmb || cama === nomeAmb.replace(/\s+/g, '_') || nomeAmb === cama.replace(/_/g, ' ');
+                    });
+                    t._checkinHoje = match ? match.hospede_nome : null;
+                });
+                console.log('[CLEANER] Check-ins hoje marcados:', tarefas.filter(t => t._checkinHoje).length);
+
+                // Se NÃO tem nenhuma tarefa de hoje, criar as de fallback (rotina)
+                const temTarefaHoje = tarefas.some(t => t.data === today);
+                if (!temTarefaHoje) {
+                    console.log('[CLEANER] Sem tarefas de hoje - criando fallback');
+                    await createFallbackTarefas();
+                }
+
+                renderTarefas();
+                renderCheckouts();
+                updateKPIs();
+                console.log('[CLEANER] Render concluído');
+            } catch (err) {
+                console.error('[CLEANER] Erro geral em loadTarefasAndCheckouts:', err);
+                // Mesmo com erro, tenta renderizar o que tem
+                try { renderTarefas(); renderCheckouts(); updateKPIs(); } catch(e) {}
+            }
+        }
+
+        async function createFallbackTarefas() {
+            const fallbackTarefas = [
+                {
+                    nome: 'Cozinha',
+                    tipo: 'cozinha',
+                    itens: ['Louça', 'Bancada / Fogão / Pia', 'Mesa', 'Chão', 'Lixo', 'Produtos de limpeza']
+                },
+                {
+                    nome: 'Área Comum',
+                    tipo: 'area_comum',
+                    itens: ['Sofás', 'Mesas', 'Aspirar / Varrer', 'Lixeiras']
+                },
+                {
+                    nome: 'FICHAS MÁQUINA',
+                    tipo: 'lavanderia',
+                    itens: ['Organizar máquinas', 'Limpar superfícies', 'Varrer', 'Repor produto']
+                },
+                {
+                    nome: 'Banheiro Social',
+                    tipo: 'banheiro',
+                    itens: ['Pia / Espelho', 'Vaso', 'Chão', 'Repor papel / Sabonete', 'Lixo']
+                }
+            ];
+
+            for (const fallback of fallbackTarefas) {
+                const checklist = fallback.itens.map(item => ({
+                    texto: item,
+                    feito: false
+                }));
+
+                try {
+                    const { error } = await supabase
+                        .from('tarefas_limpeza')
+                        .insert([
+                            {
+                                data: getTodayDateString(),
+                                tipo_tarefa: 'rotina',
+                                status: 'pendente',
+                                checklist: checklist,
+                                observacoes: null
+                            }
+                        ]);
+
+                    if (error) throw error;
+                } catch (err) {
+                    console.error(`Erro ao criar tarefa de fallback ${fallback.nome}:`, err);
+                }
+            }
+
+            // Recarregar após criar
+            const { data: tarefasData } = await supabase
+                .from('tarefas_limpeza')
+                .select('*')
+                .eq('data', getTodayDateString());
+
+            tarefas = tarefasData || [];
+        }
+
+        // ============================================
+        // RENDERIZAR INTERFACE
+        // ============================================
+
+        function renderCheckouts() {
+            checkoutsContainer.innerHTML = '';
+
+            if (checkouts.length === 0) {
+                checkoutsContainer.innerHTML = '<p class="text-center text-domus-texto-suave py-6">Nenhum check-out hoje</p>';
+                return;
+            }
+
+            checkouts.forEach(checkout => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl shadow-sm border border-domus-borda p-4';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="font-semibold text-domus-texto">${checkout.hospede_nome || 'Hóspede'}</h3>
+                            <p class="text-sm text-domus-texto-suave">Quarto ${checkout.quarto}</p>
+                            ${checkout.observacoes_internas ? `<p class="text-xs text-domus-rosa mt-2">📌 ${checkout.observacoes_internas}</p>` : ''}
+                        </div>
+                        <span class="text-2xl">🔑</span>
+                    </div>
+                `;
+                checkoutsContainer.appendChild(card);
+            });
+        }
+
+        function renderTarefas() {
+            tarefasContainer.innerHTML = '';
+
+            if (tarefas.length === 0) {
+                tarefasContainer.innerHTML = '<p class="text-center text-domus-texto-suave py-6">Nenhuma tarefa por enquanto</p>';
+                return;
+            }
+
+            // Ordenar: prioridade > check-in hoje > quartos > rotinas; atrasadas primeiro; finalizadas no fim
+            const hoje = getTodayDateString();
+            const tarefasOrdenadas = [...tarefas].sort((a, b) => {
+                // 1. Finalizadas vão pro fim
+                if (a.status === 'concluida' && b.status !== 'concluida') return 1;
+                if (b.status === 'concluida' && a.status !== 'concluida') return -1;
+                // 2. Prioridade vem PRIMEIRO entre as pendentes
+                const aPri = a.prioridade ? 1 : 0;
+                const bPri = b.prioridade ? 1 : 0;
+                if (aPri !== bPri) return bPri - aPri;
+                // 3. Check-in hoje vem antes (quartos urgentes)
+                const aChk = a._checkinHoje ? 1 : 0;
+                const bChk = b._checkinHoje ? 1 : 0;
+                if (aChk !== bChk) return bChk - aChk;
+                // 4. Quartos antes de rotinas
+                const aRotina = a.tipo_tarefa === 'rotina' ? 1 : 0;
+                const bRotina = b.tipo_tarefa === 'rotina' ? 1 : 0;
+                if (aRotina !== bRotina) return aRotina - bRotina;
+                // 5. Por data (mais antigas atrasadas primeiro)
+                return (a.data || '').localeCompare(b.data || '');
+            });
+
+            tarefasOrdenadas.forEach(tarefa => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl shadow-sm border p-4 card-expandivel cursor-pointer hover:shadow-md transition-shadow ' + (tarefa.prioridade ? 'border-yellow-400 border-2 ring-2 ring-yellow-100' : 'border-domus-borda');
+
+                const ambienteName = tarefa.ambientes?.nome || `Tarefa ${tarefa.id.slice(0, 8)}`;
+                const tipoAmbiente = tarefa.ambientes?.tipo || tarefa.tipo_tarefa;
+                const emoji = getEmoji(tipoAmbiente);
+                const statusClass = `status-${tarefa.status}`;
+
+                // Calcular progresso
+                const checklist = Array.isArray(tarefa.checklist) ? tarefa.checklist : [];
+                const completed = checklist.filter(item => item.feito).length;
+                const total = checklist.length;
+                const percentage = total > 0 ? (completed / total) * 100 : 0;
+
+                // Badge "atrasada" se data é anterior a hoje e não está concluída
+                const ehAtrasada = tarefa.data && tarefa.data < hoje && tarefa.status !== 'concluida';
+                const badgeAtrasada = ehAtrasada ? `
+                    <span class="bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ml-1">
+                        Atrasada (${new Date(tarefa.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})
+                    </span>
+                ` : '';
+                // Badge prioridade
+                const badgePrioridade = tarefa.prioridade ? `
+                    <span class="bg-yellow-100 text-yellow-800 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ml-1">
+                        ⭐ Prioridade
+                    </span>
+                ` : '';
+                // Badge "Check-in hoje" — quarto urgente, vai chegar hóspede
+                const badgeCheckinHoje = tarefa._checkinHoje ? `
+                    <span class="bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ml-1">
+                        🚪 Check-in hoje
+                    </span>
+                ` : '';
+
+                // Buscar senha da porta deste ambiente (se existir)
+                const portaInfo = obterSenhaPorta(ambienteName);
+                const blocoSenha = portaInfo ? `
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 my-2 flex items-center justify-between gap-2" onclick="event.stopPropagation()">
+                        <div class="flex items-center gap-2 flex-1 min-w-0">
+                            <span class="text-base">🔐</span>
+                            <div class="min-w-0">
+                                <p class="text-[9px] uppercase tracking-wider text-amber-700 font-semibold leading-none">Senha da porta</p>
+                                <p class="font-mono font-bold text-amber-900 text-base leading-tight">${portaInfo.senha} <span class="text-amber-600">${portaInfo.tecla}</span></p>
+                            </div>
+                        </div>
+                        ${!portaInfo.confirmada ? '<span class="text-[9px] text-amber-700 italic flex-shrink-0">a confirmar</span>' : ''}
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="emoji text-2xl">${emoji}</span>
+                            <div>
+                                <h3 class="font-semibold text-domus-texto">${ambienteName}${badgePrioridade}${badgeCheckinHoje}${badgeAtrasada}</h3>
+                                <p class="text-xs text-domus-texto-suave">${checklist.length} itens</p>
+                            </div>
+                        </div>
+                        <span class="${statusClass} text-xs font-semibold px-3 py-1 rounded-full">
+                            ${tarefa.status === 'pendente' ? 'Pendente' : tarefa.status === 'em_andamento' ? 'Em andamento' : 'Finalizada'}
+                        </span>
+                    </div>
+                    ${blocoSenha}
+                    <div class="bg-gray-100 rounded-full h-2 overflow-hidden">
+                        <div class="progress-bar h-full transition-all duration-300" style="width: ${percentage}%"></div>
+                    </div>
+                    <p class="text-xs text-domus-texto-suave mt-2">${completed} de ${total} itens</p>
+                `;
+
+                card.addEventListener('click', () => openTaskModal(tarefa));
+                tarefasContainer.appendChild(card);
+            });
+        }
+
+        function updateKPIs() {
+            const hoje = getTodayDateString();
+            // Pendentes = SÓ QUARTOS pendentes (rotinas não contam pra não assustar Vivian)
+            const pendentes = tarefas.filter(t => t.status !== 'concluida' && t.tipo_tarefa !== 'rotina').length;
+            // Finalizadas = SÓ QUARTOS finalizados de hoje
+            const concluidas = tarefas.filter(t => t.status === 'concluida' && t.data === hoje && t.tipo_tarefa !== 'rotina').length;
+
+            kpiCheckout.textContent = checkouts.length;
+            kpiPendentes.textContent = pendentes;
+            kpiConcluidas.textContent = concluidas;
+        }
+
+        // ============================================
+        // MODAL DE TAREFA
+        // ============================================
+
+        function openTaskModal(tarefa) {
+            tarefaAtual = tarefa;
+            const ambienteName = tarefa.ambientes?.nome || `Tarefa`;
+
+            const isFichasOmo = tarefa.tipo_tarefa === 'fichas_omo';
+            document.getElementById('modalTitle').textContent = isFichasOmo ? '🧺 FICHAS MÁQUINA (cozinha das meninas)' : ambienteName;
+
+            const checklistContainer = document.getElementById('checklistContainer');
+            const fichasOmoContainer = document.getElementById('fichasOmoContainer');
+            checklistContainer.innerHTML = '';
+
+            // Tarefa especial de fichas OMO: renderiza grid em vez de checklist
+            if (isFichasOmo) {
+                checklistContainer.classList.add('hidden');
+                fichasOmoContainer.classList.remove('hidden');
+                renderFichasGrid(tarefa.fichas_omo);
+            } else {
+                checklistContainer.classList.remove('hidden');
+                fichasOmoContainer.classList.add('hidden');
+            }
+
+            const checklist = Array.isArray(tarefa.checklist) ? tarefa.checklist : [];
+
+            checklist.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors';
+                itemDiv.innerHTML = `
+                    <input type="checkbox" class="checkbox-custom mt-0.5 checklist-item" data-index="${index}" ${item.feito ? 'checked' : ''} ${tarefa.status === 'pendente' && !tarefa.iniciado_em ? 'disabled' : ''}>
+                    <label class="flex-1 text-sm text-domus-texto cursor-pointer select-none ${item.feito ? 'line-through text-domus-texto-suave' : ''}">${item.texto}</label>
+                `;
+                const checkbox = itemDiv.querySelector('.checklist-item');
+                checkbox.addEventListener('change', () => handleCheckboxChange(index));
+                checklistContainer.appendChild(itemDiv);
+            });
+
+            const startBtn = document.getElementById('startTaskBtn');
+            const completeBtn = document.getElementById('completeTaskBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const taskObservacoes = document.getElementById('taskObservacoes');
+
+            if (tarefa.status === 'pendente') {
+                startBtn.classList.remove('hidden');
+                completeBtn.classList.add('hidden');
+                progressContainer.classList.add('hidden');
+            } else if (tarefa.status === 'em_andamento') {
+                startBtn.classList.add('hidden');
+                completeBtn.classList.remove('hidden');
+                progressContainer.classList.remove('hidden');
+                updateProgress();
+            } else {
+                startBtn.classList.add('hidden');
+                completeBtn.classList.add('hidden');
+                progressContainer.classList.remove('hidden');
+                document.querySelectorAll('.checklist-item').forEach(cb => cb.disabled = true);
+                updateProgress();
+            }
+
+            taskObservacoes.value = tarefa.observacoes || '';
+            renderFotos();
+            taskModal.classList.remove('hidden');
+        }
+
+        function closeTaskModal() {
+            taskModal.classList.add('hidden');
+            tarefaAtual = null;
+        }
+
+        function renderFichasGrid(selecionado) {
+            const grid = document.getElementById('fichasGrid');
+            if (!grid || !tarefaAtual) return;
+            grid.innerHTML = '';
+            const podeEditar = tarefaAtual.status === 'em_andamento';
+            for (let i = 1; i <= 10; i++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = i;
+                const ativo = i === selecionado;
+                btn.className = 'aspect-square rounded-xl border-2 text-2xl font-bold transition ' +
+                    (ativo
+                        ? 'border-domus-azul bg-domus-azul text-white shadow-md'
+                        : 'border-gray-300 bg-white text-domus-texto hover:border-domus-azul');
+                if (!podeEditar && tarefaAtual.status === 'pendente' && !tarefaAtual.iniciado_em) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+                btn.addEventListener('click', () => selecionarFichasOmo(i));
+                grid.appendChild(btn);
+            }
+        }
+
+        async function selecionarFichasOmo(numero) {
+            if (!tarefaAtual) return;
+            if (tarefaAtual.status === 'pendente' && !tarefaAtual.iniciado_em) {
+                alert('Toque em "Iniciar Tarefa" antes de selecionar.');
+                return;
+            }
+            tarefaAtual.fichas_omo = numero;
+            renderFichasGrid(numero);
+            try {
+                const { error } = await supabase
+                    .from('tarefas_limpeza')
+                    .update({ fichas_omo: numero })
+                    .eq('id', tarefaAtual.id);
+                if (error) throw error;
+            } catch (err) {
+                console.error('Erro ao salvar fichas:', err);
+            }
+        }
+
+        function handleCheckboxChange(index) {
+            const checkbox = document.querySelector(`[data-index="${index}"]`);
+            if (!checkbox || !tarefaAtual) return;
+            tarefaAtual.checklist[index].feito = checkbox.checked;
+            const label = checkbox.nextElementSibling;
+            if (checkbox.checked) {
+                label.classList.add('line-through', 'text-domus-texto-suave');
+            } else {
+                label.classList.remove('line-through', 'text-domus-texto-suave');
+            }
+            updateProgress();
+            saveTarefaChanges();
+        }
+
+        function updateProgress() {
+            const checklist = (tarefaAtual && tarefaAtual.checklist) || [];
+            const completed = checklist.filter(item => item.feito).length;
+            const total = checklist.length;
+            const percentage = total > 0 ? (completed / total) * 100 : 0;
+            const bar = document.getElementById('progressBar');
+            const txt = document.getElementById('progressText');
+            if (bar) bar.style.width = percentage + '%';
+            if (txt) txt.textContent = `${completed}/${total}`;
+        }
+
+        async function saveTarefaChanges() {
+            if (!tarefaAtual) return;
+            try {
+                const obs = document.getElementById('taskObservacoes')?.value || '';
+                const { error } = await supabase
+                    .from('tarefas_limpeza')
+                    .update({ checklist: tarefaAtual.checklist, observacoes: obs })
+                    .eq('id', tarefaAtual.id);
+                if (error) throw error;
+            } catch (err) {
+                console.error('Erro ao salvar tarefa:', err);
+            }
+        }
+        // BOTÃO: COMEÇAR LIMPEZA
+        document.getElementById('startTaskBtn').addEventListener('click', async () => {
+            if (!tarefaAtual) return;
+            try {
+                const agora = new Date().toISOString();
+                const { error } = await supabase
+                    .from('tarefas_limpeza')
+                    .update({
+                        status: 'em_andamento',
+                        iniciado_em: agora,
+                        arrumadeira_id: currentUser?.id || null
+                    })
+                    .eq('id', tarefaAtual.id);
+                if (error) throw error;
+
+                tarefaAtual.status = 'em_andamento';
+                tarefaAtual.iniciado_em = agora;
+
+                document.getElementById('startTaskBtn').classList.add('hidden');
+                document.getElementById('completeTaskBtn').classList.remove('hidden');
+                document.getElementById('progressContainer').classList.remove('hidden');
+                document.querySelectorAll('.checklist-item').forEach(cb => cb.disabled = false);
+                if (tarefaAtual.tipo_tarefa === 'fichas_omo') renderFichasGrid(tarefaAtual.fichas_omo);
+                updateProgress();
+
+                await loadTarefasAndCheckouts();
+                const recarregada = tarefas.find(t => t.id === tarefaAtual.id);
+                if (recarregada) tarefaAtual = recarregada;
+            } catch (err) {
+                console.error('Erro ao começar limpeza:', err);
+                alert('Erro ao começar limpeza:\n\n' + (err.message || JSON.stringify(err)) + '\n\n(manda print pra Gabi resolver)');
+            }
+        });
+
+        // BOTÃO: CONCLUIR LIMPEZA
+        document.getElementById('completeTaskBtn').addEventListener('click', async () => {
+            if (!tarefaAtual) return;
+            // Tarefa especial fichas OMO: exige número selecionado
+            if (tarefaAtual.tipo_tarefa === 'fichas_omo') {
+                if (!tarefaAtual.fichas_omo || tarefaAtual.fichas_omo < 1 || tarefaAtual.fichas_omo > 10) {
+                    alert('Selecione quantas fichas há na gaveta (1 a 10) antes de finalizar.');
+                    return;
+                }
+            } else {
+                const checklist = tarefaAtual.checklist || [];
+                const pendentes = checklist.filter(i => !i.feito).length;
+                if (pendentes > 0) {
+                    const ok = confirm('Ainda há ' + pendentes + ' ' + (pendentes === 1 ? 'item pendente' : 'itens pendentes') + '. Finalizar mesmo assim?');
+                    if (!ok) return;
+                }
+            }
+            try {
+                const agora = new Date().toISOString();
+                const obs = document.getElementById('taskObservacoes')?.value || '';
+                const { error } = await supabase
+                    .from('tarefas_limpeza')
+                    .update({
+                        status: 'concluida',
+                        concluido_em: agora,
+                        checklist: tarefaAtual.checklist,
+                        observacoes: obs
+                    })
+                    .eq('id', tarefaAtual.id);
+                if (error) throw error;
+
+                tarefaAtual.status = 'concluida';
+                tarefaAtual.concluido_em = agora;
+
+                closeTaskModal();
+                await loadTarefasAndCheckouts();
+                mostrarToast('Limpeza concluida! Quarto pronto.');
+            } catch (err) {
+                console.error('Erro ao concluir limpeza:', err);
+                alert('Erro ao concluir limpeza:\n\n' + (err.message || JSON.stringify(err)) + '\n\n(manda print pra Gabi resolver)');
+            }
+        });
+
+        // FECHAR MODAL
+        document.getElementById('closeModalBtn')?.addEventListener('click', closeTaskModal);
+        if (taskModal) taskModal.addEventListener('click', (e) => { if (e.target === taskModal) closeTaskModal(); });
+
+        // SALVAR OBSERVAÇÕES (no blur)
+        document.getElementById('taskObservacoes')?.addEventListener('blur', () => {
+            if (tarefaAtual && tarefaAtual.status === 'em_andamento') saveTarefaChanges();
+        });
+
+        // TOAST DE FEEDBACK
+        function mostrarToast(mensagem) {
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#27AE60;color:white;padding:14px 24px;border-radius:999px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:9999;font-size:15px;';
+            toast.textContent = mensagem;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+
+        // ============================================
+        // FOTOS DA TAREFA (upload pro Supabase Storage)
+        // ============================================
+        function renderFotos() {
+            const container = document.getElementById('fotosContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            const fotos = (tarefaAtual && Array.isArray(tarefaAtual.fotos)) ? tarefaAtual.fotos : [];
+            fotos.forEach((url, idx) => {
+                const div = document.createElement('div');
+                div.className = 'relative group';
+                div.innerHTML = `
+                    <a href="${url}" target="_blank" rel="noopener">
+                        <img src="${url}" class="w-full h-24 object-cover rounded-lg border border-domus-borda" loading="lazy">
+                    </a>
+                    <button type="button" data-idx="${idx}" class="absolute top-1 right-1 bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center opacity-90 hover:opacity-100 foto-remove-btn">×</button>
+                `;
+                container.appendChild(div);
+            });
+            container.querySelectorAll('.foto-remove-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const idx = parseInt(btn.dataset.idx);
+                    if (!confirm('Remover esta foto?')) return;
+                    tarefaAtual.fotos.splice(idx, 1);
+                    await salvarFotosNoBanco();
+                    renderFotos();
+                });
+            });
+        }
+
+        async function salvarFotosNoBanco() {
+            if (!tarefaAtual) return;
+            try {
+                const { error } = await supabase
+                    .from('tarefas_limpeza')
+                    .update({ fotos: tarefaAtual.fotos })
+                    .eq('id', tarefaAtual.id);
+                if (error) throw error;
+            } catch (err) {
+                console.error('Erro ao salvar fotos:', err);
+                alert('Erro ao salvar fotos: ' + (err.message || 'desconhecido'));
+            }
+        }
+
+        const _fotoInput = document.getElementById('fotoInput');
+        const _btnAdicionarFoto = document.getElementById('btnAdicionarFoto');
+        if (_btnAdicionarFoto && _fotoInput) {
+            _btnAdicionarFoto.addEventListener('click', () => _fotoInput.click());
+            _fotoInput.addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files || []);
+                if (!files.length || !tarefaAtual) return;
+                const label = document.getElementById('btnAdicionarFotoLabel');
+                const labelOriginal = label ? label.textContent : '';
+                if (label) label.textContent = 'Enviando...';
+                _btnAdicionarFoto.disabled = true;
+                try {
+                    if (!Array.isArray(tarefaAtual.fotos)) tarefaAtual.fotos = [];
+                    for (const file of files) {
+                        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+                        const nome = `${tarefaAtual.id}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+                        const { data, error } = await supabase.storage
+                            .from('limpeza-fotos')
+                            .upload(nome, file, { cacheControl: '3600', upsert: false });
+                        if (error) throw error;
+                        const { data: urlData } = supabase.storage.from('limpeza-fotos').getPublicUrl(data.path);
+                        tarefaAtual.fotos.push(urlData.publicUrl);
+                    }
+                    await salvarFotosNoBanco();
+                    renderFotos();
+                } catch (err) {
+                    console.error('Erro upload foto:', err);
+                    alert('Erro ao enviar foto:\n' + (err.message || JSON.stringify(err)));
+                } finally {
+                    if (label) label.textContent = labelOriginal || 'Adicionar foto';
+                    _btnAdicionarFoto.disabled = false;
+                    _fotoInput.value = '';
+                }
+            });
+        }
+
+        // INICIALIZAÇÃO: tentar restaurar sessão salva
+        (function tentarRestaurarSessaoCleaner() {
+            try {
+                const sessaoSalva = localStorage.getItem('cleaner_session');
+                if (sessaoSalva) {
+                    const sessao = JSON.parse(sessaoSalva);
+                    if (sessao && sessao.cleaner_id && sessao.cleaner_email) {
+                        currentUser = { id: sessao.cleaner_id, email: sessao.cleaner_email };
+                        currentUserProfile = { id: sessao.cleaner_id, nome: sessao.cleaner_nome, perfil: 'limpeza' };
+                        const h1 = document.querySelector('#mainScreen h1');
+                        if (h1) h1.textContent = 'Olá, ' + (sessao.cleaner_nome || 'Equipe Domus') + '!';
+                        showMainScreen();
+                        return;
+                    }
+                }
+            } catch(e) { console.warn('[CLEANER] sessao invalida', e); }
+            showLoginScreen();
+        })();
+
+    </script>
+</body>
+</html>

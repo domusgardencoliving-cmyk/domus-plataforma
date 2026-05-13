@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auditoria Completa — Plataforma Domus</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+    .serif { font-family: 'Instrument Serif', serif; }
+    details > summary { cursor: pointer; user-select: none; list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary::before { content: '▶'; display: inline-block; transition: transform 0.2s; margin-right: 6px; font-size: 10px; }
+    details[open] > summary::before { transform: rotate(90deg); }
+    .test-row { transition: all 0.15s; }
+    .pulse { animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
+    .badge-ok { background: #dcfce7; color: #166534; }
+    .badge-warn { background: #fef3c7; color: #92400e; }
+    .badge-err { background: #fee2e2; color: #991b1b; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+    .badge-running { background: #e0e7ff; color: #3730a3; }
+    table { font-size: 12px; }
+    table th { background: #f1f5f9; padding: 6px 10px; text-align: left; font-weight: 600; color: #475569; }
+    table td { padding: 6px 10px; border-bottom: 1px solid #f1f5f9; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <header class="bg-gradient-to-r from-slate-800 to-slate-700 text-white p-6 shadow">
+    <div class="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="serif text-3xl">Auditoria Completa</h1>
+        <p class="text-sm text-slate-300 mt-1">Bateria de testes de integridade da plataforma Domus</p>
+      </div>
+      <a href="index.html" class="text-sm text-slate-300 hover:text-white px-3 py-2 rounded-lg border border-slate-600 hover:border-slate-400 transition">
+        ← Voltar pro DG Gestão
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-6">
+
+    <!-- Resumo geral -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div class="bg-white rounded-xl shadow p-4 text-center">
+        <div class="text-3xl font-bold text-slate-800" id="totalTestes">—</div>
+        <div class="text-xs uppercase tracking-wide text-slate-500 font-semibold mt-1">Testes</div>
+      </div>
+      <div class="bg-emerald-50 rounded-xl shadow p-4 text-center border border-emerald-200">
+        <div class="text-3xl font-bold text-emerald-700" id="totalOk">—</div>
+        <div class="text-xs uppercase tracking-wide text-emerald-600 font-semibold mt-1">OK</div>
+      </div>
+      <div class="bg-amber-50 rounded-xl shadow p-4 text-center border border-amber-200">
+        <div class="text-3xl font-bold text-amber-700" id="totalWarn">—</div>
+        <div class="text-xs uppercase tracking-wide text-amber-600 font-semibold mt-1">Atenção</div>
+      </div>
+      <div class="bg-rose-50 rounded-xl shadow p-4 text-center border border-rose-200">
+        <div class="text-3xl font-bold text-rose-700" id="totalErr">—</div>
+        <div class="text-xs uppercase tracking-wide text-rose-600 font-semibold mt-1">Crítico</div>
+      </div>
+    </section>
+
+    <div class="text-center mb-6">
+      <button onclick="rodarAuditoria()" id="btnRodar"
+        class="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition shadow-lg">
+        Rodar auditoria completa
+      </button>
+      <p class="text-xs text-slate-500 mt-2">Vai consultar dezenas de tabelas no Supabase. Leva ~10 segundos.</p>
+    </div>
+
+    <!-- Testes por categoria -->
+    <div id="categorias" class="space-y-6">
+      <!-- preenchido por JS -->
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function fmtData(s) {
+      if (!s) return '—';
+      const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+      return s;
+    }
+    function hoje() {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
+    }
+    function diasDesde(data) {
+      if (!data) return 0;
+      const d1 = new Date(data + 'T12:00:00');
+      const d2 = new Date(hoje() + 'T12:00:00');
+      return Math.floor((d2 - d1) / (1000*60*60*24));
+    }
+
+    // ============================================================
+    // DEFINIÇÃO DOS TESTES
+    // ============================================================
+    const CATEGORIAS = [
+      {
+        nome: 'Reservas',
+        icone: '📋',
+        cor: 'blue',
+        testes: [
+          { id:'r1', nome:'Total de reservas no banco', fn: testarTotalReservas },
+          { id:'r2', nome:'Reservas com datas inválidas (checkout ≤ checkin)', fn: testarDatasInvalidas },
+          { id:'r3', nome:'Reservas sem nome de hóspede', fn: testarSemNome },
+          { id:'r4', nome:'Reservas sem cama/quarto', fn: testarSemCama },
+          { id:'r5', nome:'Reservas confirmadas com valor R$ 0,00', fn: testarValorZero },
+          { id:'r6', nome:'Reservas duplicadas (mesma cama + período)', fn: testarDuplicadas },
+          { id:'r7', nome:'Em espera há mais de 7 dias', fn: testarEmEsperaAntigas },
+          { id:'r8', nome:'"Confirmada" mas data já passou (deveriam ser check-out)', fn: testarConfirmadasNoPassado },
+          { id:'r9', nome:'Reservas Booking/Airbnb sem hospedin_id', fn: testarSemHospedinId },
+          { id:'r10', nome:'Hospedin_id duplicado (importação dupla)', fn: testarHospedinIdDuplicado },
+          { id:'r11', nome:'Status de hoje (entradas, saídas, ocupados)', fn: testarStatusHoje },
+        ]
+      },
+      {
+        nome: 'Hóspedes',
+        icone: '👥',
+        cor: 'purple',
+        testes: [
+          { id:'h1', nome:'Total de hóspedes únicos', fn: testarTotalHospedes },
+          { id:'h2', nome:'Hóspedes recorrentes (Top 10)', fn: testarHospedesRecorrentes },
+          { id:'h3', nome:'Possíveis duplicatas por nome', fn: testarHospedesDuplicados },
+        ]
+      },
+      {
+        nome: 'Moradoras (Coliving)',
+        icone: '🏠',
+        cor: 'pink',
+        testes: [
+          { id:'m1', nome:'Moradoras ativas', fn: testarMoradorasAtivas },
+          { id:'m2', nome:'Status "ativo" mas contrato venceu', fn: testarContratoVencido },
+          { id:'m3', nome:'Sem e-mail (não loga no Portal Dominhas)', fn: testarSemEmail },
+          { id:'m4', nome:'Sem boleto/lançamento do mês corrente', fn: testarSemBoletoMes },
+        ]
+      },
+      {
+        nome: 'Limpeza',
+        icone: '🧹',
+        cor: 'amber',
+        testes: [
+          { id:'l1', nome:'Tarefas pendentes (não iniciadas)', fn: testarLimpezaPendentes },
+          { id:'l2', nome:'"Em andamento" há mais de 1 dia (esquecidas)', fn: testarLimpezaEsquecidas },
+          { id:'l3', nome:'Tarefas para hoje', fn: testarLimpezaHoje },
+        ]
+      },
+      {
+        nome: 'Cupons',
+        icone: '🎟️',
+        cor: 'rose',
+        testes: [
+          { id:'c1', nome:'Cupons expirados ainda marcados como ativos', fn: testarCuponsExpiradosAtivos },
+          { id:'c2', nome:'Cupons criados mas nunca usados (>30 dias)', fn: testarCuponsNuncaUsados },
+        ]
+      },
+      {
+        nome: 'Cross-module / Integridade',
+        icone: '🔗',
+        cor: 'slate',
+        testes: [
+          { id:'x1', nome:'Tarefas de limpeza órfãs (reserva deletada)', fn: testarLimpezaOrfas },
+          { id:'x2', nome:'Pagamentos sem reserva associada', fn: testarPagamentosOrfaos },
+          { id:'x3', nome:'Lista de espera (coliving)', fn: testarListaEspera },
+        ]
+      }
+    ];
+
+    // ============================================================
+    // RENDERIZAR ESQUELETO
+    // ============================================================
+    function renderEsqueleto() {
+      const div = document.getElementById('categorias');
+      div.innerHTML = '';
+      let totalTestes = 0;
+      CATEGORIAS.forEach(cat => {
+        totalTestes += cat.testes.length;
+        const sec = document.createElement('section');
+        sec.className = 'bg-white rounded-2xl shadow p-5';
+        sec.innerHTML = `
+          <h2 class="serif text-xl text-slate-800 mb-4 flex items-center gap-2">
+            <span class="text-2xl">${cat.icone}</span> ${cat.nome}
+            <span class="text-sm text-slate-400 font-sans font-normal">(${cat.testes.length} testes)</span>
+          </h2>
+          <div class="space-y-2">
+            ${cat.testes.map(t => `
+              <div class="test-row border border-slate-100 rounded-lg p-3" id="test-${t.id}">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-slate-700 flex-1">${t.nome}</span>
+                  <span class="badge badge-info" id="status-${t.id}">aguardando</span>
+                </div>
+                <div id="detalhe-${t.id}" class="mt-2 hidden"></div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        div.appendChild(sec);
+      });
+      document.getElementById('totalTestes').textContent = totalTestes;
+      document.getElementById('totalOk').textContent = '—';
+      document.getElementById('totalWarn').textContent = '—';
+      document.getElementById('totalErr').textContent = '—';
+    }
+
+    function setStatus(id, status, detalheHtml) {
+      const badge = document.getElementById('status-' + id);
+      const det = document.getElementById('detalhe-' + id);
+      const row = document.getElementById('test-' + id);
+      badge.className = 'badge badge-' + status;
+      const labels = { ok: 'OK', warn: 'atenção', err: 'crítico', running: 'rodando…' };
+      badge.textContent = labels[status] || status;
+      if (status === 'running') badge.classList.add('pulse');
+      else badge.classList.remove('pulse');
+      if (detalheHtml) {
+        det.innerHTML = detalheHtml;
+        det.classList.remove('hidden');
+      }
+      // border color por status
+      row.style.borderColor = ({ ok:'#bbf7d0', warn:'#fde68a', err:'#fecaca' }[status]) || '#e2e8f0';
+    }
+
+    function tabela(rows, colunas) {
+      if (!rows || !rows.length) return '<p class="text-xs text-slate-500 italic">Nenhum item</p>';
+      return `<details class="mt-2"><summary class="text-xs text-slate-500 hover:text-slate-700">Ver ${rows.length} itens</summary>
+        <div class="mt-2 overflow-x-auto max-h-72"><table class="w-full">
+          <thead><tr>${colunas.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
+          <tbody>${rows.map(r => `<tr>${colunas.map(c => `<td>${c.fn ? c.fn(r) : (r[c.key] ?? '—')}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table></div></details>`;
+    }
+
+    // ============================================================
+    // FUNÇÕES DE TESTE
+    // ============================================================
+    async function testarTotalReservas() {
+      const { count, error } = await db.from('reservas').select('id', { count:'exact', head:true });
+      if (error) return { status:'err', msg:'Erro: ' + error.message };
+      return { status:'ok', msg: count + ' reservas no total' };
+    }
+
+    async function testarDatasInvalidas() {
+      const { data, error } = await db.from('reservas')
+        .select('id, hospede_nome, cama, checkin, checkout, status')
+        .neq('status','cancelada');
+      if (error) return { status:'err', msg:error.message };
+      const ruins = (data||[]).filter(r => r.checkin && r.checkout && r.checkout <= r.checkin);
+      if (!ruins.length) return { status:'ok', msg:'Todas as datas batem' };
+      return {
+        status:'err',
+        msg: ruins.length + ' com datas absurdas',
+        detalhe: tabela(ruins.slice(0,50), [
+          {label:'Hóspede', key:'hospede_nome'},
+          {label:'Cama', key:'cama'},
+          {label:'Check-in', fn:r=>fmtData(r.checkin)},
+          {label:'Check-out', fn:r=>fmtData(r.checkout)},
+          {label:'Status', key:'status'}
+        ])
+      };
+    }
+
+    async function testarSemNome() {
+      const { data } = await db.from('reservas')
+        .select('id, hospede_nome, hospede_contato, cama, checkin, checkout, plataforma, canal_codigo')
+        .or('hospede_nome.is.null,hospede_nome.eq.')
+        .neq('status','cancelada')
+        .gte('checkout', hoje())
+        .order('checkin', { ascending: false });
+      if (!data || !data.length) return { status:'ok', msg:'Todas as reservas ativas têm nome' };
+      return {
+        status:'warn',
+        msg: data.length + ' sem nome (visualmente caem em "(sem nome)")',
+        detalhe: tabela(data, [
+          {label:'ID', fn:r=>r.id.slice(0,8)},
+          {label:'Cama', key:'cama'},
+          {label:'Datas', fn:r=>fmtData(r.checkin)+' → '+fmtData(r.checkout)},
+          {label:'Contato', key:'hospede_contato'},
+          {label:'Canal', key:'canal_codigo'}
+        ])
+      };
+    }
+
+    async function testarSemCama() {
+      const { data } = await db.from('reservas')
+        .select('id, hospede_nome, cama, checkin, checkout, status')
+        .or('cama.is.null,cama.eq.')
+        .neq('status','cancelada')
+        .gte('checkout', hoje());
+      if (!data || !data.length) return { status:'ok', msg:'Todas as reservas ativas têm cama definida' };
+      return {
+        status:'err',
+        msg: data.length + ' sem cama (não vão aparecer no mapa)',
+        detalhe: tabela(data, [
+          {label:'Hóspede', key:'hospede_nome'},
+          {label:'Datas', fn:r=>fmtData(r.checkin)+' → '+fmtData(r.checkout)},
+          {label:'Status', key:'status'}
+        ])
+      };
+    }
+
+    async function testarValorZero() {
+      const { data } = await db.from('reservas')
+        .select('id, hospede_nome, cama, checkin, checkout, valor_total, plataforma')
+        .in('status', ['confirmada','check-in','check-out'])
+        .or('valor_total.is.null,valor_total.eq.0')
+        .gte('checkin', new Date(Date.now() - 90*24*3600*1000).toISOString().slice(0,10));
+      if (!data || !data.length) return { status:'ok', msg:'Todas as reservas confirmadas têm valor' };
+      return {
+        status:'warn',
+        msg: data.length + ' confirmadas com valor R$ 0 (últimos 90d)',
+        detalhe: tabela(data, [
+          {label:'Hóspede', key:'hospede_nome'},
+          {label:'Cama', key:'cama'},
+          {label:'Datas', fn:r=>fmtData(r.checkin)+' → '+fmtData(r.checkout)},
+          {label:'Plataforma', key:'plataforma'}
+        ])
+      };
+    }
+
+    async function testarDuplicadas() {
+      const hojeISO = hoje();
+      const { data } = await db.from('reservas')
+        .select('id, hospede_nome, cama, checkin, checkout, status, plataforma')
+        .neq('status','cancelada')
+        .gte('checkout', hojeISO)
+        .lte('checkin', new Date(Date.now() + 365*24*3600*1000).toISOString().slice(0,10));
+      if (!data) return { status:'ok', msg:'Sem dados' };
+      // Detecta sobreposição na mesma cama
+      const grupos = {};
+      data.forEach(r => {
+        const k = (r.cama||'?').toLowerCase().trim();
+        if (!grupos[k]) grupos[k] = [];
+        grupos[k].push(r);
+      });
+      const conflitos = [];
+      Object.entries(grupos).forEach(([cama, lista]) => {
+        for (let i=0; i<lista.length; i++) {
+          for (let j=i+1; j<lista.length; j++) {
+            const a = lista[i], b = lista[j];
+            if (a.checkin < b.checkout && b.checkin < a.checkout) {
+              conflitos.push({cama, a, b});
+            }
+          }
+        }
+      });
+      if (!conflitos.length) return { status:'ok', msg:'Sem sobreposições' };
+      return {
+        status:'err',
+        msg: conflitos.length + ' sobreposições — duas reservas na mesma cama',
+        detalhe: tabela(conflitos.slice(0,50), [
+          {label:'Cama', key:'cama'},
+          {label:'Reserva A', fn:c=>c.a.hospede_nome+' ('+fmtData(c.a.checkin)+'→'+fmtData(c.a.checkout)+')'},
+          {label:'Reserva B', fn:c=>c.b.hospede_nome+' ('+fmtData(c.b.checkin)+'→'+fmtData(c.b.checkout)+')'}
+        ])
+      };
+    }
+
+    async function testarEmEsperaAntigas() {
+      const seteDiasAtras = new Date(Date.now() - 7*24*3600*1000).toISOString().slice(0,10);
+      const { data } = await db.from('reservas')
+        .select('id, hospede_nome, cama, checkin, checkout, criado_em')
+        .eq('status','em_espera')
+        .lte('criado_em', seteDiasAtras);
+      if (!data || !data.length) return { status:'ok', msg:'Sem em_espera antigas' };
+      return {
+        status:'warn',
+        msg: data.length + ' em "em_espera" há mais de 7 dias — confirmar ou cancelar',
+        detalhe: tabela(data, [
+          {label:'Hóspede', key:'hospede_nome'},
+          {label:'Cama', key:'cama'},
+          {label:'Check-in', fn:r=>fmtData(r.checkin)},
+          {label:'Criada há', fn:r=>diasDesde(r.criado_em ? r.criado_em.slice(0,10) : null)+' dias'}
+        ])
+      };
+    }
+
+    async function testarConfirmadasNoPassado() {
+      const ontem = new Date(Date.now() - 24*3600*1000).toISOString().slice(0,10);
+      const { data } = await db.from('reservas')
+        .select('id, hospede_nome, cama, checkin, checkout, status')
+        .eq('status','confirmada')
+        .lt('checkout', ontem);
+      if (!data || !data.length) return { status:'ok', msg:'Sem confirmadas vencidas' };
+      return {
+        status:'warn',
+        msg: data.length + ' "confirmada" com checkout no passado — fazer check-out',
+        detalhe: tabela(data.slice(0,50), [
+          {label:'Hóspede', key:'hospede_nome'},
+          {label:'Cama', key:'cama'},
+          {label:'Check-out', fn:r=>fmtData(r.checkout)}
+        ])
+      };
+    }
+
+    async function testarSemHospedinId() {
+      const { data } = await db.from('reservas')
+        .select('id, hospede_nome, cama, plataforma, hospedin_id, canal_codigo')
+        .in('plataforma', ['Booking','Airbnb','Hospedin'])
+        .is('hospedin_id', null);
+      if (!data || !data.length) return { status:'ok', msg:'Todas reservas de OTA têm hospedin_id' };
+      return {
+        status:'warn',
+        msg: data.length + ' Booking/Airbnb sem hospedin_id (impossível conferir contra Hospedin)',
+        detalhe: tabela(data.slice(0,30), [
+          {label:'Hóspede', key:'hospede_nome'},
+          {label:'Cama', key:'cama'},
+          {label:'Plataforma', key:'plataforma'}
+        ])
+      };
+    }
+
+    async function testarHospedinIdDuplicado() {
+      const { data } = await db.from('reservas')
+        .select('hospedin_id, id, hospede_nome, cama, checkin')
+        .not('hospedin_id', 'is', null);
+      if (!data) return { status:'ok', msg:'Sem dados' };
+      const counts = {};
+      data.forEach(r => { counts[r.hospedin_id] = (counts[r.hospedin_id]||[]).concat(r); });
+      const dups = Object.values(counts).filter(arr => arr.length > 1);
+      if (!dups.length) return { status:'ok', msg:'Sem hospedin_id duplicados' };
+      const flat = [];
+      dups.forEach(arr => arr.forEach(r => flat.push(r)));
+      return {
+        status:'err',
+        msg: dups.length + ' hospedin_id duplicados (importação dupla — duplicar reservas)',
+        detalhe: tabela(flat.slice(0,40), [
+          {label:'Hospedin ID', key:'hospedin_id'},
+          {label:'Hóspede', key:'hospede_nome'},
+          {label:'Cama', key:'cama'},
+          {label:'Check-in', fn:r=>fmtData(r.checkin)}
+        ])
+      };
+    }
+
+    async function testarStatusHoje() {
+      const h = hoje();
+      const { count: ocupadosCount } = await db.from('reservas').select('id', {count:'exact', head:true})
+        .lte('checkin', h).gt('checkout', h).in('status', ['confirmada','check-in']);
+      const { count: entrandoCount } = await db.from('reservas').select('id', {count:'exact', head:true})
+        .eq('checkin', h).neq('status','cancelada');
+      const { count: saindoCount } = await db.from('reservas').select('id', {count:'exact', head:true})
+        .eq('checkout', h).neq('status','cancelada');
+      return {
+        status:'ok',
+        msg: `Hoje (${fmtData(h)}): ${ocupadosCount} ocupados • ${entrandoCount} entram • ${saindoCount} saem`
+      };
+    }
+
+    async function testarTotalHospedes() {
+      const { data } = await db.from('reservas').select('hospede_nome').neq('status','cancelada');
+      if (!data) return { status:'ok', msg:'Sem dados' };
+      const unicos = new Set(data.map(r => (r.hospede_nome||'').trim().toLowerCase()).filter(Boolean));
+      return { status:'ok', msg: unicos.size + ' hóspedes únicos no banco' };
+    }
+
+    async function testarHospedesRecorrentes() {
+      const { data } = await db.from('reservas').select('hospede_nome, valor_total').neq('status','cancelada');
+      if (!data) return { status:'ok', msg:'Sem dados' };
+      const map = {};
+      data.forEach(r => {
+        const k = (r.hospede_nome||'').trim();
+        if (!k) return;
+        if (!map[k]) map[k] = { nome: k, qtde: 0, total: 0 };
+        map[k].qtde++;
+        map[k].total += parseFloat(r.valor_total || 0);
+      });
+      const recorrentes = Object.values(map).filter(h => h.qtde > 1).sort((a,b)=>b.qtde-a.qtde).slice(0,10);
+      if (!recorrentes.length) return { status:'info', msg:'Nenhum hóspede recorrente ainda' };
+      return {
+        status:'ok',
+        msg: recorrentes.length + ' hóspedes com 2+ estadias (top 10)',
+        detalhe: tabela(recorrentes, [
+          {label:'Hóspede', key:'nome'},
+          {label:'Estadias', key:'qtde'},
+          {label:'Total gasto', fn:h=>'R$ '+h.total.toFixed(2).replace('.',',')}
+        ])
+      };
+    }
+
+    async function testarHospedesDuplicados() {
+      const { data } = await db.from('reservas').select('hospede_nome, hospede_documento, hospede_contato').neq('status','cancelada');
+      if (!data) return { status:'ok', msg:'Sem dados' };
+      const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+      const grupos = {};
+      data.forEach(r => {
+        const k = norm(r.hospede_nome);
+        if (!k) return;
+        if (!grupos[k]) grupos[k] = { nome: r.hospede_nome, count: 0, docs: new Set(), contatos: new Set() };
+        grupos[k].count++;
+        if (r.hospede_documento) grupos[k].docs.add(r.hospede_documento);
+        if (r.hospede_contato) grupos[k].contatos.add(r.hospede_contato);
+      });
+      // Possíveis duplicatas: mesmo nome com docs/contatos diferentes
+      const dups = Object.values(grupos).filter(g => g.docs.size > 1 || g.contatos.size > 1).slice(0,30);
+      if (!dups.length) return { status:'ok', msg:'Sem suspeitos de duplicação' };
+      return {
+        status:'warn',
+        msg: dups.length + ' nomes com documentos ou contatos diferentes — talvez sejam pessoas distintas com mesmo nome OU duplicação',
+        detalhe: tabela(dups, [
+          {label:'Nome', key:'nome'},
+          {label:'Reservas', key:'count'},
+          {label:'Docs distintos', fn:d=>d.docs.size},
+          {label:'Contatos distintos', fn:d=>d.contatos.size}
+        ])
+      };
+    }
+
+    async function testarMoradorasAtivas() {
+      const { count, error } = await db.from('moradores').select('id', {count:'exact', head:true}).eq('status','ativo');
+      if (error) return { status:'err', msg:error.message };
+      return { status:'ok', msg: (count||0) + ' moradoras ativas' };
+    }
+
+    async function testarContratoVencido() {
+      const { data } = await db.from('moradores')
+        .select('id, nome, unidade, fim_contrato, status')
+        .eq('status','ativo')
+        .lt('fim_contrato', hoje());
+      if (!data || !data.length) return { status:'ok', msg:'Sem contratos vencidos com status ativo' };
+      return {
+        status:'warn',
+        msg: data.length + ' moradoras "ativas" com contrato vencido',
+        detalhe: tabela(data, [
+          {label:'Nome', key:'nome'},
+          {label:'Unidade', key:'unidade'},
+          {label:'Fim contrato', fn:m=>fmtData(m.fim_contrato)},
+          {label:'Vencido há', fn:m=>diasDesde(m.fim_contrato)+' dias'}
+        ])
+      };
+    }
+
+    async function testarSemEmail() {
+      const { data } = await db.from('moradores')
+        .select('id, nome, unidade, email')
+        .eq('status','ativo')
+        .or('email.is.null,email.eq.');
+      if (!data || !data.length) return { status:'ok', msg:'Todas têm e-mail' };
+      return {
+        status:'warn',
+        msg: data.length + ' moradoras ativas sem e-mail (não conseguem entrar no Portal Dominhas)',
+        detalhe: tabela(data, [
+          {label:'Nome', key:'nome'},
+          {label:'Unidade', key:'unidade'}
+        ])
+      };
+    }
+
+    async function testarSemBoletoMes() {
+      const inicioMes = hoje().slice(0,7) + '-01';
+      try {
+        const { data: ativas } = await db.from('moradores').select('id, nome, unidade').eq('status','ativo');
+        const { data: lancs } = await db.from('lancamentos').select('morador_id').gte('data', inicioMes);
+        if (!ativas) return { status:'ok', msg:'Sem dados' };
+        const comLanc = new Set((lancs||[]).map(l => l.morador_id));
+        const sem = (ativas||[]).filter(m => !comLanc.has(m.id));
+        if (!sem.length) return { status:'ok', msg:'Todas as moradoras têm lançamento este mês' };
+        return {
+          status:'warn',
+          msg: sem.length + ' moradoras sem lançamento financeiro este mês',
+          detalhe: tabela(sem, [{label:'Nome', key:'nome'},{label:'Unidade', key:'unidade'}])
+        };
+      } catch (e) {
+        return { status:'info', msg:'Tabela lancamentos talvez não esteja acessível: ' + e.message };
+      }
+    }
+
+    async function testarLimpezaPendentes() {
+      const { count } = await db.from('tarefas_limpeza').select('id', {count:'exact', head:true}).eq('status','pendente');
+      return { status:'ok', msg: (count||0) + ' tarefas pendentes' };
+    }
+
+    async function testarLimpezaEsquecidas() {
+      const ontem = new Date(Date.now() - 24*3600*1000).toISOString().slice(0,10);
+      const { data } = await db.from('tarefas_limpeza')
+        .select('id, data, ambiente_id, ambientes(nome), iniciado_em')
+        .eq('status','em_andamento')
+        .lt('iniciado_em', ontem + 'T00:00:00');
+      if (!data || !data.length) return { status:'ok', msg:'Nada esquecido' };
+      return {
+        status:'warn',
+        msg: data.length + ' tarefas "em andamento" há mais de 1 dia',
+        detalhe: tabela(data, [
+          {label:'Ambiente', fn:t=>(t.ambientes&&t.ambientes.nome)||'—'},
+          {label:'Data', fn:t=>fmtData(t.data)},
+          {label:'Iniciada há', fn:t=>diasDesde(t.iniciado_em ? t.iniciado_em.slice(0,10) : null)+' dias'}
+        ])
+      };
+    }
+
+    async function testarLimpezaHoje() {
+      const h = hoje();
+      const { data } = await db.from('tarefas_limpeza')
+        .select('id, status, ambientes(nome), tipo_tarefa')
+        .eq('data', h);
+      if (!data || !data.length) return { status:'info', msg:'Nenhuma tarefa pra hoje' };
+      const por_status = data.reduce((acc, t) => { acc[t.status] = (acc[t.status]||0)+1; return acc; }, {});
+      return {
+        status: por_status.pendente ? 'warn' : 'ok',
+        msg: data.length + ' tarefas hoje — ' + Object.entries(por_status).map(([k,v])=>k+':'+v).join(', '),
+        detalhe: tabela(data, [
+          {label:'Ambiente', fn:t=>(t.ambientes&&t.ambientes.nome)||'—'},
+          {label:'Tipo', key:'tipo_tarefa'},
+          {label:'Status', key:'status'}
+        ])
+      };
+    }
+
+    async function testarCuponsExpiradosAtivos() {
+      try {
+        const { data } = await db.from('cupons')
+          .select('id, codigo, validade, ativo')
+          .eq('ativo', true)
+          .lt('validade', hoje());
+        if (!data || !data.length) return { status:'ok', msg:'Sem cupons expirados ativos' };
+        return {
+          status:'warn',
+          msg: data.length + ' cupons expirados ainda marcados como ativos',
+          detalhe: tabela(data, [
+            {label:'Código', key:'codigo'},
+            {label:'Validade', fn:c=>fmtData(c.validade)},
+            {label:'Vencido há', fn:c=>diasDesde(c.validade)+' dias'}
+          ])
+        };
+      } catch (e) {
+        return { status:'info', msg:'Tabela cupons não existe ou sem acesso' };
+      }
+    }
+
+    async function testarCuponsNuncaUsados() {
+      try {
+        const trintaDias = new Date(Date.now() - 30*24*3600*1000).toISOString();
+        const { data } = await db.from('cupons')
+          .select('id, codigo, usos, criado_em, validade')
+          .lte('criado_em', trintaDias)
+          .eq('ativo', true);
+        if (!data) return { status:'ok', msg:'Sem cupons antigos' };
+        const semUso = data.filter(c => !c.usos || c.usos === 0);
+        if (!semUso.length) return { status:'ok', msg:'Cupons antigos têm uso' };
+        return {
+          status:'info',
+          msg: semUso.length + ' cupons antigos sem uso (talvez desativar)',
+          detalhe: tabela(semUso, [
+            {label:'Código', key:'codigo'},
+            {label:'Validade', fn:c=>fmtData(c.validade)}
+          ])
+        };
+      } catch (e) {
+        return { status:'info', msg:'Tabela cupons sem acesso' };
+      }
+    }
+
+    async function testarLimpezaOrfas() {
+      try {
+        const { data } = await db.from('tarefas_limpeza')
+          .select('id, data, reserva_id, ambientes(nome)')
+          .not('reserva_id','is',null);
+        if (!data || !data.length) return { status:'ok', msg:'Sem tarefas vinculadas a reservas' };
+        // Verifica quais reserva_id existem
+        const ids = [...new Set(data.map(t => t.reserva_id))];
+        const { data: existem } = await db.from('reservas').select('id').in('id', ids);
+        const existentes = new Set((existem||[]).map(r => r.id));
+        const orfas = data.filter(t => !existentes.has(t.reserva_id));
+        if (!orfas.length) return { status:'ok', msg:'Todas as tarefas com reserva têm reserva existente' };
+        return {
+          status:'warn',
+          msg: orfas.length + ' tarefas vinculadas a reservas que não existem mais',
+          detalhe: tabela(orfas.slice(0,20), [
+            {label:'Data', fn:t=>fmtData(t.data)},
+            {label:'Ambiente', fn:t=>(t.ambientes&&t.ambientes.nome)||'—'},
+            {label:'Reserva ID', fn:t=>t.reserva_id.slice(0,8)}
+          ])
+        };
+      } catch (e) {
+        return { status:'info', msg:'Erro: ' + e.message };
+      }
+    }
+
+    async function testarPagamentosOrfaos() {
+      try {
+        const { data } = await db.from('pagamentos').select('id, reserva_id, valor');
+        if (!data || !data.length) return { status:'info', msg:'Tabela vazia ou sem acesso' };
+        const ids = [...new Set(data.map(p => p.reserva_id).filter(Boolean))];
+        if (!ids.length) return { status:'warn', msg: data.length + ' pagamentos sem reserva_id' };
+        const { data: existem } = await db.from('reservas').select('id').in('id', ids);
+        const existentes = new Set((existem||[]).map(r => r.id));
+        const orfaos = data.filter(p => p.reserva_id && !existentes.has(p.reserva_id));
+        if (!orfaos.length) return { status:'ok', msg: data.length + ' pagamentos, todos com reserva válida' };
+        return {
+          status:'warn',
+          msg: orfaos.length + ' pagamentos órfãos (reserva apagada)',
+          detalhe: tabela(orfaos.slice(0,20), [
+            {label:'Valor', fn:p=>'R$ '+(p.valor||0).toFixed(2)},
+            {label:'Reserva ID', fn:p=>(p.reserva_id||'').slice(0,8)}
+          ])
+        };
+      } catch (e) {
+        return { status:'info', msg:'Tabela pagamentos sem acesso' };
+      }
+    }
+
+    async function testarListaEspera() {
+      try {
+        const { count } = await db.from('lista_espera').select('id', {count:'exact', head:true});
+        if (!count) return { status:'info', msg:'Lista de espera vazia' };
+        return { status:'ok', msg: count + ' pessoas na lista de espera' };
+      } catch (e) {
+        return { status:'info', msg:'Tabela lista_espera não existe ou sem acesso' };
+      }
+    }
+
+    // ============================================================
+    // RUNNER
+    // ============================================================
+    async function rodarAuditoria() {
+      const btn = document.getElementById('btnRodar');
+      btn.disabled = true;
+      btn.textContent = '⏳ Rodando...';
+
+      let ok = 0, warn = 0, err = 0;
+      for (const cat of CATEGORIAS) {
+        for (const teste of cat.testes) {
+          setStatus(teste.id, 'running');
+          try {
+            const res = await teste.fn();
+            const html = '<div class="text-xs text-slate-600">' + (res.msg || '') + '</div>' + (res.detalhe || '');
+            setStatus(teste.id, res.status, html);
+            if (res.status === 'ok') ok++;
+            else if (res.status === 'warn' || res.status === 'info') warn++;
+            else if (res.status === 'err') err++;
+          } catch (e) {
+            console.error('Erro em', teste.id, e);
+            setStatus(teste.id, 'err', '<div class="text-xs text-rose-600">Erro: '+(e.message||e)+'</div>');
+            err++;
+          }
+          // Atualizar contadores em tempo real
+          document.getElementById('totalOk').textContent = ok;
+          document.getElementById('totalWarn').textContent = warn;
+          document.getElementById('totalErr').textContent = err;
+        }
+      }
+
+      btn.disabled = false;
+      btn.textContent = '🔄 Rodar de novo';
+    }
+
+    // Init
+    renderEsqueleto();
+  </script>
+</body>
+</html>

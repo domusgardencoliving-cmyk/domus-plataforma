@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testar WhatsApp — Domus</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+    .serif { font-family: 'Instrument Serif', serif; }
+    pre { white-space: pre-wrap; word-break: break-all; font-family: ui-monospace, monospace; font-size: 11px; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <header class="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-6 shadow">
+    <div class="max-w-3xl mx-auto flex items-center justify-between">
+      <div>
+        <h1 class="serif text-3xl">Testar WhatsApp Meta API</h1>
+        <p class="text-sm text-emerald-100 mt-1">Envia mensagem livre direto pela API da Meta</p>
+      </div>
+      <a href="index.html" class="text-sm text-emerald-100 hover:text-white px-3 py-2 rounded-lg border border-emerald-400 hover:border-emerald-200 transition">← Voltar</a>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto p-6">
+
+    <section class="bg-white rounded-2xl shadow p-6 mb-6">
+      <h2 class="serif text-xl text-slate-800 mb-4">Credenciais Meta</h2>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+            Access Token <span class="text-rose-600">*</span>
+          </label>
+          <input id="token" type="password" placeholder="EAAZCvlDBJ7eABRf6sbb..."
+            class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 font-mono" />
+          <p class="text-xs text-slate-500 mt-1">Cola o token completo do painel da Meta. Fica salvo só no teu navegador.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Phone Number ID</label>
+            <input id="phoneId" type="text" value="1078526355349123"
+              class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 font-mono" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Versão da API</label>
+            <input id="apiVersion" type="text" value="v25.0"
+              class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 font-mono" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-2xl shadow p-6 mb-6">
+      <h2 class="serif text-xl text-slate-800 mb-4">Mensagem</h2>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+            Número destinatário (com DDI, sem espaços) <span class="text-rose-600">*</span>
+          </label>
+          <input id="destino" type="text" placeholder="5511943330911"
+            class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 font-mono" />
+          <p class="text-xs text-slate-500 mt-1">Formato: 55 + DDD + número, tudo junto. Ex: 5511943330911</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Texto da mensagem</label>
+          <textarea id="mensagem" rows="4" placeholder="Oi! Esse é um teste da nossa nova plataforma 💙"
+            class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300">Oi! Esse é um teste da nossa nova plataforma da Domus. Se chegou, deu certo! 💙</textarea>
+        </div>
+
+        <button onclick="enviar()" id="btnEnviar"
+          class="w-full px-5 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Enviar mensagem agora
+        </button>
+      </div>
+    </section>
+
+    <section id="resultadoSection" class="bg-slate-900 text-slate-100 rounded-2xl shadow p-5 mb-6 hidden">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400 mb-3">Resposta da Meta</h2>
+      <div id="resultado" class="space-y-2"></div>
+    </section>
+
+    <section class="bg-blue-50 border border-blue-200 rounded-2xl p-5 text-sm text-slate-700">
+      <h3 class="font-semibold text-slate-800 mb-2">Dica</h3>
+      <p>Pra a mensagem chegar, é preciso que o teu WhatsApp tenha mandado uma mensagem pro número de teste da Meta (+1 555 640-9862) <strong>nas últimas 24 horas</strong>. Se já fez isso, é só enviar daqui.</p>
+      <p class="mt-2">Se aparecer erro <code class="bg-blue-100 px-1 rounded">131030</code> ou similar, o número não foi pré-aprovado — adiciona ele primeiro no painel da Meta.</p>
+    </section>
+
+  </main>
+
+  <script>
+    // Carregar credenciais salvas
+    (function() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('wa_test_creds') || '{}');
+        if (saved.token) document.getElementById('token').value = saved.token;
+        if (saved.destino) document.getElementById('destino').value = saved.destino;
+      } catch (e) {}
+    })();
+
+    function log(msg, tipo) {
+      tipo = tipo || 'info';
+      const cores = { info: 'text-slate-300', ok: 'text-emerald-400', err: 'text-rose-400', warn: 'text-amber-400' };
+      const div = document.createElement('div');
+      div.className = (cores[tipo] || cores.info) + ' text-xs';
+      div.innerHTML = '<span class="text-slate-500">' + new Date().toLocaleTimeString('pt-BR') + '</span> ' + msg;
+      document.getElementById('resultado').appendChild(div);
+    }
+
+    async function enviar() {
+      const token = document.getElementById('token').value.trim();
+      const phoneId = document.getElementById('phoneId').value.trim();
+      const apiVer = document.getElementById('apiVersion').value.trim() || 'v25.0';
+      const destino = document.getElementById('destino').value.trim().replace(/\D/g, '');
+      const mensagem = document.getElementById('mensagem').value.trim();
+
+      if (!token) { alert('Cola o Access Token primeiro.'); return; }
+      if (!phoneId) { alert('Phone Number ID está vazio.'); return; }
+      if (!destino) { alert('Coloca o número de destino (com DDI).'); return; }
+      if (!mensagem) { alert('Escreve uma mensagem.'); return; }
+
+      // Salvar credenciais (sem o token pra segurança — ou só num localStorage simples)
+      try {
+        localStorage.setItem('wa_test_creds', JSON.stringify({ token, destino }));
+      } catch (e) {}
+
+      const btn = document.getElementById('btnEnviar');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+
+      document.getElementById('resultadoSection').classList.remove('hidden');
+      document.getElementById('resultado').innerHTML = '';
+
+      const url = 'https://graph.facebook.com/' + apiVer + '/' + phoneId + '/messages';
+      const body = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: destino,
+        type: 'text',
+        text: { preview_url: false, body: mensagem }
+      };
+
+      log('POST ' + url, 'info');
+      log('Body: ' + JSON.stringify(body, null, 2), 'info');
+
+      try {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+
+        const data = await r.json();
+        log('HTTP ' + r.status + ' ' + r.statusText, r.ok ? 'ok' : 'err');
+
+        const pre = document.createElement('pre');
+        pre.className = 'bg-slate-800 p-3 rounded text-xs ' + (r.ok ? 'text-emerald-300' : 'text-rose-300');
+        pre.textContent = JSON.stringify(data, null, 2);
+        document.getElementById('resultado').appendChild(pre);
+
+        if (r.ok && data.messages && data.messages[0]) {
+          log('✅ Mensagem aceita pela Meta! ID: ' + data.messages[0].id, 'ok');
+          log('Confere no teu WhatsApp em segundos.', 'ok');
+        } else if (data.error) {
+          log('❌ Erro: ' + data.error.message + ' (code ' + data.error.code + ')', 'err');
+          if (data.error.code === 131030) {
+            log('Esse erro significa: o número não está pré-aprovado pra receber. Adiciona ele no painel da Meta primeiro.', 'warn');
+          } else if (data.error.code === 190) {
+            log('Token expirou ou é inválido. Gera um novo no painel da Meta.', 'warn');
+          } else if (data.error.code === 131047) {
+            log('Janela de 24h fechada. Manda uma mensagem do teu WhatsApp pro número de teste e tenta de novo.', 'warn');
+          }
+        }
+      } catch (e) {
+        log('Erro de conexão: ' + e.message, 'err');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Enviar mensagem agora';
+      }
+    }
+  </script>
+</body>
+</html>

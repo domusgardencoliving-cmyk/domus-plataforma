@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agendar visita — Domus Garden Coliving</title>
+  <meta name="description" content="Agende uma visita à Domus Garden Coliving e conheça nossa casa." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏡</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'domus-azul': '#1BA8B8',
+            'domus-azul-escuro': '#0A6B75',
+            'domus-azul-claro': '#4DC5D0',
+            'domus-azul-palido': '#E0F4F6',
+            'domus-rosa': '#FF385C',
+            'domus-texto': '#222222',
+            'domus-texto-suave': '#717171',
+            'domus-borda': '#EBEBEB',
+            'domus-creme': '#FFF8F0',
+            'domus-creme-forte': '#FBEFD9'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            serif: ['Instrument Serif', 'Georgia', 'serif']
+          }
+        }
+      }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; background: #FFF8F0; }
+    .font-serif { font-family: 'Instrument Serif', Georgia, serif; }
+    .bg-domus-gradient {
+      background: linear-gradient(135deg, #0A6B75 0%, #1BA8B8 50%, #4DC5D0 100%);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .step-content { animation: fadeIn 0.3s ease-out; }
+    .input-domus {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #EBEBEB;
+      border-radius: 0.75rem;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      background: white;
+    }
+    .input-domus:focus {
+      outline: none;
+      border-color: #1BA8B8;
+      box-shadow: 0 0 0 3px rgba(27,168,184,0.1);
+    }
+    .input-domus.invalido {
+      border-color: #DC2626;
+    }
+    label.lbl {
+      display: block;
+      font-size: 0.78rem;
+      color: #717171;
+      margin-bottom: 0.35rem;
+      font-weight: 500;
+    }
+    .day-card {
+      padding: 0.85rem 0.5rem;
+      border: 1px solid #EBEBEB;
+      border-radius: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
+      text-align: center;
+    }
+    .day-card:hover { border-color: #1BA8B8; transform: translateY(-2px); }
+    .day-card.ativa {
+      background: #1BA8B8;
+      border-color: #1BA8B8;
+      color: white;
+    }
+    .day-card.ativa .dia-mes { color: white; }
+    .day-card.ativa .dia-semana { color: rgba(255,255,255,0.9); }
+    .day-card.lotada {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: #f3f4f6;
+    }
+    .slot-card {
+      padding: 0.75rem 0.5rem;
+      border: 1px solid #EBEBEB;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
+      text-align: center;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .slot-card:hover:not(.ocupado) { border-color: #1BA8B8; }
+    .slot-card.ativa {
+      background: #1BA8B8;
+      border-color: #1BA8B8;
+      color: white;
+    }
+    .slot-card.ocupado {
+      opacity: 0.35;
+      cursor: not-allowed;
+      background: #f3f4f6;
+      color: #717171;
+      text-decoration: line-through;
+    }
+    .selfie-area {
+      border: 2px dashed #EBEBEB;
+      border-radius: 1rem;
+      padding: 2.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
+    }
+    .selfie-area:hover {
+      border-color: #1BA8B8;
+      background: #E0F4F6;
+    }
+    .selfie-area.preenchida {
+      border-style: solid;
+      border-color: #0F9D58;
+      background: #D1FAE5;
+      padding: 1rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-24">
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md border-b border-domus-borda/50 sticky top-0 z-40">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-domus-gradient flex items-center justify-center">
+          <span class="text-white text-sm font-bold">D</span>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-domus-azul-escuro leading-tight">Domus Garden</p>
+          <p class="text-[10px] text-domus-texto-suave leading-tight">Coliving Feminino</p>
+        </div>
+      </a>
+      <span id="passo-label" class="text-xs text-domus-texto-suave">Etapa 1 de 4</span>
+    </div>
+    <!-- Progress -->
+    <div class="h-1 bg-domus-borda/40">
+      <div id="progress-bar" class="h-full bg-domus-gradient transition-all duration-500" style="width: 25%"></div>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 py-8">
+
+    <!-- ============== ETAPA 1 — ESCOLHER DIA ============== -->
+    <section id="etapa-1" class="step-content">
+      <div class="text-center mb-7">
+        <h1 class="font-serif text-3xl md:text-4xl text-domus-azul-escuro mb-2">Vai ser uma alegria te receber</h1>
+        <p class="text-domus-texto-suave">Escolhe o melhor dia pra você conhecer a casa</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-domus-borda/40 p-5 mb-4">
+        <p class="text-xs uppercase tracking-wider text-domus-azul font-semibold mb-3">Próximos dias disponíveis</p>
+        <div id="grid-dias" class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+          <!-- Dias preenchidos via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== ETAPA 2 — ESCOLHER HORÁRIO ============== -->
+    <section id="etapa-2" class="step-content hidden">
+      <div class="text-center mb-7">
+        <h1 class="font-serif text-3xl md:text-4xl text-domus-azul-escuro mb-2">Escolhe um horário</h1>
+        <p class="text-domus-texto-suave" id="dia-escolhido-label">—</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-domus-borda/40 p-5">
+        <p class="text-xs uppercase tracking-wider text-domus-azul font-semibold mb-3">Horários disponíveis</p>
+        <div id="grid-horarios" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <!-- Slots preenchidos via JS -->
+        </div>
+        <div class="flex items-center gap-3 mt-4 text-[11px] text-domus-texto-suave">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-white border border-domus-borda inline-block"></span> Disponível</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-domus-azul inline-block"></span> Selecionado</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span> Ocupado</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== ETAPA 3 — DADOS ============== -->
+    <section id="etapa-3" class="step-content hidden">
+      <div class="text-center mb-7">
+        <h1 class="font-serif text-3xl md:text-4xl text-domus-azul-escuro mb-2">Seus dados</h1>
+        <p class="text-domus-texto-suave" id="resumo-data-hora">—</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-domus-borda/40 p-5 space-y-4">
+        <div>
+          <label class="lbl">Seu nome *</label>
+          <input id="f-nome" type="text" class="input-domus" placeholder="Como prefere ser chamada" autocomplete="name" />
+        </div>
+        <div>
+          <label class="lbl">E-mail *</label>
+          <input id="f-email" type="email" class="input-domus" placeholder="seu.email@exemplo.com" autocomplete="email" />
+        </div>
+        <div>
+          <label class="lbl">WhatsApp *</label>
+          <input id="f-whatsapp" type="tel" class="input-domus" placeholder="(11) 99999-9999" autocomplete="tel" />
+        </div>
+        <div>
+          <label class="lbl">Quer comentar algo? <span class="text-domus-texto-suave">(opcional)</span></label>
+          <textarea id="f-obs" rows="2" class="input-domus" placeholder="Algo que a gente já possa saber"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== ETAPA 4 — SELFIE ============== -->
+    <section id="etapa-4" class="step-content hidden">
+      <div class="text-center mb-7">
+        <h1 class="font-serif text-3xl md:text-4xl text-domus-azul-escuro mb-2">Última coisa: uma selfie 📸</h1>
+        <p class="text-domus-texto-suave max-w-md mx-auto">Pra a gente te reconhecer com carinho na hora que você chegar</p>
+      </div>
+
+      <label class="selfie-area block" id="selfie-card">
+        <input id="selfie-input" type="file" accept="image/*" capture="user" class="hidden" />
+        <div id="selfie-vazio">
+          <div class="text-5xl mb-3">📷</div>
+          <p class="font-semibold text-domus-azul-escuro">Toque para tirar selfie</p>
+          <p class="text-xs text-domus-texto-suave mt-1">Pode usar a câmera do celular ou enviar uma foto</p>
+        </div>
+        <div id="selfie-preview" class="hidden">
+          <img id="selfie-img" alt="Selfie" class="w-32 h-32 rounded-full object-cover mx-auto border-4 border-green-400" />
+          <p class="text-sm font-semibold text-green-700 mt-3">✓ Selfie enviada</p>
+          <p class="text-[11px] text-domus-texto-suave mt-1">Toque na imagem se quiser trocar</p>
+        </div>
+      </label>
+
+      <div id="erro-envio" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 mt-5">
+        <p id="erro-envio-texto" class="text-sm text-red-700"></p>
+      </div>
+    </section>
+
+    <!-- ============== TELA DE SUCESSO ============== -->
+    <section id="tela-sucesso" class="hidden">
+      <div class="text-center py-6">
+        <div class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center text-5xl mx-auto mb-6">✓</div>
+        <h2 class="font-serif text-3xl text-domus-azul-escuro mb-3">Visita marcada!</h2>
+        <p class="text-domus-texto mb-6 max-w-md mx-auto" id="sucesso-resumo">—</p>
+
+        <div class="bg-white rounded-2xl border border-domus-borda/40 p-6 max-w-md mx-auto mb-6 text-left">
+          <p class="text-[10px] uppercase tracking-wider text-domus-azul font-semibold mb-3">Endereço</p>
+          <p id="sucesso-endereco" class="text-sm text-domus-texto leading-relaxed">—</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto items-stretch justify-center">
+          <a id="btn-gcal" href="#" target="_blank" class="flex-1 px-5 py-3.5 bg-domus-azul text-white rounded-xl font-semibold text-sm text-center hover:bg-domus-azul-escuro transition flex items-center justify-center gap-2 shadow-sm">
+            <span aria-hidden="true">📅</span> Adicionar ao Google Calendar
+          </a>
+          <a id="btn-whats" href="#" target="_blank" class="flex-1 px-5 py-3.5 rounded-xl font-semibold text-sm text-center text-white transition flex items-center justify-center gap-2 shadow-sm" style="background:#25D366;" onmouseover="this.style.background='#1DA851'" onmouseout="this.style.background='#25D366'">
+            <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            WhatsApp
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer com botões -->
+  <footer id="footer-acoes" class="fixed bottom-0 inset-x-0 bg-white border-t border-domus-borda/40 backdrop-blur-md z-30">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+      <button id="btn-voltar" onclick="voltarEtapa()" class="hidden px-4 py-2.5 rounded-xl border border-domus-borda text-sm font-medium text-domus-texto hover:bg-gray-50 transition">
+        Voltar
+      </button>
+      <div class="flex-1"></div>
+      <button id="btn-proximo" onclick="proximaEtapa()" class="hidden px-6 py-2.5 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition">
+        <span id="btn-proximo-txt">Próximo</span>
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    // ============================================================
+    // CONFIG
+    // ============================================================
+    const SUPABASE_URL  = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    const TOTAL_ETAPAS = 4;
+    let etapaAtual = 1;
+
+    // unidade vem da URL (?unidade=AP ou ?unidade=Rib) — opcional
+    const params = new URLSearchParams(location.search);
+    const UNIDADE = (params.get('unidade') || '').toUpperCase() === 'RIB' ? 'Rib'
+                  : (params.get('unidade') || '').toUpperCase() === 'AP'  ? 'AP'
+                  : null;
+
+    const ENDERECOS = {
+      'AP':  'Rua Dr. Andrade Pertence, 73 — Vila Olímpia, São Paulo/SP',
+      'Rib': 'Rua Ribeirão Claro, 547 — Vila Olímpia, São Paulo/SP'
+    };
+
+    let diaEscolhido = null;   // 'YYYY-MM-DD'
+    let horarioEscolhido = null; // 'HH:mm'
+    let selfieFile = null;
+    let visitasOcupadasPorDia = {}; // { '2026-05-08': ['11:00', '11:30'], ... }
+
+    // ============================================================
+    // GERAR DIAS DISPONÍVEIS (próximos 14 dias úteis exceto dom/seg)
+    // ============================================================
+    function gerarDias() {
+      const dias = [];
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const NOMES_DIA = ['dom','seg','ter','qua','qui','sex','sáb'];
+      const NOMES_MES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+      let d = new Date(hoje);
+      let count = 0;
+      while (dias.length < 10 && count < 30) {
+        d.setDate(d.getDate() + 1); // começa amanhã
+        const dow = d.getDay();
+        // Aceita: terça(2), quarta(3), quinta(4), sexta(5), sábado(6)
+        if (dow >= 2 && dow <= 6) {
+          dias.push({
+            iso: d.toISOString().split('T')[0],
+            dia: d.getDate(),
+            mes: NOMES_MES[d.getMonth()],
+            semana: NOMES_DIA[dow]
+          });
+        }
+        count++;
+      }
+      return dias;
+    }
+
+    function gerarHorarios() {
+      // 11h às 18h30 (último slot 18:30, dura até 19h)
+      const slots = [];
+      for (let h = 11; h <= 18; h++) {
+        slots.push(String(h).padStart(2,'0') + ':00');
+        slots.push(String(h).padStart(2,'0') + ':30');
+      }
+      return slots;
+    }
+
+    // ============================================================
+    // BUSCAR VISITAS JÁ AGENDADAS NOS PRÓXIMOS DIAS (pra marcar slots ocupados)
+    // ============================================================
+    async function carregarOcupadas() {
+      try {
+        const hoje = new Date().toISOString().split('T')[0];
+        const dataLimite = new Date();
+        dataLimite.setDate(dataLimite.getDate() + 30);
+        const limiteISO = dataLimite.toISOString().split('T')[0];
+
+        let q = db.from('visitas_agendadas')
+          .select('data, horario, unidade')
+          .eq('status', 'agendada')
+          .gte('data', hoje)
+          .lte('data', limiteISO);
+
+        if (UNIDADE) q = q.eq('unidade', UNIDADE);
+
+        const { data, error } = await q;
+        if (error) { console.warn('[ocupadas] erro:', error); return; }
+
+        visitasOcupadasPorDia = {};
+        (data || []).forEach(v => {
+          const dia = v.data;
+          if (!visitasOcupadasPorDia[dia]) visitasOcupadasPorDia[dia] = [];
+          // horario vem como "HH:MM:SS" — pegamos só HH:MM
+          visitasOcupadasPorDia[dia].push((v.horario || '').substring(0, 5));
+        });
+      } catch (e) {
+        console.warn('[ocupadas] catch:', e);
+      }
+    }
+
+    // ============================================================
+    // RENDERIZAR DIAS
+    // ============================================================
+    function renderDias() {
+      const grid = document.getElementById('grid-dias');
+      const dias = gerarDias();
+      const todosSlots = gerarHorarios();
+
+      grid.innerHTML = dias.map(d => {
+        const ocupadas = (visitasOcupadasPorDia[d.iso] || []).length;
+        const lotada = ocupadas >= todosSlots.length;
+        return `
+          <div class="day-card ${lotada ? 'lotada' : ''}" data-iso="${d.iso}" ${lotada ? 'data-lotada="1"' : ''}>
+            <p class="dia-semana text-[11px] uppercase tracking-wider text-domus-texto-suave">${d.semana}</p>
+            <p class="dia-mes font-serif text-2xl text-domus-azul-escuro mt-1">${d.dia}</p>
+            <p class="text-[10px] text-domus-texto-suave">${d.mes}</p>
+            ${lotada ? '<p class="text-[9px] text-red-600 font-semibold mt-1">Esgotado</p>' : ''}
+          </div>
+        `;
+      }).join('');
+
+      grid.querySelectorAll('.day-card').forEach(c => {
+        c.addEventListener('click', () => {
+          if (c.dataset.lotada) return;
+          grid.querySelectorAll('.day-card').forEach(o => o.classList.remove('ativa'));
+          c.classList.add('ativa');
+          diaEscolhido = c.dataset.iso;
+          atualizarBotaoProximo();
+        });
+      });
+    }
+
+    // ============================================================
+    // RENDERIZAR HORÁRIOS
+    // ============================================================
+    // Slots "ocupados" fixos por dia da semana (prova social — dá impressão de procurada)
+    // Se alguém agendar de verdade nesse mesmo horário, vira ocupado real (dupla camada).
+    const SLOTS_FAKE_POR_DIA_SEMANA = {
+      2: ['11:30', '15:00'], // terça
+      3: ['13:00', '17:30'], // quarta
+      4: ['12:30', '16:00'], // quinta
+      5: ['14:00', '18:30'], // sexta
+      6: ['11:00', '14:30']  // sábado
+    };
+
+    function renderHorarios() {
+      const grid = document.getElementById('grid-horarios');
+      const slots = gerarHorarios();
+      const ocupadasReais = visitasOcupadasPorDia[diaEscolhido] || [];
+      const dow = new Date(diaEscolhido + 'T12:00:00').getDay();
+      const fakes = SLOTS_FAKE_POR_DIA_SEMANA[dow] || [];
+      const ocupadas = [...new Set([...ocupadasReais, ...fakes])];
+
+      grid.innerHTML = slots.map(s => {
+        const ocupado = ocupadas.includes(s);
+        return `<div class="slot-card ${ocupado ? 'ocupado' : ''}" data-slot="${s}" ${ocupado ? 'data-ocupado="1"' : ''}>${s}</div>`;
+      }).join('');
+
+      grid.querySelectorAll('.slot-card').forEach(c => {
+        c.addEventListener('click', () => {
+          if (c.dataset.ocupado) return;
+          grid.querySelectorAll('.slot-card').forEach(o => o.classList.remove('ativa'));
+          c.classList.add('ativa');
+          horarioEscolhido = c.dataset.slot;
+          atualizarBotaoProximo();
+        });
+      });
+
+      // Atualizar label do dia escolhido
+      const data = new Date(diaEscolhido + 'T12:00:00');
+      const opt = { weekday: 'long', day: 'numeric', month: 'long' };
+      document.getElementById('dia-escolhido-label').textContent =
+        data.toLocaleDateString('pt-BR', opt).replace(/^./, c => c.toUpperCase());
+    }
+
+    // ============================================================
+    // NAVEGAÇÃO
+    // ============================================================
+    function mostrarEtapa(n) {
+      for (let i = 1; i <= TOTAL_ETAPAS; i++) {
+        const sec = document.getElementById('etapa-' + i);
+        if (sec) sec.classList.toggle('hidden', i !== n);
+      }
+      etapaAtual = n;
+      document.getElementById('passo-label').textContent = `Etapa ${n} de ${TOTAL_ETAPAS}`;
+      document.getElementById('progress-bar').style.width = (n / TOTAL_ETAPAS * 100) + '%';
+      document.getElementById('btn-voltar').classList.toggle('hidden', n === 1);
+      const txt = document.getElementById('btn-proximo-txt');
+      txt.textContent = (n === TOTAL_ETAPAS) ? 'Confirmar visita' : 'Próximo';
+
+      // Renderizar conteúdo dinâmico das etapas
+      if (n === 2) renderHorarios();
+      if (n === 3) {
+        const data = new Date(diaEscolhido + 'T12:00:00');
+        const opt = { weekday: 'long', day: 'numeric', month: 'long' };
+        const dataFmt = data.toLocaleDateString('pt-BR', opt);
+        document.getElementById('resumo-data-hora').textContent = `${dataFmt} · ${horarioEscolhido}`;
+      }
+
+      atualizarBotaoProximo();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function atualizarBotaoProximo() {
+      const btn = document.getElementById('btn-proximo');
+      const ok = (
+        (etapaAtual === 1 && diaEscolhido) ||
+        (etapaAtual === 2 && horarioEscolhido) ||
+        (etapaAtual === 3 && document.getElementById('f-nome').value.trim()
+                          && document.getElementById('f-email').value.trim()
+                          && document.getElementById('f-whatsapp').value.trim()) ||
+        (etapaAtual === 4 && selfieFile)
+      );
+      btn.classList.toggle('hidden', !ok);
+    }
+
+    function proximaEtapa() {
+      if (etapaAtual === TOTAL_ETAPAS) { return enviarAgendamento(); }
+      mostrarEtapa(etapaAtual + 1);
+    }
+
+    function voltarEtapa() {
+      if (etapaAtual > 1) mostrarEtapa(etapaAtual - 1);
+    }
+
+    // ============================================================
+    // SELFIE
+    // ============================================================
+    document.getElementById('selfie-input').addEventListener('change', e => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      if (f.size > 10 * 1024 * 1024) { alert('Foto muito grande (máx 10MB)'); return; }
+      selfieFile = f;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById('selfie-img').src = ev.target.result;
+        document.getElementById('selfie-vazio').classList.add('hidden');
+        document.getElementById('selfie-preview').classList.remove('hidden');
+        document.getElementById('selfie-card').classList.add('preenchida');
+        atualizarBotaoProximo();
+      };
+      reader.readAsDataURL(f);
+    });
+
+    // ============================================================
+    // INPUTS DE TEXTO — habilita botão se todos preenchidos
+    // ============================================================
+    ['f-nome','f-email','f-whatsapp'].forEach(id => {
+      document.getElementById(id).addEventListener('input', atualizarBotaoProximo);
+    });
+
+    // ============================================================
+    // ENVIAR AGENDAMENTO
+    // ============================================================
+    async function enviarAgendamento() {
+      const btn = document.getElementById('btn-proximo');
+      const erroEl = document.getElementById('erro-envio');
+      const erroTxt = document.getElementById('erro-envio-texto');
+      btn.disabled = true;
+      document.getElementById('btn-proximo-txt').textContent = 'Confirmando...';
+      erroEl.classList.add('hidden');
+
+      try {
+        const nome = document.getElementById('f-nome').value.trim();
+        const email = document.getElementById('f-email').value.trim().toLowerCase();
+        const whatsapp = document.getElementById('f-whatsapp').value.trim();
+        const obs = document.getElementById('f-obs').value.trim() || null;
+
+        // 1) Insere no banco
+        const { data: inserted, error: insErr } = await db
+          .from('visitas_agendadas')
+          .insert([{
+            nome, email, whatsapp,
+            unidade: UNIDADE,
+            data: diaEscolhido,
+            horario: horarioEscolhido,
+            observacoes: obs,
+            status: 'agendada',
+            user_agent: navigator.userAgent.substring(0, 240)
+          }])
+          .select()
+          .single();
+
+        if (insErr) {
+          if (insErr.code === '23505') {
+            // Slot tomado entre o load e o submit
+            throw new Error('Esse horário acabou de ser reservado por outra pessoa. Escolha outro, por favor.');
+          }
+          throw insErr;
+        }
+
+        const visitaId = inserted.id;
+        const cancelToken = inserted.cancel_token;
+
+        // 2) Sobe selfie
+        if (selfieFile) {
+          const ext = (selfieFile.name.split('.').pop() || 'jpg').toLowerCase();
+          const path = `${visitaId}/selfie.${ext}`;
+          const { error: upErr } = await db.storage.from('visitas').upload(path, selfieFile, {
+            contentType: selfieFile.type, upsert: true
+          });
+          if (!upErr) {
+            await db.from('visitas_agendadas').update({ selfie_url: path }).eq('id', visitaId);
+          } else {
+            console.warn('[selfie] erro upload:', upErr);
+          }
+        }
+
+        mostrarSucesso(nome, diaEscolhido, horarioEscolhido, cancelToken);
+      } catch (err) {
+        console.error('[agendar] erro:', err);
+        erroTxt.textContent = err.message || 'Erro ao agendar. Tente de novo em instantes.';
+        erroEl.classList.remove('hidden');
+        btn.disabled = false;
+        document.getElementById('btn-proximo-txt').textContent = 'Confirmar visita';
+      }
+    }
+
+    function mostrarSucesso(nome, dataISO, horario, cancelToken) {
+      // Esconde tudo e mostra sucesso
+      for (let i = 1; i <= TOTAL_ETAPAS; i++) {
+        document.getElementById('etapa-' + i)?.classList.add('hidden');
+      }
+      document.getElementById('footer-acoes').classList.add('hidden');
+      document.getElementById('tela-sucesso').classList.remove('hidden');
+
+      const data = new Date(dataISO + 'T12:00:00');
+      const opt = { weekday: 'long', day: 'numeric', month: 'long' };
+      const dataFmt = data.toLocaleDateString('pt-BR', opt);
+
+      document.getElementById('sucesso-resumo').innerHTML =
+        `Te esperamos <strong>${dataFmt}</strong> às <strong>${horario}</strong>.<br>Nos vemos em breve, ${nome.split(' ')[0]} 💛`;
+
+      const enderecoTexto = UNIDADE
+        ? ENDERECOS[UNIDADE]
+        : 'Confirmamos a unidade pelo WhatsApp logo mais 💛';
+      document.getElementById('sucesso-endereco').textContent = enderecoTexto;
+
+      // Link Google Calendar
+      const startDate = dataISO.replace(/-/g, '');
+      const [hh, mm] = horario.split(':');
+      const startTime = `T${hh}${mm}00`;
+      const endHora = String(parseInt(hh) + (mm === '30' ? 1 : 0)).padStart(2, '0');
+      const endMin = mm === '30' ? '00' : '30';
+      const endTime = `T${endHora}${endMin}00`;
+      const titulo = encodeURIComponent('Visita à Domus Garden Coliving');
+      const detalhes = encodeURIComponent(`Visita marcada com ${nome}.\n\nEndereço: ${enderecoTexto}`);
+      const local = encodeURIComponent(enderecoTexto);
+      const gcalUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${startDate}${startTime}/${startDate}${endTime}&details=${detalhes}&location=${local}&ctz=America/Sao_Paulo`;
+      document.getElementById('btn-gcal').href = gcalUrl;
+
+      // WhatsApp — mensagem pré-pronta + espaço pra dúvida
+      const msgWhats = encodeURIComponent(
+        `Oi! Acabei de agendar uma visita pelo site da Domus pra ${dataFmt} às ${horario}. Meu nome é ${nome} 💛\n\nTenho uma dúvida: (explique aqui sua dúvida)`
+      );
+      document.getElementById('btn-whats').href = `https://wa.me/5511943330911?text=${msgWhats}`;
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    (async () => {
+      await carregarOcupadas();
+      renderDias();
+      mostrarEtapa(1);
+    })();
+  </script>
+
+</body>
+</html>
