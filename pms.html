@@ -2769,7 +2769,10 @@
           // Posicionar: cada coluna é (100/mapaDias)% da largura
           const colWidth = 100 / mapaDias;
           bar.style.left = (barStart * colWidth) + '%';
-          bar.style.width = ((barEnd - barStart) * colWidth) + '%';
+          // Estende meio dia pra direita (visual de "saída de manhã" — igual Hospedin)
+          const eMeioDia = (barEnd < mapaDias);
+          const larguraExtra = eMeioDia ? 0.5 : 0;
+          bar.style.width = ((barEnd - barStart + larguraExtra) * colWidth) + '%';
 
           // Cor por status (regra solicitada pela Gabi):
           //   Amarelo = pré-reserva (status pendente / proforma)
@@ -4131,9 +4134,50 @@
         document.getElementById('editResQuarto').value = r.quarto || r.cama || '';
         document.getElementById('editResValor').value = r.valor_total || '';
         document.getElementById('editResObs').value = r.observacoes || '';
+        // Popula dropdown de quartos disponíveis na janela checkin-checkout
+        await popularQuartosDisponiveis(r.checkin, r.checkout, r.cama || r.quarto || '', r.id);
         closeAcaoModal();
         document.getElementById('editarReservaModal').classList.remove('hidden');
       } catch (e) { mostrarToast('Erro ao abrir edição: ' + e.message, 'error'); }
+    }
+
+    // Popula select com quartos que NÃO têm conflito de reserva no período (mantém o quarto atual)
+    async function popularQuartosDisponiveis(checkin, checkout, quartoAtual, reservaAtualId) {
+      const sel = document.getElementById('editResQuarto');
+      const hint = document.getElementById('editResQuartoHint');
+      sel.innerHTML = '<option value="">Carregando...</option>';
+
+      try {
+        // Busca todas reservas que sobrepõem essa janela (excluindo a atual)
+        const { data: conflitos } = await db
+          .from('reservas')
+          .select('id, cama, quarto, hospede_nome, checkin, checkout')
+          .neq('id', reservaAtualId)
+          .neq('status', 'cancelada')
+          .lt('checkin', checkout)
+          .gt('checkout', checkin);
+
+        const ocupados = new Set();
+        (conflitos || []).forEach(c => {
+          const ocupado = (c.cama || c.quarto || '').trim();
+          if (ocupado) ocupados.add(ocupado.toLowerCase());
+        });
+
+        sel.innerHTML = '';
+        QUARTOS.forEach(q => {
+          const ocupado = ocupados.has(q.id.toLowerCase());
+          const opt = document.createElement('option');
+          opt.value = q.id;
+          opt.textContent = q.label + (ocupado ? ' — OCUPADO' : '') + ' · R$ ' + q.preco;
+          opt.disabled = ocupado && q.id.toLowerCase() !== quartoAtual.toLowerCase();
+          if (q.id.toLowerCase() === quartoAtual.toLowerCase()) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        hint.textContent = 'Disponíveis no período ' + checkin + ' a ' + checkout + '. Quartos ocupados ficam desabilitados.';
+      } catch (e) {
+        sel.innerHTML = '<option value="' + (quartoAtual || '') + '">' + (quartoAtual || 'erro ao carregar') + '</option>';
+        hint.textContent = 'Não consegui verificar disponibilidade — usando quarto atual.';
+      }
     }
 
     function fecharEditarReservaModal() {
@@ -4465,7 +4509,10 @@
           </div>
           <div>
             <label class="block text-xs font-medium text-domus-texto-suave mb-1">Quarto / Cama</label>
-            <input id="editResQuarto" type="text" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" placeholder="Ex: Studio 1, Hostel 6 - Cama 1" />
+            <select id="editResQuarto" class="w-full px-3 py-2 border border-domus-borda rounded text-sm">
+              <option value="">Carregando quartos disponíveis...</option>
+            </select>
+            <p id="editResQuartoHint" class="text-[10px] text-domus-texto-suave mt-1"></p>
           </div>
           <div>
             <label class="block text-xs font-medium text-domus-texto-suave mb-1">Valor total (R$)</label>
