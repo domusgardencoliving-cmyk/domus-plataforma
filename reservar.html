@@ -2883,4 +2883,18 @@
           if (!banner) {
             banner = document.createElement('div');
             banner.id = 'pr-banner-adicional';
-            
+            banner.className = 'mb-4 p-3 rounded-xl bg-domus-rosa/10 border border-domus-rosa/30 text-center';
+            banner.innerHTML = '<p class="text-sm text-domus-rosa font-semibold">+ Adicionando mais uma reserva</p>' +
+                               '<p class="text-[11px] text-domus-texto-suave mt-1">Voce ja esta logado. Escolha as datas e o quarto desta reserva extra.</p>';
+            var step2El = document.getElementById('pr-step-2');
+            if (step2El) step2El.insertBefore(banner, step2El.firstChild);
+          } else {
+            banner.classList.remove('hidden');
+          }
+          window._reservaAdicional = true;
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
