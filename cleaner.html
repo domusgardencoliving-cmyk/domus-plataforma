@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- safeStorage: garante que localStorage não quebre em modo anônimo / quota cheia -->
+    <script>(function(){var f={};try{localStorage.setItem('__t__','1');localStorage.removeItem('__t__');return;}catch(e){}try{Object.defineProperty(window,'localStorage',{value:{getItem:function(k){return f[k]!==undefined?f[k]:null;},setItem:function(k,v){f[k]=String(v);},removeItem:function(k){delete f[k];},clear:function(){f={};},key:function(i){return Object.keys(f)[i]||null;},get length(){return Object.keys(f).length;}},writable:true,configurable:true});console.warn('[safeStorage] usando fallback em memoria');}catch(e){console.error('[safeStorage] falhou:',e);}})();</script>
     <title>Domus Limpeza</title>
 
     <!-- Google Fonts -->
@@ -1327,19 +1329,4 @@
                 const sessaoSalva = localStorage.getItem('cleaner_session');
                 if (sessaoSalva) {
                     const sessao = JSON.parse(sessaoSalva);
-                    if (sessao && sessao.cleaner_id && sessao.cleaner_email) {
-                        currentUser = { id: sessao.cleaner_id, email: sessao.cleaner_email };
-                        currentUserProfile = { id: sessao.cleaner_id, nome: sessao.cleaner_nome, perfil: 'limpeza' };
-                        const h1 = document.querySelector('#mainScreen h1');
-                        if (h1) h1.textContent = 'Olá, ' + (sessao.cleaner_nome || 'Equipe Domus') + '!';
-                        showMainScreen();
-                        return;
-                    }
-                }
-            } catch(e) { console.warn('[CLEANER] sessao invalida', e); }
-            showLoginScreen();
-        })();
-
-    </script>
-</body>
-</html>
+                    if (sessao && sessao.cleaner_id && ses

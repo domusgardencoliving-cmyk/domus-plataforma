@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- safeStorage: garante que localStorage não quebre em modo anônimo / quota cheia -->
+  <script>(function(){var f={};try{localStorage.setItem('__t__','1');localStorage.removeItem('__t__');return;}catch(e){}try{Object.defineProperty(window,'localStorage',{value:{getItem:function(k){return f[k]!==undefined?f[k]:null;},setItem:function(k,v){f[k]=String(v);},removeItem:function(k){delete f[k];},clear:function(){f={};},key:function(i){return Object.keys(f)[i]||null;},get length(){return Object.keys(f).length;}},writable:true,configurable:true});console.warn('[safeStorage] usando fallback em memoria');}catch(e){console.error('[safeStorage] falhou:',e);}})();</script>
   <title>Domus PMS — Hostel Andrade Pertence</title>
   <meta name="description" content="Sistema de gestão do hostel Domus Garden Coliving" />
 
@@ -3998,23 +4000,4 @@
           </div>
 
           <div id="cancEnganoAviso" class="hidden p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
-            ⚠️ Reservas marcadas como "por engano" <strong>não entram nas estatísticas</strong> de receita, ocupação ou taxa de cancelamento. Use somente quando a reserva nunca deveria ter existido (clique acidental, teste, etc.).
-          </div>
-
-          <div class="flex gap-2 pt-2">
-            <button type="button" onclick="fecharCancelarReservaModal()"
-              class="flex-1 px-4 py-2 bg-gray-100 text-domus-texto rounded text-sm hover:bg-gray-200">
-              Voltar
-            </button>
-            <button type="submit"
-              class="flex-1 px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 font-medium">
-              Confirmar cancelamento
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-</body>
-</html>
+            ⚠️ Reservas marcadas como "por engano" <strong>não entram nas estatísticas</strong> de receita, ocupaçã

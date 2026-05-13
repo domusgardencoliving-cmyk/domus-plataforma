@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- safeStorage: garante que localStorage não quebre em modo anônimo / quota cheia -->
+  <script>(function(){var f={};try{localStorage.setItem('__t__','1');localStorage.removeItem('__t__');return;}catch(e){}try{Object.defineProperty(window,'localStorage',{value:{getItem:function(k){return f[k]!==undefined?f[k]:null;},setItem:function(k,v){f[k]=String(v);},removeItem:function(k){delete f[k];},clear:function(){f={};},key:function(i){return Object.keys(f)[i]||null;},get length(){return Object.keys(f).length;}},writable:true,configurable:true});console.warn('[safeStorage] usando fallback em memoria');}catch(e){console.error('[safeStorage] falhou:',e);}})();</script>
   <title>Portal Dominhas — Domus Garden</title>
   <meta name="description" content="Portal das moradoras do Domus Garden Coliving. Acesse seu contrato, boletos, comunicados e mercadinho." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏡</text></svg>" />
@@ -1170,23 +1172,4 @@
               mostrarPainel();
               return;
             }
-          } catch(e) { console.warn('sessão inválida', e); }
-        }
-
-        // Pré-preencher email se "lembrar de mim" foi marcado
-        const remember = localStorage.getItem('domus_morador_remember');
-        const savedEmail = localStorage.getItem('domus_morador_email');
-        if (remember && savedEmail) {
-          var emailEl = document.getElementById('login-email');
-          var lembrarEl = document.getElementById('lembrar-mim');
-          if (emailEl) emailEl.value = savedEmail;
-          if (lembrarEl) lembrarEl.checked = true;
-        }
-      } catch (err) {
-        console.error('Erro na inicialização:', err);
-      }
-    })();
-  </script>
-
-</body>
-</html>
+          } 

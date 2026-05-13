@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- safeStorage: garante que localStorage não quebre em modo anônimo / quota cheia -->
+  <script>(function(){var f={};try{localStorage.setItem('__t__','1');localStorage.removeItem('__t__');return;}catch(e){}try{Object.defineProperty(window,'localStorage',{value:{getItem:function(k){return f[k]!==undefined?f[k]:null;},setItem:function(k,v){f[k]=String(v);},removeItem:function(k){delete f[k];},clear:function(){f={};},key:function(i){return Object.keys(f)[i]||null;},get length(){return Object.keys(f).length;}},writable:true,configurable:true});console.warn('[safeStorage] usando fallback em memoria');}catch(e){console.error('[safeStorage] falhou:',e);}})();</script>
   <title>Minha Conta — Domus Garden</title>
   <meta name="description" content="Acesse sua conta no Domus Garden. Veja suas reservas, pontos de fidelidade e dados pessoais." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏡</text></svg>" />
@@ -878,25 +880,4 @@
             return '<div class="bg-white rounded-2xl border border-domus-borda/30 p-4">'
               + '<div class="flex items-start justify-between mb-2">'
               + '<div><p class="font-semibold text-domus-azul-escuro">' + (r.cama || 'Acomodação') + '</p>'
-              + '<p class="text-xs text-domus-texto-suave">' + dataIn + ' - ' + dataOut + '</p></div>'
-              + statusBadge + '</div>'
-              + (valor ? '<p class="text-sm font-medium text-domus-azul mt-2">' + valor + '</p>' : '')
-              + '</div>';
-          }).join('');
-        }
-      } catch (err) {
-        console.error('Erro ao carregar reservas:', err);
-        clearTimeout(timeoutId);
-        if (loading) loading.classList.add('hidden');
-        if (vazio) vazio.classList.remove('hidden');
-      }
-    }
-
-    // Disparar carregamento ao abrir a página (depois do login restaurado)
-    setTimeout(function() {
-      try { carregarMinhasReservas(); } catch(e) { console.warn(e); }
-    }, 500);
-
-  </script>
-</body>
-</html>
+              + '<p class="text-xs text-domus-texto-suave">' + dataIn + ' - ' + 

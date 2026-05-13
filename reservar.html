@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- safeStorage: garante que localStorage não quebre em modo anônimo / quota cheia -->
+  <script>(function(){var f={};try{localStorage.setItem('__t__','1');localStorage.removeItem('__t__');return;}catch(e){}try{Object.defineProperty(window,'localStorage',{value:{getItem:function(k){return f[k]!==undefined?f[k]:null;},setItem:function(k,v){f[k]=String(v);},removeItem:function(k){delete f[k];},clear:function(){f={};},key:function(i){return Object.keys(f)[i]||null;},get length(){return Object.keys(f).length;}},writable:true,configurable:true});console.warn('[safeStorage] usando fallback em memoria');}catch(e){console.error('[safeStorage] falhou:',e);}})();</script>
   <title>Reserve seu Espaço — Domus Garden</title>
   <!-- Microsoft Clarity (analytics + heatmap + gravacoes) -->
   <script type="text/javascript">
@@ -2881,16 +2883,4 @@
           if (!banner) {
             banner = document.createElement('div');
             banner.id = 'pr-banner-adicional';
-            banner.className = 'mb-4 p-3 rounded-xl bg-domus-rosa/10 border border-domus-rosa/30 text-center';
-            banner.innerHTML = '<p class="text-sm text-domus-rosa font-semibold">+ Adicionando mais uma reserva</p>' +
-                               '<p class="text-[11px] text-domus-texto-suave mt-1">Voce ja esta logado. Escolha as datas e o quarto desta reserva extra.</p>';
-            var step2El = document.getElementById('pr-step-2');
-            if (step2El) step2El.insertBefore(banner, step2El.firstChild);
-          } else {
-            banner.classList.remove('hidden');
-          }
-          window._reservaAdicional = true;
-        });
-      }
-    })();
-  </scrip
+            
