@@ -896,6 +896,10 @@
           <span>🎟️</span>
           <span>Cupons</span>
         </a>
+        <a href="#" data-view="problemas" class="sidebar-link" id="sidebarProblemas">
+          <span>⚠️</span>
+          <span>Problemas <span id="badgeProblemas" style="background:#ef4444;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;margin-left:4px;display:none;">0</span></span>
+        </a>
         <a href="#" data-view="boletos" class="sidebar-link">
           <span>💰</span>
           <span>Boletos Dominhas</span>
@@ -1333,6 +1337,51 @@
               </thead>
               <tbody id="cuponsTable">
                 <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PROBLEMAS VIEW (IA validadora) -->
+        <div id="problemasView" class="view hidden">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-2xl font-semibold text-domus-texto">Reservas com problema</h2>
+              <p class="text-xs text-domus-texto-suave mt-1">A IA validadora detectou reservas que precisam da sua atenção.</p>
+            </div>
+            <button onclick="loadProblemas()" class="px-4 py-2 bg-domus-azul text-white rounded text-sm hover:bg-opacity-90">↻ Atualizar</button>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 mb-4">
+            <div class="p-4 rounded-xl bg-red-50 border border-red-300 text-center">
+              <div class="text-[10px] uppercase tracking-wider text-red-700 font-semibold">Críticos</div>
+              <div id="kpiCritico" class="text-2xl font-bold text-red-700">—</div>
+            </div>
+            <div class="p-4 rounded-xl bg-amber-50 border border-amber-300 text-center">
+              <div class="text-[10px] uppercase tracking-wider text-amber-700 font-semibold">Atenção</div>
+              <div id="kpiAtencao" class="text-2xl font-bold text-amber-700">—</div>
+            </div>
+            <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-center">
+              <div class="text-[10px] uppercase tracking-wider text-emerald-700 font-semibold">OK</div>
+              <div id="kpiOk" class="text-2xl font-bold text-emerald-700">—</div>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Hóspede</th>
+                  <th>Quarto</th>
+                  <th>Check-in</th>
+                  <th>Canal</th>
+                  <th>Problemas detectados</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="problemasTable">
+                <tr><td colspan="7" class="text-center text-domus-texto-suave py-8 italic">Carregando...</td></tr>
               </tbody>
             </table>
           </div>
@@ -2138,6 +2187,7 @@
       else if (view === 'hospedes') loadHospedes();
       else if (view === 'cupons') loadCupons();
       else if (view === 'boletos') loadBoletos();
+      else if (view === 'problemas') loadProblemas();
     }
 
     // ==========================================
@@ -3651,6 +3701,56 @@
     function mesAtualISO() {
       const d = new Date();
       return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+
+    async function loadProblemas() {
+      try {
+        const { data: todas } = await db.from('reservas').select('id,hospede_nome,cama,quarto,checkin,canal_codigo,validacao_status,validacao_problemas').neq('status','cancelada').or('nao_contabilizar.is.null,nao_contabilizar.eq.false').order('checkin',{ascending:true});
+        const list = todas || [];
+        const criticos = list.filter(r => r.validacao_status === 'critico');
+        const atencao = list.filter(r => r.validacao_status === 'atencao');
+        const ok = list.filter(r => r.validacao_status === 'ok');
+        document.getElementById('kpiCritico').textContent = criticos.length;
+        document.getElementById('kpiAtencao').textContent = atencao.length;
+        document.getElementById('kpiOk').textContent = ok.length;
+
+        // Badge no menu
+        const badge = document.getElementById('badgeProblemas');
+        if (badge) {
+          const total = criticos.length + atencao.length;
+          if (total > 0) { badge.textContent = total; badge.style.display = 'inline-block'; }
+          else { badge.style.display = 'none'; }
+        }
+
+        // Render — críticos primeiro, depois atenção
+        const ordenadas = [...criticos, ...atencao];
+        const tbody = document.getElementById('problemasTable');
+        if (!ordenadas.length) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-emerald-700 py-8">🎉 Todas as reservas estão OK!</td></tr>';
+          return;
+        }
+        tbody.innerHTML = ordenadas.map(r => {
+          const probs = r.validacao_problemas || [];
+          const probsHtml = probs.map(p => {
+            const cor = p.severidade === 'critico' ? 'text-red-700' : 'text-amber-700';
+            return '<div class="' + cor + ' text-xs">• ' + p.msg + ' <span class="text-domus-texto-suave">(' + p.campo + ')</span></div>';
+          }).join('');
+          const statusBadge = r.validacao_status === 'critico'
+            ? '<span class="px-2 py-1 rounded bg-red-100 text-red-800 text-xs font-bold">CRÍTICO</span>'
+            : '<span class="px-2 py-1 rounded bg-amber-100 text-amber-800 text-xs font-bold">ATENÇÃO</span>';
+          return '<tr>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td><div class="font-medium">' + (r.hospede_nome || '(sem nome)') + '</div></td>' +
+            '<td class="text-xs">' + (r.cama || r.quarto || '—') + '</td>' +
+            '<td class="text-xs">' + fmtDataBR(r.checkin) + '</td>' +
+            '<td class="text-xs">' + (r.canal_codigo || '—') + '</td>' +
+            '<td>' + probsHtml + '</td>' +
+            '<td><button onclick="abrirAcaoModal(\'' + r.id + '\')" class="text-domus-azul hover:underline text-xs">Ver/editar</button></td>' +
+            '</tr>';
+        }).join('');
+      } catch (e) {
+        document.getElementById('problemasTable').innerHTML = '<tr><td colspan="7" class="text-center text-red-600 py-6">Erro: ' + (e.message || e) + '</td></tr>';
+      }
     }
 
     async function loadBoletos() {
