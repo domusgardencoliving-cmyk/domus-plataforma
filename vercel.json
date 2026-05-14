@@ -54,6 +54,14 @@
     {
       "source": "/auditoria-pms",
       "destination": "/auditoria-pms.html"
+    },
+    {
+      "source": "/boletos-mes",
+      "destination": "/boletos-mes.html"
+    },
+    {
+      "source": "/boletos",
+      "destination": "/boletos-mes.html"
     }
   ]
 }
