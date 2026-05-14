@@ -2753,6 +2753,17 @@
             <button onclick="mostrarDgTab('dg-dashboard', this)" class="dg-nav-item active w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3 bg-domus-azul text-white">
               <span>📊</span> Dashboard
             </button>
+            <!-- ÁTRIO em destaque (mais usado) -->
+            <a href="sala-conversas.html" target="_blank"
+               class="dg-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer no-underline transition mb-2"
+               style="background:linear-gradient(135deg,#008B9C,#0A3142);color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,0.15);box-shadow:0 2px 8px rgba(0,139,156,0.25);">
+              <span style="font-size:18px;">🏛️</span>
+              <div class="flex-1">
+                <div style="font-weight:600;font-size:14px;">Átrio</div>
+                <div style="font-size:10px;opacity:0.8;font-style:italic;">todas as conversas chegam aqui</div>
+              </div>
+              <span style="font-size:10px;opacity:0.7;">↗</span>
+            </a>
             <button onclick="mostrarDgTab('dg-moradoras', this)" class="dg-nav-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3">
               <span>👥</span> Moradoras
             </button>
@@ -2818,9 +2829,6 @@
             <button onclick="mostrarDgTab('dg-limpeza-admin', this); carregarLimpezaAdmin();" class="dg-nav-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3">
               <span>🧹</span> Limpeza Admin
             </button>
-            <a href="sala-conversas.html" target="_blank" class="dg-nav-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3">
-              <span>💬</span> Fale Domus <span class="ml-auto text-[10px] text-domus-bege/50">↗</span>
-            </a>
             <!-- Separador -->
             <div class="my-3 border-t border-domus-azul/20"></div>
             <p class="px-4 text-[10px] uppercase tracking-widest text-domus-bege/60 mb-2">Outros módulos</p>
@@ -18278,12 +18286,4 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
           </div>
         </div>
 
-        <label class="flex items-center gap-2 text-sm text-domus-texto-suave cursor-pointer">
-          <input id="login-lembrar" type="checkbox" class="w-4 h-4 rounded border-domus-borda text-domus-azul focus:ring-domus-azul" />
-          <span>Lembrar de mim</span>
-        </label>
-
-        <div id="login-erro" class="hidden text-sm text-red-600 text-center p-2 bg-red-50 rounded-lg"></div>
-
-        <button type="submit" id="btn-entrar-dg"
-          style="display:flex !important; visibility:visible !important; opacity:1 !important; width:100% !important; backg
+        
