@@ -40,13 +40,35 @@ interface ReservaHospedin {
 }
 
 const loginHospedin = async (email: string, password: string): Promise<string | null> => {
-  const r = await fetch(`${HOSPEDIN_BASE}/authentication/sessions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ session: { email, password } }),
-  });
-  const d = await r.json();
-  return d?.token ?? null;
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    try {
+      const r = await fetch(`${HOSPEDIN_BASE}/authentication/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ session: { email, password } }),
+      });
+      const txt = await r.text();
+      if (!r.ok) {
+        console.log(`Hospedin login HTTP ${r.status} (tentativa ${tentativa}): ${txt.slice(0, 200)}`);
+        if (tentativa < 3) { await new Promise(res => setTimeout(res, 1000 * tentativa)); continue; }
+        return null;
+      }
+      // Tentar parse JSON; se falhar, tentar extrair token via regex
+      try {
+        const d = JSON.parse(txt);
+        if (d?.token) return d.token;
+      } catch {
+        const m = txt.match(/"token"\s*:\s*"([^"]+)"/);
+        if (m) return m[1];
+        console.log(`Hospedin login JSON inválido (tentativa ${tentativa}): ${txt.slice(0, 300)}`);
+      }
+      if (tentativa < 3) await new Promise(res => setTimeout(res, 1000 * tentativa));
+    } catch (e: any) {
+      console.log(`Hospedin login erro (tentativa ${tentativa}): ${e.message}`);
+      if (tentativa < 3) await new Promise(res => setTimeout(res, 1000 * tentativa));
+    }
+  }
+  return null;
 };
 
 const buscarPaginaHospedin = async (token: string, page: number, dataInicio: string): Promise<{ reservations: ReservaHospedin[]; total_pages: number }> => {
@@ -169,39 +191,4 @@ Deno.serve(async (req) => {
               acoes.push({
                 acao: "atualizada", hospedin_id, nome: dadosNovos.hospede_nome,
                 de: { checkin: existente.checkin, checkout: existente.checkout, status: existente.status, cama: existente.cama },
-                pra: { checkin: dadosNovos.checkin, checkout: dadosNovos.checkout, status: dadosNovos.status, cama: dadosNovos.cama },
-              });
-            } else {
-              stats.inalteradas++;
-            }
-          }
-        } catch (e: any) {
-          stats.erros++;
-          erros.push({ hospedin_id: rH.id, erro: e.message?.slice(0, 200) });
-        }
-      }
-      page++;
-    } while (page <= totalPages);
-  } catch (e: any) {
-    return new Response(JSON.stringify({ ok: false, erro: e.message, stats }), {
-      status: 500, headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  // Salva log
-  await sb.from("auditoria_sync_hospedin").insert({
-    rodou_em: new Date().toISOString(),
-    duracao_ms: Date.now() - inicioRun,
-    stats,
-    acoes: acoes.slice(0, 50),
-    erros,
-  }).select().maybeSingle().then(() => {}).catch(() => {});
-
-  return new Response(JSON.stringify({
-    ok: true,
-    duracao_ms: Date.now() - inicioRun,
-    stats,
-    acoes: acoes.slice(0, 20),
-    erros,
-  }, null, 2), { headers: { "Content-Type": "application/json" } });
-});
+                pra: { checkin: dadosNovos.checkin, checkout: dadosNovos.checkou

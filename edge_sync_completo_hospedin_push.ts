@@ -17,13 +17,34 @@ const HOSPEDIN_BASE = "https://pms-api.hospedin.com/api/v2";
 const ACCOUNT_ID = "23949";
 
 const loginHospedin = async (email: string, password: string): Promise<string | null> => {
-  const r = await fetch(`${HOSPEDIN_BASE}/authentication/sessions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ session: { email, password } }),
-  });
-  const d = await r.json();
-  return d?.token ?? null;
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    try {
+      const r = await fetch(`${HOSPEDIN_BASE}/authentication/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ session: { email, password } }),
+      });
+      const txt = await r.text();
+      if (!r.ok) {
+        console.log(`Hospedin login HTTP ${r.status} (tentativa ${tentativa}): ${txt.slice(0, 200)}`);
+        if (tentativa < 3) { await new Promise(res => setTimeout(res, 1000 * tentativa)); continue; }
+        return null;
+      }
+      try {
+        const d = JSON.parse(txt);
+        if (d?.token) return d.token;
+      } catch {
+        const m = txt.match(/"token"\s*:\s*"([^"]+)"/);
+        if (m) return m[1];
+        console.log(`Hospedin login JSON inválido (tentativa ${tentativa}): ${txt.slice(0, 300)}`);
+      }
+      if (tentativa < 3) await new Promise(res => setTimeout(res, 1000 * tentativa));
+    } catch (e: any) {
+      console.log(`Hospedin login erro (tentativa ${tentativa}): ${e.message}`);
+      if (tentativa < 3) await new Promise(res => setTimeout(res, 1000 * tentativa));
+    }
+  }
+  return null;
 };
 
 const criarReservaHospedin = async (token: string, reserva: any) => {
@@ -161,30 +182,4 @@ Deno.serve(async (_req) => {
         await sb.from("reservas").update({
           ultima_sync_hospedin: new Date().toISOString(),
           status_sync_hospedin: "sincronizada",
-        }).eq("id", r.id);
-        stats.atualizadas++;
-        acoes.push({ acao: "atualizada_hospedin", dg_id: r.id, hospedin_id: r.hospedin_id, hospede: r.hospede_nome });
-      } else {
-        stats.erros++;
-        erros.push({ dg_id: r.id, hospedin_id: r.hospedin_id, status: result.status });
-      }
-      await new Promise(res => setTimeout(res, 400));
-    } catch (e: any) {
-      stats.erros++;
-      erros.push({ dg_id: r.id, erro: e.message?.slice(0, 200) });
-    }
-  }
-
-  // Log auditoria
-  await sb.from("auditoria_sync_hospedin").insert({
-    rodou_em: new Date().toISOString(),
-    duracao_ms: Date.now() - inicio,
-    stats: { ...stats, direcao: "push_dg_pra_hospedin" },
-    acoes: acoes.slice(0, 50),
-    erros,
-  }).then(() => {}).catch(() => {});
-
-  return new Response(JSON.stringify({
-    ok: true, duracao_ms: Date.now() - inicio, stats, acoes, erros,
-  }, null, 2), { headers: { "Content-Type": "application/json" } });
-});
+       
