@@ -18282,4 +18282,30 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
           <div class="relative">
             <input id="login-senha" type="password" required placeholder="senha"
               class="w-full px-4 py-2.5 pr-12 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" autocomplete="current-password" />
-            <button type="button" onclick="toggleSenha()" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-d
+            <button type="button" onclick="toggleSenha()" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-domus-texto-suave hover:text-domus-texto text-base" aria-label="Mostrar/ocultar senha" style="background:transparent;border:none;cursor:pointer;">👁️</button>
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2 text-sm text-domus-texto-suave cursor-pointer">
+          <input id="login-lembrar" type="checkbox" class="w-4 h-4 rounded border-domus-borda text-domus-azul focus:ring-domus-azul" />
+          <span>Lembrar de mim</span>
+        </label>
+
+        <div id="login-erro" class="hidden text-sm text-red-600 text-center p-2 bg-red-50 rounded-lg"></div>
+
+        <button type="submit" id="btn-entrar-dg"
+          style="display:flex !important; visibility:visible !important; opacity:1 !important; width:100% !important; background:#008B9C !important; color:#fff !important; padding:14px !important; border-radius:10px !important; font-weight:700 !important; align-items:center !important; justify-content:center !important; gap:8px !important; cursor:pointer !important; border:none !important; font-size:16px !important; margin-top:12px !important; min-height:48px !important; touch-action:manipulation !important; -webkit-appearance:none !important; appearance:none !important; box-shadow:0 4px 12px rgba(0,139,156,0.3) !important; position:relative !important; z-index:1 !important;">
+          <span id="login-texto" style="color:#fff !important; font-weight:700 !important;">Entrar</span>
+          <span id="login-spinner" class="hidden inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+        </button>
+
+        <!-- Backup link Entrar — fallback caso o botão acima quebre por algum motivo -->
+        <div style="text-align:center; margin-top:8px; font-size:13px; color:#64748b;">
+          Botão sumiu? <a href="#" onclick="event.preventDefault(); tentarLogin();" style="color:#008B9C; text-decoration:underline; font-weight:600;">Clique aqui pra entrar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
