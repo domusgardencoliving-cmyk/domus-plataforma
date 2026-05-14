@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Conectar canais — Átrio Domus</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#008B9C" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--azul-domus:#008B9C;--azul-escuro:#0A3142;--dourado:#C9A961;--rosa-rib:#D4537E}
+  *{box-sizing:border-box}
+  body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#F4F6F9;color:#0A3142;margin:0;min-height:100vh;min-height:100dvh}
+  .ico-wrap{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;flex-shrink:0}
+  .ico-wrap svg{width:26px;height:26px;fill:white}
+  .ico-whatsapp{background:#25D366}
+  .ico-instagram{background:linear-gradient(45deg,#F58529 0%,#DD2A7B 50%,#8134AF 100%)}
+  .ico-airbnb{background:#FF5A5F}
+  .ico-booking{background:#003580}
+  .ico-webquartos{background:#7AB800}
+  .ico-email{background:#EA4335}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600}
+  .badge-conectado{background:#D1FAE5;color:#065F46}
+  .badge-pendente{background:#FEF3C7;color:#92400E}
+  .badge-aguardando{background:#E0E7FF;color:#3730A3}
+  .badge-erro{background:#FEE2E2;color:#991B1B}
+  .card{background:white;border:1px solid #E5E9EE;border-radius:16px;padding:20px;display:flex;align-items:flex-start;gap:16px;transition:border-color .15s,box-shadow .15s}
+  .card:hover{border-color:var(--azul-domus);box-shadow:0 4px 12px rgba(0,139,156,.08)}
+  .btn{padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;border:none;transition:all .15s;min-height:42px}
+  .btn-primary{background:var(--azul-domus);color:white}
+  .btn-primary:hover{background:var(--azul-escuro)}
+  .btn-outline{background:transparent;border:1.5px solid #CBD5E1;color:#475569}
+  .btn-outline:hover{border-color:var(--azul-domus);color:var(--azul-domus)}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="ico-whatsapp-svg" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></symbol>
+    <symbol id="ico-instagram-svg" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24s3.668-.014 4.948-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></symbol>
+    <symbol id="ico-airbnb-svg" viewBox="0 0 24 24"><path d="M22.5 19.31c-.21.95-.86 1.74-1.71 2.13-.45.21-.94.31-1.43.31-.46 0-.93-.08-1.36-.26-.61-.25-1.16-.65-1.78-1.31-.61-.66-1.27-1.5-2.05-2.55-.39-.51-.78-1.04-1.17-1.6-.39.56-.78 1.09-1.17 1.6-.78 1.05-1.44 1.89-2.05 2.55-.62.66-1.17 1.06-1.78 1.31-.43.18-.9.26-1.36.26-.49 0-.98-.1-1.43-.31-.85-.39-1.5-1.18-1.71-2.13-.21-.94-.06-1.94.42-3.04C5 14.65 5.84 13 6.79 11.27c.96-1.74 2.04-3.55 3.16-5.36C10.93 4.21 12 2.5 12 2.5s1.07 1.71 2.05 3.41c1.12 1.81 2.2 3.62 3.16 5.36.95 1.73 1.79 3.38 2.87 4.99.48 1.11.63 2.11.42 3.05zM12 14.46c-.65-.83-1.31-1.71-1.92-2.6.61-.92 1.28-1.86 1.92-2.71.65.85 1.31 1.79 1.92 2.71-.61.89-1.27 1.77-1.92 2.6z"/></symbol>
+    <symbol id="ico-booking-svg" viewBox="0 0 24 24"><path d="M16.494 13.918a1.527 1.527 0 110 3.054 1.527 1.527 0 010-3.054zm-7.226-.013h2.176v-.005c1.116 0 1.835.62 1.835 1.578 0 1.045-.7 1.682-1.875 1.683H9.268v-3.256zm0-3.792h1.668v.062c.762 0 1.255.428 1.256 1.114 0 .57-.305 1.213-1.234 1.213H9.268V10.113zm10.7-7.42a4.55 4.55 0 00-3.241-1.342H6.913a4.586 4.586 0 00-4.585 4.582v9.675a4.586 4.586 0 004.585 4.583h9.811a4.586 4.586 0 004.585-4.582V6.001a4.55 4.55 0 00-1.342-3.308zM12.78 18.622H7.94c-.36 0-.654-.293-.654-.652V8.4c0-.36.295-.654.655-.655h4.59c2.157 0 3.47 1.222 3.47 2.886a2.466 2.466 0 01-1.237 2.166 2.747 2.747 0 011.882 2.661c0 2.038-1.466 3.165-3.866 3.165z"/></symbol>
+    <symbol id="ico-webquartos-svg" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></symbol>
+    <symbol id="ico-email-svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></symbol>
+    <symbol id="ico-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+    <symbol id="ico-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+  </defs>
+</svg>
+
+<header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3 sticky top-0 z-10" style="padding-top:max(12px,env(safe-area-inset-top))">
+  <a href="/sala-conversas" class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-700 hover:bg-slate-100">
+    <svg width="22" height="22"><use href="#ico-back"/></svg>
+  </a>
+  <div class="flex-1">
+    <p class="text-[10px] uppercase tracking-widest text-slate-400">Átrio</p>
+    <h1 class="font-serif text-xl" style="color:var(--azul-escuro)">Conectar canais</h1>
+  </div>
+</header>
+
+<main class="max-w-2xl mx-auto px-4 py-6 pb-20 space-y-6">
+
+  <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
+    <span class="text-2xl">💡</span>
+    <div class="text-sm text-blue-900">
+      <p class="font-semibold mb-1">Como funciona</p>
+      <p>Conecte cada canal uma vez. As mensagens chegam automaticamente no Átrio. A IA Domus responde 80% e você foca nos casos importantes pelo celular.</p>
+    </div>
+  </div>
+
+  <!-- Email Gmail (destrava 4 canais) -->
+  <div class="card">
+    <span class="ico-wrap ico-email"><svg><use href="#ico-email-svg"/></svg></span>
+    <div class="flex-1">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="font-semibold text-base" style="color:var(--azul-escuro)">Gmail Domus</h3>
+          <p class="text-xs text-slate-500 mt-0.5">domusgardencoliving@gmail.com</p>
+        </div>
+        <span class="badge badge-pendente" id="status-gmail">⏳ Aguardando</span>
+      </div>
+      <p class="text-sm text-slate-600 mt-3">Conecta de uma vez: <b>e-mail direto</b> + <b>Airbnb</b> + <b>Booking</b> + <b>Webquartos</b> (mensagens deles chegam por e-mail).</p>
+      <button class="btn btn-primary mt-3" onclick="conectarGmail()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" opacity=".9"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" opacity=".9"/><path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.61z" opacity=".9"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" opacity=".9"/></svg>
+        Conectar com Google
+      </button>
+    </div>
+  </div>
+
+  <!-- Instagram -->
+  <div class="card">
+    <span class="ico-wrap ico-instagram"><svg><use href="#ico-instagram-svg"/></svg></span>
+    <div class="flex-1">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="font-semibold text-base" style="color:var(--azul-escuro)">Instagram</h3>
+          <p class="text-xs text-slate-500 mt-0.5">@domusgardencoliving</p>
+        </div>
+        <span class="badge badge-pendente" id="status-instagram">⏳ Aguardando</span>
+      </div>
+      <p class="text-sm text-slate-600 mt-3">DMs do Instagram caem direto no Átrio. Conecta via Meta (mesma autenticação do WhatsApp Business).</p>
+      <button class="btn btn-primary mt-3" onclick="conectarInstagram()">
+        Conectar com Meta
+      </button>
+    </div>
+  </div>
+
+  <!-- Airbnb -->
+  <div class="card">
+    <span class="ico-wrap ico-airbnb"><svg><use href="#ico-airbnb-svg"/></svg></span>
+    <div class="flex-1">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="font-semibold text-base" style="color:var(--azul-escuro)">Airbnb</h3>
+          <p class="text-xs text-slate-500 mt-0.5">via e-mail (sem API direta)</p>
+        </div>
+        <span class="badge badge-aguardando" id="status-airbnb">📧 Via Gmail</span>
+      </div>
+      <p class="text-sm text-slate-600 mt-3">Airbnb não tem API pública, mas envia e-mail toda vez que hóspede manda mensagem. Quando você conectar o <b>Gmail acima</b>, mensagens do Airbnb caem aqui automaticamente.</p>
+    </div>
+  </div>
+
+  <!-- Booking -->
+  <div class="card">
+    <span class="ico-wrap ico-booking"><svg><use href="#ico-booking-svg"/></svg></span>
+    <div class="flex-1">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="font-semibold text-base" style="color:var(--azul-escuro)">Booking</h3>
+          <p class="text-xs text-slate-500 mt-0.5">via e-mail (sem API de mensagens)</p>
+        </div>
+        <span class="badge badge-aguardando" id="status-booking">📧 Via Gmail</span>
+      </div>
+      <p class="text-sm text-slate-600 mt-3">Mesmo do Airbnb: chega por e-mail. Conecte o Gmail e pronto.</p>
+    </div>
+  </div>
+
+  <!-- Webquartos -->
+  <div class="card">
+    <span class="ico-wrap ico-webquartos"><svg><use href="#ico-webquartos-svg"/></svg></span>
+    <div class="flex-1">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="font-semibold text-base" style="color:var(--azul-escuro)">Webquartos</h3>
+          <p class="text-xs text-slate-500 mt-0.5">via e-mail</p>
+        </div>
+        <span class="badge badge-aguardando" id="status-webquartos">📧 Via Gmail</span>
+      </div>
+      <p class="text-sm text-slate-600 mt-3">Configurado pra encaminhar pro Gmail Domus. Eu cuido da configuração no painel deles depois.</p>
+    </div>
+  </div>
+
+  <!-- WhatsApp -->
+  <div class="card opacity-90">
+    <span class="ico-wrap ico-whatsapp"><svg><use href="#ico-whatsapp-svg"/></svg></span>
+    <div class="flex-1">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="font-semibold text-base" style="color:var(--azul-escuro)">WhatsApp</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Aguardando chip novo</p>
+        </div>
+        <span class="badge badge-aguardando" id="status-whatsapp">⏳ Pendente</span>
+      </div>
+      <p class="text-sm text-slate-600 mt-3">A automação do WhatsApp pela API Meta exige um <b>número novo dedicado</b> (o (11) 94333-0911 fica livre pra atendimento manual). Assim que tiver o chip, ativo em 5 min.</p>
+      <a href="https://www.claro.com.br/empresas/produtos/m2m" target="_blank" class="btn btn-outline mt-3">
+        Onde comprar chip
+      </a>
+    </div>
+  </div>
+
+  <!-- Status geral -->
+  <div class="bg-slate-100 rounded-xl p-4 text-center text-sm text-slate-600 mt-8">
+    <p id="resumo-status">Conecte o Gmail acima pra destravar 4 canais de uma vez.</p>
+  </div>
+
+</main>
+
+<script>
+  const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // OAuth Google (Gmail) — usa OAuth pop-up + salva tokens em contas_canais
+  // O Client ID precisa estar registrado no Google Cloud Console com redirect URI:
+  // https://domusgardencoliving.com/conectar-canais.html
+  const GOOGLE_CLIENT_ID = '1093717290237-domus-gmail-poll.apps.googleusercontent.com'; // substituir pelo real
+  const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send';
+  const REDIRECT_URI = window.location.origin + '/conectar-canais.html';
+
+  function conectarGmail() {
+    const url = 'https://accounts.google.com/o/oauth2/v2/auth' +
+      '?client_id=' + GOOGLE_CLIENT_ID +
+      '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
+      '&response_type=code' +
+      '&scope=' + encodeURIComponent(GOOGLE_SCOPES) +
+      '&access_type=offline' +
+      '&prompt=consent' +
+      '&state=gmail';
+    window.location.href = url;
+  }
+
+  function conectarInstagram() {
+    // Instagram Graph API via Meta OAuth
+    // Requer App ID Meta + permissions instagram_basic, instagram_manage_messages
+    const META_APP_ID = '4485544395009504'; // Domus Mensagens
+    const url = 'https://www.facebook.com/v18.0/dialog/oauth' +
+      '?client_id=' + META_APP_ID +
+      '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
+      '&scope=instagram_basic,instagram_manage_messages,pages_messaging,pages_show_list,business_management' +
+      '&response_type=code' +
+      '&state=instagram';
+    window.location.href = url;
+  }
+
+  // Lê callback de OAuth se voltou da tela do provedor
+  async function processarCallback() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+    const erro = params.get('error');
+    if (erro) { alert('Erro autorizando: ' + erro); history.replaceState({},'','/conectar-canais'); return; }
+    if (!code || !state) return;
+
+    // Chama Edge Function pra trocar code → token e salvar em contas_canais
+    try {
+      const resp = await fetch(SUPABASE_URL + '/functions/v1/oauth-callback', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + SUPABASE_KEY },
+        body: JSON.stringify({ provider: state, code, redirect_uri: REDIRECT_URI })
+      });
+      const r = await resp.json();
+      if (r.success) {
+        alert('✓ ' + state + ' conectado! As mensagens vão começar a chegar no Átrio.');
+        history.replaceState({},'','/conectar-canais');
+        carregarStatus();
+      } else {
+        alert('Erro ao conectar ' + state + ': ' + (r.erro || 'desconhecido'));
+      }
+    } catch(e) { alert('Erro de rede: ' + e.message); }
+  }
+
+  async function carregarStatus() {
+    try {
+      const { data } = await db.from('contas_canais').select('canal,status,conectado_em');
+      (data || []).forEach(c => {
+        const el = document.getElementById('status-' + c.canal);
+        if (!el) return;
+        if (c.status === 'conectado') {
+          el.className = 'badge badge-conectado';
+          el.innerHTML = '✓ Conectado';
+        } else if (c.status === 'erro') {
+          el.className = 'badge badge-erro';
+          el.innerHTML = '✕ Erro';
+        }
+      });
+      atualizarResumo(data);
+    } catch(e) { /* tabela talvez nao exista ainda */ }
+  }
+
+  function atualizarResumo(contas) {
+    const conectados = (contas || []).filter(c => c.status === 'conectado').length;
+    const el = document.getElementById('resumo-status');
+    if (conectados === 0) {
+      el.innerHTML = 'Conecte o Gmail acima pra destravar 4 canais de uma vez.';
+    } else {
+      el.innerHTML = '<b>' + conectados + ' canal(is) conectado(s).</b> Mensagens chegam no Átrio em até 2 minutos.';
+    }
+  }
+
+  carregarStatus();
+  processarCallback();
+</script>
+
+</body>
+</html>
