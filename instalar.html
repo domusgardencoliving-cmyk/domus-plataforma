@@ -136,7 +136,7 @@
           <div class="w-10 h-10 rounded-full bg-domus-azul/10 flex items-center justify-center text-domus-azul font-bold text-lg flex-shrink-0">3</div>
           <div class="flex-1">
             <h3 class="font-serif text-lg text-domus-azul-escuro">Pronto!</h3>
-            <p class="text-sm text-domus-texto-suave mt-1">O ícone da Domus vai aparecer na sua tela inicial. Toque nele pra abrir o app em tela cheia.</p>
+            <p class="text-sm text-domus-texto-suave mt-1">O ícone do <strong id="ios-app-name-2">Átrio</strong> vai aparecer na sua tela inicial com o nome e ícone certos. Toque nele pra abrir em tela cheia.</p>
           </div>
         </div>
         <div class="bg-gradient-to-br from-domus-azul to-domus-azul-escuro rounded-2xl p-4 text-center">
@@ -234,9 +234,16 @@
       return 'desktop';
     }
 
-    function trocarApp(key) {
+    function trocarApp(key, forcarRedirect) {
       appAtual = key;
       const app = APPS[key];
+      // Mobile: redireciona pra página do app pra que o iOS pegue manifest+ícone certos
+      const plat = detectarPlataforma();
+      if ((plat === 'ios' || plat === 'android') && forcarRedirect !== false) {
+        // Adiciona ?instalar=1 pra app mostrar bannerzinho com instruções
+        window.location.href = app.url + '?instalar=1';
+        return;
+      }
       // Atualiza visual
       ['atrio','pms','ocr','dom','cleaner'].forEach(k => {
         const bt = document.getElementById('bt-app-' + k);
@@ -303,7 +310,7 @@
       const params = new URLSearchParams(window.location.search);
       const app = params.get('app');
       if (app && APPS[app]) appAtual = app;
-      trocarApp(appAtual);
+      trocarApp(appAtual, false);
 
       const plat = detectarPlataforma();
       document.getElementById('bloco-' + plat).classList.remove('hidden');
