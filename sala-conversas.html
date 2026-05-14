@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Sala de Conversas — Domus Garden</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --azul-domus:#008B9C; --azul-escuro:#0A3142; --dourado:#C9A961;
+    --rosa-rib:#D4537E; --creme:#FFF8F0; --texto-suave:#5A6B7B;
+  }
+  body{font-family:'Inter',system-ui,sans-serif;background:#F4F6F9;color:#0A3142;margin:0;height:100vh;overflow:hidden}
+  .canal-whatsapp{background:#25D366;color:white}
+  .canal-instagram{background:linear-gradient(45deg,#F58529,#DD2A7B,#8134AF);color:white}
+  .canal-airbnb{background:#FF5A5F;color:white}
+  .canal-booking{background:#003580;color:white}
+  .canal-webquartos{background:#7AB800;color:white}
+  .canal-email{background:#EA4335;color:white}
+  .canal-manual{background:#888;color:white}
+  .conversa-item{transition:all .15s}
+  .conversa-item:hover{background:#F0F4F8}
+  .conversa-item.ativa{background:#E6F1FB;border-left:3px solid var(--azul-domus)}
+  .msg-entrada{background:white;color:#0A3142;align-self:flex-start;border-radius:0 12px 12px 12px}
+  .msg-saida{background:var(--azul-domus);color:white;align-self:flex-end;border-radius:12px 0 12px 12px}
+  .msg-ia{background:linear-gradient(135deg,#7F77DD,#534AB7);color:white;align-self:flex-end;border-radius:12px 0 12px 12px}
+  .badge-canal{font-size:9px;padding:2px 6px;border-radius:6px;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+  .scroll-conversas::-webkit-scrollbar{width:6px}
+  .scroll-conversas::-webkit-scrollbar-thumb{background:#D5DCE3;border-radius:3px}
+  .pulso{animation:pulso 2s infinite}
+  @keyframes pulso{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</head>
+<body>
+<div class="flex h-screen">
+
+  <!-- Sidebar — Filtros e Canais -->
+  <aside class="w-56 bg-white border-r border-slate-200 flex flex-col">
+    <div class="p-4 border-b border-slate-100">
+      <p class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">Domus Garden</p>
+      <h1 class="font-serif text-lg" style="color:var(--azul-escuro)">Sala de Conversas</h1>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-2">
+      <button class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center justify-between" data-filtro="todas">
+        <span class="flex items-center gap-2"><span>📬</span> Todas</span>
+        <span class="text-xs text-slate-400" id="cnt-todas">0</span>
+      </button>
+      <button class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center justify-between" data-filtro="aguardando_gabi">
+        <span class="flex items-center gap-2"><span>👋</span> Aguardando você</span>
+        <span class="text-xs font-bold text-rose-500" id="cnt-aguardando">0</span>
+      </button>
+      <button class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center justify-between" data-filtro="vip">
+        <span class="flex items-center gap-2"><span>⭐</span> VIPs</span>
+        <span class="text-xs text-amber-500" id="cnt-vip">0</span>
+      </button>
+      <button class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center justify-between" data-filtro="ia_pendente">
+        <span class="flex items-center gap-2"><span>🤖</span> IA sugere resposta</span>
+        <span class="text-xs text-purple-500" id="cnt-ia">0</span>
+      </button>
+
+      <div class="px-4 pt-5 pb-2 text-[10px] uppercase tracking-widest text-slate-400">Canais</div>
+      <button class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center justify-between" data-canal="whatsapp">
+        <span class="flex items-center gap-2"><span class="badge-canal canal-whatsapp">WA</span> WhatsApp</span>
+        <span class="text-xs text-slate-400" id="cnt-whatsapp">0</span>
+      </button>
+      <button class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center justify-between" data-canal="instagram">
+        <span class="flex items-center gap-2"><span class="badge-canal canal-instagram">IG</span> Instagram</span>
+        <span class="text-xs text-slate-400" id="cnt-instagram">0</span>
+      </button>
+      <button class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center justify-between" data-canal="airbnb">
+        <span class="flex items-center gap-2"><span class="badge-canal canal-airbnb">AB</span> Airbnb</span>
+        <span class="text-xs text-slate-400" id="cnt-airbnb">0</span>
+      </button>
+      <button class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center justify-between" data-canal="booking">
+        <span class="flex items-center gap-2"><span class="badge-canal canal-booking">BO</span> Booking</span>
+        <span class="text-xs text-slate-400" id="cnt-booking">0</span>
+      </button>
+      <button class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center justify-between" data-canal="webquartos">
+        <span class="flex items-center gap-2"><span class="badge-canal canal-webquartos">WQ</span> Webquartos</span>
+        <span class="text-xs text-slate-400" id="cnt-webquartos">0</span>
+      </button>
+      <button class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center justify-between" data-canal="email">
+        <span class="flex items-center gap-2"><span class="badge-canal canal-email">EM</span> E-mail</span>
+        <span class="text-xs text-slate-400" id="cnt-email">0</span>
+      </button>
+
+      <div class="px-4 pt-6">
+        <a href="#config" class="text-xs text-slate-500 hover:text-slate-700">⚙️ Conectar canais</a>
+      </div>
+    </nav>
+
+    <div class="p-3 border-t border-slate-100 text-[11px] text-slate-400">
+      <span class="pulso text-emerald-500">●</span> Atualizando ao vivo
+    </div>
+  </aside>
+
+  <!-- Lista de conversas -->
+  <section class="w-80 bg-white border-r border-slate-200 flex flex-col">
+    <div class="p-3 border-b border-slate-100">
+      <input type="text" id="busca" placeholder="🔍 Buscar conversa..." class="w-full px-3 py-2 text-sm rounded-lg bg-slate-50 border border-transparent focus:bg-white focus:border-slate-200 focus:outline-none" />
+    </div>
+    <div class="flex-1 overflow-y-auto scroll-conversas" id="lista-conversas">
+      <div class="p-6 text-center text-slate-400 text-sm">
+        <div class="text-4xl mb-2">📭</div>
+        <p>Nenhuma conversa ainda</p>
+        <p class="text-xs mt-2">Conecte os canais pra começar a receber mensagens aqui</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Conversa principal -->
+  <main class="flex-1 flex flex-col bg-slate-50">
+    <div id="conversa-vazia" class="flex-1 flex flex-col items-center justify-center text-slate-400">
+      <div class="text-6xl mb-4">💬</div>
+      <p class="text-lg font-medium" style="color:var(--azul-escuro)">Selecione uma conversa</p>
+      <p class="text-sm mt-2 max-w-md text-center">Aqui você vê as mensagens de WhatsApp, Instagram, Airbnb, Booking e Webquartos num lugar só. A IA Domus sugere respostas pra você só clicar em "Enviar".</p>
+
+      <div class="mt-8 grid grid-cols-3 gap-3 max-w-2xl">
+        <div class="p-4 bg-white rounded-xl border border-slate-200 text-left">
+          <div class="text-2xl mb-2">⚡</div>
+          <p class="text-xs font-semibold" style="color:var(--azul-escuro)">Resposta automática</p>
+          <p class="text-[11px] text-slate-500 mt-1">FAQs respondidas pela IA com base no ABC da Domus</p>
+        </div>
+        <div class="p-4 bg-white rounded-xl border border-slate-200 text-left">
+          <div class="text-2xl mb-2">🎯</div>
+          <p class="text-xs font-semibold" style="color:var(--azul-escuro)">Vende-C ativa</p>
+          <p class="text-[11px] text-slate-500 mt-1">Conduz reservas direto pelo nosso site (corta comissão)</p>
+        </div>
+        <div class="p-4 bg-white rounded-xl border border-slate-200 text-left">
+          <div class="text-2xl mb-2">⭐</div>
+          <p class="text-xs font-semibold" style="color:var(--azul-escuro)">Você foca nos VIPs</p>
+          <p class="text-[11px] text-slate-500 mt-1">5+ estadias, casos complexos, vendas grandes</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="conversa-ativa" class="hidden flex-1 flex flex-col">
+      <header class="bg-white border-b border-slate-200 px-5 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-domus-azul text-white flex items-center justify-center font-bold" id="conv-avatar">?</div>
+          <div>
+            <p class="font-semibold text-sm" id="conv-nome">—</p>
+            <p class="text-xs text-slate-500 flex items-center gap-2">
+              <span class="badge-canal" id="conv-canal-badge">CANAL</span>
+              <span id="conv-extra">—</span>
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button class="px-3 py-1.5 text-xs rounded-lg bg-slate-100 hover:bg-slate-200">Marcar lida</button>
+          <button class="px-3 py-1.5 text-xs rounded-lg bg-slate-100 hover:bg-slate-200">Arquivar</button>
+        </div>
+      </header>
+
+      <div id="mensagens-area" class="flex-1 overflow-y-auto p-5 flex flex-col gap-2 scroll-conversas"></div>
+
+      <footer class="bg-white border-t border-slate-200 p-4">
+        <div id="ia-sugerida-bloco" class="hidden mb-3 p-3 rounded-lg bg-purple-50 border border-purple-200">
+          <div class="flex items-start gap-2 mb-2">
+            <span class="text-lg">🤖</span>
+            <div class="flex-1">
+              <p class="text-xs font-semibold text-purple-900">IA Domus sugere:</p>
+              <p class="text-sm text-purple-950 mt-1" id="ia-sugerida-texto">—</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button class="px-3 py-1.5 text-xs rounded-lg bg-purple-600 text-white hover:bg-purple-700">✓ Enviar resposta</button>
+            <button class="px-3 py-1.5 text-xs rounded-lg bg-white border border-purple-300 text-purple-700">✏️ Editar antes</button>
+            <button class="px-3 py-1.5 text-xs rounded-lg bg-white border border-slate-300 text-slate-600">✕ Descartar</button>
+          </div>
+        </div>
+
+        <div class="flex gap-2 items-end">
+          <button class="text-slate-400 hover:text-slate-600 p-2" title="Anexar"><span class="text-xl">📎</span></button>
+          <textarea id="texto-resposta" placeholder="Digite uma resposta..." class="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-domus-azul focus:outline-none resize-none" rows="2"></textarea>
+          <button class="px-4 py-2 rounded-lg text-white text-sm font-medium" style="background:var(--azul-domus)">Enviar →</button>
+        </div>
+        <div class="flex gap-2 mt-2 text-[11px] text-slate-400">
+          <button class="hover:text-slate-600">⚡ Modelos</button>
+          <span>•</span>
+          <button class="hover:text-slate-600">🎟️ Cupom</button>
+          <span>•</span>
+          <button class="hover:text-slate-600">🏠 Indicar quarto</button>
+          <span>•</span>
+          <button class="hover:text-slate-600">📅 Mostrar disponibilidade</button>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <!-- Painel direito — info do hóspede/reserva -->
+  <aside class="w-72 bg-white border-l border-slate-200 overflow-y-auto" id="painel-direito" style="display:none">
+    <div class="p-5 border-b border-slate-100">
+      <p class="text-[10px] uppercase tracking-widest text-slate-400 mb-3">Hóspede</p>
+      <p class="font-semibold" id="painel-nome">—</p>
+      <p class="text-xs text-slate-500" id="painel-tel">—</p>
+      <div class="mt-3 flex gap-2 text-[10px]">
+        <span class="px-2 py-1 rounded-full bg-amber-100 text-amber-700">⭐ VIP 5x</span>
+        <span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">+ R$ 4.2k</span>
+      </div>
+    </div>
+    <div class="p-5 border-b border-slate-100">
+      <p class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">Próxima reserva</p>
+      <p class="text-sm font-medium" id="painel-reserva">—</p>
+    </div>
+    <div class="p-5">
+      <p class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">Histórico</p>
+      <p class="text-xs text-slate-500">Conversas anteriores aparecem aqui...</p>
+    </div>
+  </aside>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let _conversas = [];
+  let _ativa = null;
+
+  async function carregarConversas() {
+    const { data, error } = await db.from('conversas')
+      .select('*')
+      .order('ultima_mensagem_em', { ascending: false })
+      .limit(100);
+    if (error) { console.warn('Tabela ainda nao criada:', error.message); return; }
+    _conversas = data || [];
+    renderLista();
+    atualizarContadores();
+  }
+
+  function renderLista() {
+    const lista = document.getElementById('lista-conversas');
+    if (_conversas.length === 0) {
+      lista.innerHTML = `<div class="p-6 text-center text-slate-400 text-sm">
+        <div class="text-4xl mb-2">📭</div>
+        <p>Nenhuma conversa ainda</p>
+        <p class="text-xs mt-2">Conecte os canais pra começar</p>
+      </div>`;
+      return;
+    }
+    lista.innerHTML = _conversas.map(c => `
+      <div class="conversa-item p-3 border-b border-slate-100 cursor-pointer ${_ativa === c.id ? 'ativa' : ''}" onclick="abrirConversa('${c.id}')">
+        <div class="flex items-start gap-2">
+          <span class="badge-canal canal-${c.canal}">${(c.canal||'').slice(0,2).toUpperCase()}</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-start">
+              <p class="text-sm font-semibold truncate">${c.hospede_nome_cache || 'Sem nome'}</p>
+              ${c.nao_lidas > 0 ? `<span class="text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5">${c.nao_lidas}</span>` : ''}
+            </div>
+            <p class="text-xs text-slate-500 truncate">${c.ultima_mensagem_preview || ''}</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">${new Date(c.ultima_mensagem_em).toLocaleString('pt-BR')}</p>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function atualizarContadores() {
+    document.getElementById('cnt-todas').textContent = _conversas.length;
+    document.getElementById('cnt-aguardando').textContent = _conversas.filter(c => c.status === 'aguardando_gabi').length;
+    document.getElementById('cnt-vip').textContent = _conversas.filter(c => c.prioridade === 'vip').length;
+    ['whatsapp','instagram','airbnb','booking','webquartos','email'].forEach(canal => {
+      document.getElementById('cnt-' + canal).textContent = _conversas.filter(c => c.canal === canal).length;
+    });
+  }
+
+  async function abrirConversa(id) {
+    _ativa = id;
+    const conv = _conversas.find(c => c.id === id);
+    if (!conv) return;
+    document.getElementById('conversa-vazia').classList.add('hidden');
+    document.getElementById('conversa-ativa').classList.remove('hidden');
+    document.getElementById('painel-direito').style.display = 'block';
+    document.getElementById('conv-nome').textContent = conv.hospede_nome_cache || 'Sem nome';
+    document.getElementById('conv-canal-badge').textContent = conv.canal.toUpperCase();
+    document.getElementById('conv-canal-badge').className = 'badge-canal canal-' + conv.canal;
+    document.getElementById('conv-extra').textContent = conv.hospede_telefone_cache || '';
+    document.getElementById('conv-avatar').textContent = (conv.hospede_nome_cache || '?').charAt(0).toUpperCase();
+    document.getElementById('painel-nome').textContent = conv.hospede_nome_cache || '—';
+    document.getElementById('painel-tel').textContent = conv.hospede_telefone_cache || '—';
+
+    const { data: msgs } = await db.from('mensagens_inbox')
+      .select('*').eq('conversa_id', id).order('enviada_em', { ascending: true });
+    const area = document.getElementById('mensagens-area');
+    area.innerHTML = (msgs || []).map(m => `
+      <div class="msg-${m.direcao === 'entrada' ? 'entrada' : (m.autor_tipo === 'ia' ? 'ia' : 'saida')} max-w-[70%] px-4 py-2.5 shadow-sm">
+        <p class="text-sm whitespace-pre-wrap">${escapar(m.conteudo || '')}</p>
+        <p class="text-[10px] mt-1 ${m.direcao === 'entrada' ? 'text-slate-400' : 'text-white/70'}">${new Date(m.enviada_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</p>
+      </div>
+    `).join('');
+    area.scrollTop = area.scrollHeight;
+    renderLista();
+  }
+
+  function escapar(s) { return String(s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+  window.abrirConversa = abrirConversa;
+
+  carregarConversas();
+  setInterval(carregarConversas, 30000); // atualiza a cada 30s
+</script>
+</body>
+</html>
