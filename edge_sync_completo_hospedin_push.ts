@@ -28,7 +28,7 @@ const loginHospedin = async (email: string, password: string): Promise<string | 
       } catch {
         const m = txt.match(/"token"\s*:\s*"([^"]+)"/);
         if (m) return m[1];
-        console.log(`Hospedin login JSON inválido (tent ${tentativa}): ${txt.slice(0, 300)}`);
+        console.log(`Hospedin login JSON invalido (tent ${tentativa}): ${txt.slice(0, 300)}`);
       }
       if (tentativa < 3) await new Promise(res => setTimeout(res, 1000 * tentativa));
     } catch (e: any) {
@@ -114,7 +114,6 @@ Deno.serve(async (_req) => {
   const acoes: any[] = [];
   const erros: any[] = [];
 
-  // CASO 1: reservas diretas DG sem hospedin_id → CRIAR
   const { data: paraCriar } = await sb
     .from("reservas")
     .select("*")
@@ -153,7 +152,6 @@ Deno.serve(async (_req) => {
     }
   }
 
-  // CASO 2: reservas DG com hospedin_id que mudaram localmente → ATUALIZAR
   const { data: paraAtualizar } = await sb
     .from("reservas")
     .select("*")
@@ -175,7 +173,7 @@ Deno.serve(async (_req) => {
           status_sync_hospedin: "sincronizada",
         }).eq("id", r.id);
         stats.atualizadas++;
-        acoes.push({ acao: "atualizada_hospedin", dg_id: r.id, hospedin_id: r.hospedin_id, hospede: r.hospede_nome });
+        acoes.push({ acao: "atualizada_hospedin", dg_id: r.id, hospedin_id: r.hospedin_id });
       } else {
         stats.erros++;
         erros.push({ dg_id: r.id, hospedin_id: r.hospedin_id, status: result.status });
@@ -188,4 +186,14 @@ Deno.serve(async (_req) => {
   }
 
   await sb.from("auditoria_sync_hospedin").insert({
-    rodou_em:
+    rodou_em: new Date().toISOString(),
+    duracao_ms: Date.now() - inicio,
+    stats: { ...stats, direcao: "push_dg_pra_hospedin" },
+    acoes: acoes.slice(0, 50),
+    erros,
+  }).then(() => {}).catch(() => {});
+
+  return new Response(JSON.stringify({
+    ok: true, duracao_ms: Date.now() - inicio, stats, acoes, erros,
+  }, null, 2), { headers: { "Content-Type": "application/json" } });
+});
