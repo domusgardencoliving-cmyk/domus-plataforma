@@ -282,3 +282,34 @@
       e.preventDefault();
       deferredPrompt = e;
       const btCard = document.getElementById('bt-instalar-android');
+      if (btCard) btCard.classList.remove('hidden');
+    });
+
+    async function instalarAndroid() {
+      if (!deferredPrompt) {
+        alert('Use o menu do Chrome (⋮) e escolha "Instalar app" — seu navegador não suporta o botão direto.');
+        return;
+      }
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if (outcome === 'accepted') {
+        document.getElementById('bt-instalar-android').innerHTML = '<div class="text-center py-4"><div class="text-5xl mb-2">✅</div><p class="font-medium text-domus-azul-escuro">Instalado! Procure o ícone da Domus na sua tela inicial.</p></div>';
+      }
+    }
+
+    // Init
+    (function init() {
+      const params = new URLSearchParams(window.location.search);
+      const app = params.get('app');
+      if (app && APPS[app]) appAtual = app;
+      trocarApp(appAtual);
+
+      const plat = detectarPlataforma();
+      document.getElementById('bloco-' + plat).classList.remove('hidden');
+    })();
+  </script>
+
+</body>
+</html>
+      if (btCard) btCard.classList
