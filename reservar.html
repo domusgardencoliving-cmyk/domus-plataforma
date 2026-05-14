@@ -2636,11 +2636,25 @@
               ].filter(Boolean).join(' | ')
             }).select('id').single();
             if (e2) {
-              if (e2.message && e2.message.includes('HOSPEDE_BLOQUEADO')) {
-                dgToast('Este quarto acabou de ficar indisponível para essas datas. Tente outras datas ou outro quarto.');
-                return;
+              const msg = (e2.message || '').toLowerCase();
+              if (msg.includes('HOSPEDE_BLOQUEADO') || msg.includes('hospede_bloqueado')) {
+                dgToast('Esse hóspede está bloqueado para reservar. Entre em contato pelo WhatsApp se acha que é engano.');
+              } else if (msg.includes('overlap') || msg.includes('exclusion') || msg.includes('conflito') || msg.includes('disponibilidade')) {
+                dgToast('Esse quarto acabou de ficar indisponível pra essas datas. Tente outras datas ou outro quarto.');
+              } else if (msg.includes('email') && (msg.includes('invalid') || msg.includes('@guest.booking.com'))) {
+                dgToast('O e-mail informado não está válido. Use seu e-mail pessoal (não o anônimo do Booking/Airbnb).');
+              } else if (msg.includes('telefone') || msg.includes('phone')) {
+                dgToast('Telefone não está válido. Use o formato (DDD) 9XXXX-XXXX com DDD.');
+              } else if (msg.includes('cpf')) {
+                dgToast('CPF não está válido. Confere os números e tenta de novo.');
+              } else if (msg.includes('duplicate') || msg.includes('unique') || msg.includes('ja existe') || msg.includes('already exists')) {
+                dgToast('Já existe uma reserva sua pra essas datas. Confere em "Minha conta" ou nos contate.');
+              } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('timeout')) {
+                dgToast('Erro de conexão. Confere sua internet e tenta de novo.');
+              } else {
+                dgToast('Erro: ' + (e2.message || 'desconhecido') + '. Se persistir, fale com a gente no WhatsApp.');
               }
-              dgToast(t('alert_erro'));
+              console.error('[reserva] erro detalhado:', e2);
               return;
             }
             reservaId = d2data?.id || null;
@@ -2864,31 +2878,4 @@
             // (so se nao houver negociacao ativa nem volta-de-pagamento)
             var _params = new URLSearchParams(window.location.search);
             if (!_params.get('reserva') && typeof mostrarPrStep === 'function') {
-              setTimeout(function(){ mostrarPrStep(2); }, 50);
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('Auto-login da sessao falhou (ignorado):', e);
-      }
-
-      // ========== "ADICIONAR MAIS UMA RESERVA" (Etapa 4) ==========
-      var btnAdicionarMais = document.getElementById('pr-btn-adicionar-mais');
-      if (btnAdicionarMais) {
-        btnAdicionarMais.addEventListener('click', function() {
-          var checkin = document.getElementById('pr-checkin'); if (checkin) checkin.value = '';
-          var checkout = document.getElementById('pr-checkout'); if (checkout) checkout.value = '';
-          document.querySelectorAll('input[name="pr-tipo-quarto"]').forEach(function(r){ r.checked = false; });
-          document.querySelectorAll('.pr-quarto-card').forEach(function(c){
-            c.classList.remove('border-domus-azul','bg-domus-azul/5');
-            c.classList.add('border-domus-borda');
-          });
-          var como = document.getElementById('pr-como-conheceu'); if (como) como.value = 'indicacao';
-          var cupom = document.getElementById('pr-cupom'); if (cupom) cupom.value = '';
-          var cupomInfo = document.getElementById('pr-cupom-info'); if (cupomInfo) cupomInfo.classList.add('hidden');
-          if (typeof mostrarPrStep === 'function') mostrarPrStep(2);
-          var banner = document.getElementById('pr-banner-adicional');
-          if (!banner) {
-            banner = document.createElement('div');
-            banner.id = 'pr-banner-adicional';
-         
+              setTimeout(function(){ mostrarPrStep(2); 
