@@ -119,6 +119,8 @@
     const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window.sb = db;
+    window.SUPA_ANON = SUPABASE_KEY;
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -4067,6 +4069,43 @@
               <button onclick="mostrarSubColiving('col-rib', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Ribeirão Claro</button>
               <button onclick="mostrarSubColiving('col-fila', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Lista de Espera</button>
               <button onclick="mostrarSubColiving('col-futuros', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Futuros Moradores</button>
+            </div>
+
+            <!-- ======= BOLETOS REAIS (DG REAL — substitui o protótipo abaixo) ======= -->
+            <div id="col-boletos-real" class="hidden">
+              <div class="bg-white rounded-2xl border border-domus-borda p-4 sm:p-6 mb-6">
+                <div class="flex flex-wrap gap-4 items-end justify-between">
+                  <div>
+                    <h3 class="font-serif text-lg text-domus-azul-escuro" id="cbr-titulo">Boletos do mês — Carregando...</h3>
+                    <p class="text-xs text-domus-texto-suave mt-1">Edite valor base, energia rateio e extras antes de emitir cada boleto</p>
+                  </div>
+                  <div class="flex flex-wrap gap-3 items-end">
+                    <div>
+                      <label class="block text-xs font-semibold text-gray-600 mb-1">Mês</label>
+                      <input type="month" id="cbr-mes" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-gray-600 mb-1">Energia total do mês (R$)</label>
+                      <input type="number" id="cbr-energia" step="0.01" placeholder="0,00" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-36">
+                    </div>
+                    <button onclick="cbrCarregar()" class="px-4 py-2 rounded-lg bg-domus-azul text-white text-sm font-medium hover:bg-domus-azul-escuro">🔄 Recalcular</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="cbr-lista" class="bg-white rounded-2xl border border-domus-borda overflow-hidden">
+                <div class="p-12 text-center text-gray-500">Selecione o mês e clique em Recalcular</div>
+              </div>
+
+              <div id="cbr-footer" class="hidden mt-4 bg-white rounded-2xl border border-domus-borda p-4 flex flex-wrap gap-3 items-center justify-between">
+                <div class="text-sm text-gray-700">
+                  <span id="cbr-qtd">0 moradoras</span> · Total: <span class="font-bold azul-domus" id="cbr-total" style="color:#008B9C">R$ 0,00</span>
+                </div>
+                <div class="flex gap-3">
+                  <button onclick="cbrSalvarRascunho()" class="px-4 py-2 rounded-lg border border-domus-borda text-sm hover:bg-gray-50">💾 Salvar rascunhos</button>
+                  <button onclick="cbrEmitirTodos()" class="px-4 py-2 rounded-lg bg-domus-azul text-white text-sm font-medium hover:bg-domus-azul-escuro">🚀 Emitir todos confirmados</button>
+                </div>
+              </div>
             </div>
 
             <!-- ======= ANDRADE PERTENCE ======= -->
@@ -11013,6 +11052,177 @@
       // Carregar dados quando abrir aba
       if (id === 'col-fila') carregarFilaEspera();
       if (id === 'col-futuros') carregarFuturos();
+      // Boletos reais (substituindo o protótipo) — mostrar/esconder bloco real
+      const blocoReal = document.getElementById('col-boletos-real');
+      if (blocoReal) {
+        if (id === 'col-ap' || id === 'col-rib') {
+          blocoReal.classList.remove('hidden');
+          // Esconder o conteúdo prototípico (fica abaixo)
+          const prototipo = document.getElementById(id);
+          if (prototipo) prototipo.style.display = 'none';
+          // Set unidade atual e carregar
+          window.cbrUnidadeAtual = id === 'col-ap' ? 'AP' : 'Rib';
+          if (!document.getElementById('cbr-mes').value) {
+            document.getElementById('cbr-mes').value = new Date().toISOString().slice(0, 7);
+          }
+          document.getElementById('cbr-titulo').textContent = `Boletos do mês — ${window.cbrUnidadeAtual === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro'}`;
+          if (typeof cbrCarregar === 'function') cbrCarregar();
+        } else {
+          blocoReal.classList.add('hidden');
+          ['col-ap','col-rib'].forEach(c => { const e = document.getElementById(c); if (e) e.style.display = ''; });
+        }
+      }
+    }
+
+    // ==========================================
+    // COLIVING BOLETOS REAIS — Funções
+    // ==========================================
+    window.cbrDados = [];
+    async function cbrCarregar() {
+      const unidade = window.cbrUnidadeAtual || 'Rib';
+      const mes = document.getElementById('cbr-mes').value;
+      if (!mes) { alert('Escolha o mês'); return; }
+      const mesPrimeiro = mes + '-01';
+      const lista = document.getElementById('cbr-lista');
+      lista.innerHTML = '<div class="p-8 text-center text-gray-500">Carregando moradoras...</div>';
+
+      try {
+        // Energia salva
+        const { data: cfg } = await window.sb.from('coliving_config_mes')
+          .select('energia_total').eq('unidade', unidade).eq('mes_referencia', mesPrimeiro).maybeSingle();
+        if (cfg?.energia_total != null) document.getElementById('cbr-energia').value = Number(cfg.energia_total);
+        const energiaTotal = Number(document.getElementById('cbr-energia').value) || 0;
+
+        // Moradoras ativas dessa unidade
+        const { data: moradoras, error: errM } = await window.sb.from('moradores').select('*')
+          .ilike('unidade', `%${unidade}%`).in('status', ['ativo','ativa']).order('nome');
+        if (errM) throw errM;
+
+        // Boletos já existentes desse mês
+        const { data: boletos } = await window.sb.from('boletos_dominhas').select('*').eq('mes_referencia', mesPrimeiro);
+        const mapBol = {}; (boletos || []).forEach(b => mapBol[b.morador_id] = b);
+
+        // Rateio energia: divide igual entre moradoras ativas
+        const rateioEnergia = moradoras.length > 0 ? +(energiaTotal / moradoras.length).toFixed(2) : 0;
+
+        window.cbrDados = moradoras.map(m => {
+          const b = mapBol[m.id] || {};
+          return {
+            morador_id: m.id, nome: m.nome, quarto: m.quarto || '—', cpf: m.cpf,
+            tem_cpf: !!(m.cpf && m.cpf.replace(/\D/g,'').length === 11),
+            valor_base: Number(b.valor_base ?? m.valor ?? 0),
+            valor_energia: Number(b.valor_energia ?? rateioEnergia),
+            valor_extras: Number(b.valor_extras ?? 0),
+            descricao_extras: b.descricao_extras || '',
+            status: b.status || 'rascunho',
+            url_boleto: b.url_boleto, banco_inter_id: b.banco_inter_id,
+          };
+        });
+        cbrRender();
+      } catch (e) {
+        lista.innerHTML = `<div class="p-8 text-red-600 text-sm">Erro: ${e.message}</div>`;
+      }
+    }
+    function cbrRender() {
+      const fmt = v => Number(v||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+      const lista = document.getElementById('cbr-lista');
+      if (!window.cbrDados.length) { lista.innerHTML = '<div class="p-8 text-center text-gray-500">Nenhuma moradora ativa</div>'; return; }
+      let html = `<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-50 border-b border-gray-200"><tr>
+        <th class="text-left px-3 py-3 font-semibold text-gray-700">Moradora</th>
+        <th class="text-left px-3 py-3 font-semibold text-gray-700">Quarto</th>
+        <th class="text-right px-3 py-3 font-semibold text-gray-700">Aluguel</th>
+        <th class="text-right px-3 py-3 font-semibold text-gray-700">Energia</th>
+        <th class="text-right px-3 py-3 font-semibold text-gray-700">Extras</th>
+        <th class="text-left px-3 py-3 font-semibold text-gray-700">Descrição</th>
+        <th class="text-right px-3 py-3 font-semibold text-gray-700">Total</th>
+        <th class="text-left px-3 py-3 font-semibold text-gray-700">Status</th>
+        <th></th></tr></thead><tbody>`;
+      window.cbrDados.forEach((d, i) => {
+        const tot = d.valor_base + d.valor_energia + d.valor_extras;
+        const stCls = d.status === 'pago' ? 'bg-green-100 text-green-700' : d.status === 'emitido' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700';
+        const podeEmit = d.tem_cpf && d.status === 'rascunho';
+        html += `<tr class="border-b border-gray-100 hover:bg-gray-50">
+          <td class="px-3 py-3"><div class="font-medium">${d.nome}</div>${!d.tem_cpf?'<div class="text-xs text-red-600">⚠ Sem CPF</div>':''}</td>
+          <td class="px-3 py-3 text-xs">${d.quarto}</td>
+          <td class="px-3 py-3 text-right"><input type="number" step="0.01" value="${d.valor_base.toFixed(2)}" onchange="cbrAtualizar(${i},'valor_base',this.value)" class="w-24 px-2 py-1 border rounded text-right text-xs"></td>
+          <td class="px-3 py-3 text-right"><input type="number" step="0.01" value="${d.valor_energia.toFixed(2)}" onchange="cbrAtualizar(${i},'valor_energia',this.value)" class="w-24 px-2 py-1 border rounded text-right text-xs"></td>
+          <td class="px-3 py-3 text-right"><input type="number" step="0.01" value="${d.valor_extras.toFixed(2)}" onchange="cbrAtualizar(${i},'valor_extras',this.value)" class="w-24 px-2 py-1 border rounded text-right text-xs"></td>
+          <td class="px-3 py-3"><input type="text" value="${d.descricao_extras||''}" onchange="cbrAtualizar(${i},'descricao_extras',this.value)" placeholder="ex: mercado 50" class="w-32 px-2 py-1 border rounded text-xs"></td>
+          <td class="px-3 py-3 text-right font-bold" id="cbr-tot-${i}" style="color:#008B9C">${fmt(tot)}</td>
+          <td class="px-3 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${stCls}">${d.status}</span></td>
+          <td class="px-3 py-3 text-right">
+            ${d.url_boleto?`<a href="${d.url_boleto}" target="_blank" class="text-xs text-domus-azul underline mr-2">PDF</a>`:''}
+            <button class="px-3 py-1 rounded text-xs bg-domus-azul text-white ${!podeEmit?'opacity-40 cursor-not-allowed':'hover:bg-domus-azul-escuro'}" ${!podeEmit?'disabled':''} onclick="cbrEmitirUm(${i})">Emitir</button>
+          </td></tr>`;
+      });
+      html += '</tbody></table></div>';
+      lista.innerHTML = html;
+      document.getElementById('cbr-footer').classList.remove('hidden');
+      cbrAtualizarFooter();
+    }
+    function cbrAtualizar(i, campo, valor) {
+      if (['valor_base','valor_energia','valor_extras'].includes(campo)) {
+        window.cbrDados[i][campo] = Number(valor) || 0;
+        const t = window.cbrDados[i].valor_base + window.cbrDados[i].valor_energia + window.cbrDados[i].valor_extras;
+        const fmt = v => Number(v||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+        document.getElementById('cbr-tot-' + i).textContent = fmt(t);
+      } else {
+        window.cbrDados[i][campo] = valor;
+      }
+      cbrAtualizarFooter();
+    }
+    function cbrAtualizarFooter() {
+      const fmt = v => Number(v||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+      const total = window.cbrDados.reduce((s,d) => s + d.valor_base + d.valor_energia + d.valor_extras, 0);
+      document.getElementById('cbr-total').textContent = fmt(total);
+      document.getElementById('cbr-qtd').textContent = `${window.cbrDados.length} moradoras`;
+    }
+    async function cbrSalvarRascunho() {
+      const unidade = window.cbrUnidadeAtual;
+      const mes = document.getElementById('cbr-mes').value + '-01';
+      const energia = Number(document.getElementById('cbr-energia').value) || 0;
+      // Salva config energia
+      await window.sb.from('coliving_config_mes').upsert({ unidade, mes_referencia: mes, energia_total: energia }, { onConflict: 'unidade,mes_referencia' });
+      let ok = 0, err = 0;
+      for (const d of window.cbrDados) {
+        const r = { morador_id: d.morador_id, morador_nome: d.nome, mes_referencia: mes,
+          valor_base: d.valor_base, valor_energia: d.valor_energia, valor_extras: d.valor_extras,
+          descricao_extras: d.descricao_extras, valor: d.valor_base + d.valor_energia + d.valor_extras,
+          status: d.status === 'rascunho' ? 'rascunho' : d.status };
+        const { error } = await window.sb.from('boletos_dominhas').upsert(r, { onConflict: 'morador_id,mes_referencia' });
+        if (error) err++; else ok++;
+      }
+      alert(`Salvos: ${ok} | Erros: ${err}`);
+    }
+    async function cbrEmitirUm(i) {
+      const d = window.cbrDados[i];
+      const total = d.valor_base + d.valor_energia + d.valor_extras;
+      if (!confirm(`Emitir boleto de ${d.nome}? Total: R$ ${total.toFixed(2)}`)) return;
+      await cbrSalvarRascunho(); // garante que a versão editada está salva
+      const r = await fetch('https://motwhfbpundrhvuwjntw.supabase.co/functions/v1/inter-emit-boleto', {
+        method: 'POST', headers: { 'Authorization': `Bearer ${window.SUPA_ANON || ''}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ morador_id: d.morador_id, mes_referencia: document.getElementById('cbr-mes').value + '-01', valor: total }),
+      });
+      const res = await r.json();
+      if (res.ok) { alert(`✅ Emitido!\nID: ${res.banco_inter_id}\nVencimento: ${res.vencimento}\nPDF: ${res.url_boleto || 'gerando...'}`); cbrCarregar(); }
+      else alert(`❌ ${res.erro || 'Erro desconhecido'}`);
+    }
+    async function cbrEmitirTodos() {
+      const aptos = window.cbrDados.filter(d => d.tem_cpf && d.status === 'rascunho');
+      if (!aptos.length) { alert('Nenhum elegível (todas precisam de CPF + status rascunho)'); return; }
+      if (!confirm(`Emitir ${aptos.length} boletos via API Inter agora?`)) return;
+      await cbrSalvarRascunho();
+      let ok = 0, err = 0;
+      for (const d of aptos) {
+        const r = await fetch('https://motwhfbpundrhvuwjntw.supabase.co/functions/v1/inter-emit-boleto', {
+          method: 'POST', headers: { 'Authorization': `Bearer ${window.SUPA_ANON || ''}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ morador_id: d.morador_id, mes_referencia: document.getElementById('cbr-mes').value + '-01', valor: d.valor_base + d.valor_energia + d.valor_extras }),
+        });
+        const res = await r.json();
+        if (res.ok) ok++; else err++;
+      }
+      alert(`Concluído: ${ok} emitidos, ${err} erros`);
+      cbrCarregar();
     }
 
     // ==========================================
@@ -18302,10 +18512,4 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
         <!-- Backup link Entrar — fallback caso o botão acima quebre por algum motivo -->
         <div style="text-align:center; margin-top:8px; font-size:13px; color:#64748b;">
           Botão sumiu? <a href="#" onclick="event.preventDefault(); tentarLogin();" style="color:#008B9C; text-decoration:underline; font-weight:600;">Clique aqui pra entrar</a>
-        </div>
-      </form>
-    </div>
-  </div>
-
-</body>
-</html>
+        <
