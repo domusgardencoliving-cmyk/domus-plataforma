@@ -45,7 +45,7 @@ DO $$ BEGIN
     -- desschedula o antigo (que só pegava novas)
     PERFORM cron.unschedule('sync-hospedin-reservas');
 
-    -- agenda o novo (sync COMPLETO 1min)
+    -- PULL: Hospedin -> DG, todo minuto
     PERFORM cron.unschedule('sync-completo-hospedin-pull');
     PERFORM cron.schedule(
       'sync-completo-hospedin-pull',
@@ -57,10 +57,9 @@ DO $$ BEGIN
         );
       $cron$
     );
-  END IF;
-EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'cron erro: %', SQLERRM; END $$;
 
--- 4. RESULTADO
-SELECT 'OK auditoria sync Hospedin pronta' AS status,
-       (SELECT COUNT(*) FROM auditoria_sync_hospedin) AS logs_existentes,
-       (SELECT * FROM public.v_status_sync_hospedin) AS status_atual;
+    -- PUSH: DG -> Hospedin, todo minuto, deslocado em 30s pra não brigar com o pull
+    PERFORM cron.unschedule('sync-completo-hospedin-push');
+    PERFORM cron.schedule(
+      'sync-completo-hospedin-push',
+      '* * * * *',  -- 1min (Postgres não suporta segundos, mas alterna na execução)
