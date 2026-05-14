@@ -11101,8 +11101,11 @@
         const { data: boletos } = await window.sb.from('boletos_dominhas').select('*').eq('mes_referencia', mesPrimeiro);
         const mapBol = {}; (boletos || []).forEach(b => mapBol[b.morador_id] = b);
 
-        // Rateio energia: divide igual entre moradoras ativas
-        const rateioEnergia = moradoras.length > 0 ? +(energiaTotal / moradoras.length).toFixed(2) : 0;
+        // Rateio energia: divide pelas VAGAS TOTAIS da unidade (não pelo nº de moradoras ativas)
+        // Vaga vazia fica zerada, mas valor das ocupadas NÃO aumenta por causa disso
+        const VAGAS_TOTAIS = { 'AP': 7, 'Rib': 14 };
+        const totalVagas = VAGAS_TOTAIS[unidade] || moradoras.length || 1;
+        const rateioEnergia = +(energiaTotal / totalVagas).toFixed(2);
 
         window.cbrDados = moradoras.map(m => {
           const b = mapBol[m.id] || {};
@@ -18510,11 +18513,4 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
 
         <!-- Backup link Entrar — fallback caso o botão acima quebre por algum motivo -->
         <div style="text-align:center; margin-top:8px; font-size:13px; color:#64748b;">
-          Botão sumiu? <a href="#" onclick="event.preventDefault(); tentarLogin();" style="color:#008B9C; text-decoration:underline; font-weight:600;">Clique aqui pra entrar</a>
-        </div>
-      </form>
-    </div>
-  </div>
-
-</body>
-</html>
+          Botão sumiu? <a
