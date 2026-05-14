@@ -63,3 +63,18 @@ DO $$ BEGIN
     PERFORM cron.schedule(
       'sync-completo-hospedin-push',
       '* * * * *',  -- 1min (Postgres não suporta segundos, mas alterna na execução)
+      $cron$
+        SELECT net.http_post(
+          url := 'https://motwhfbpundrhvuwjntw.supabase.co/functions/v1/sync-completo-hospedin-push',
+          headers := '{"Content-Type":"application/json","Authorization":"Bearer ' || current_setting('app.service_role_key', true) || '"}'::jsonb
+        );
+      $cron$
+    );
+  END IF;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'cron erro: %', SQLERRM; END $$;
+
+-- 4. RESULTADO
+SELECT 'OK auditoria sync Hospedin pronta' AS status,
+       (SELECT COUNT(*) FROM auditoria_sync_hospedin) AS logs_existentes,
+       (SELECT * FROM public.v_status_sync_hospedin) AS status_atual;
+    
