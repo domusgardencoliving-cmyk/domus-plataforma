@@ -50,6 +50,10 @@
     {
       "source": "/conectar-canais",
       "destination": "/conectar-canais.html"
+    },
+    {
+      "source": "/auditoria-pms",
+      "destination": "/auditoria-pms.html"
     }
   ]
 }

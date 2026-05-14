@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Auditoria PMS — Hospedin × DG</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#008B9C" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--azul-domus:#008B9C;--azul-escuro:#0A3142;--dourado:#C9A961;--rosa-rib:#D4537E}
+  body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#F4F6F9;color:#0A3142;margin:0;min-height:100vh}
+  .stat-card{background:white;border-radius:14px;padding:18px;border:1px solid #E5E9EE}
+  .stat-num{font-size:28px;font-weight:700;color:var(--azul-escuro)}
+  .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#5A6B7B;margin-top:4px}
+  .stat-ok{color:#059669}
+  .stat-warn{color:#D97706}
+  .stat-erro{color:#DC2626}
+  .pulso{animation:pulso 2s infinite}
+  @keyframes pulso{0%,100%{opacity:1}50%{opacity:.4}}
+  .badge{display:inline-flex;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .badge-ok{background:#D1FAE5;color:#065F46}
+  .badge-erro{background:#FEE2E2;color:#991B1B}
+  .badge-pendente{background:#FEF3C7;color:#92400E}
+  .acao-btn{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid #008B9C;background:white;color:#008B9C;cursor:pointer;transition:all .15s}
+  .acao-btn:hover{background:#008B9C;color:white}
+</style>
+</head>
+<body>
+
+<header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-10 shadow-sm">
+  <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <div>
+      <p class="text-[10px] uppercase tracking-widest text-slate-400">Painel Domus</p>
+      <h1 class="font-serif text-2xl" style="color:var(--azul-escuro)">Auditoria PMS</h1>
+    </div>
+    <div class="flex items-center gap-3 text-sm">
+      <span class="pulso text-emerald-500">●</span>
+      <span class="text-slate-500">Atualiza a cada 60s</span>
+      <button onclick="carregarTudo()" class="acao-btn">⟳ Atualizar agora</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-6 space-y-6">
+
+  <!-- Stats top -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-total-hospedin">—</div>
+      <div class="stat-label">Reservas Hospedin</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-total-dg">—</div>
+      <div class="stat-label">Reservas DG</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num stat-warn" id="stat-diff">—</div>
+      <div class="stat-label">Discrepâncias</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-ultima-sync">—</div>
+      <div class="stat-label">Última sync (s)</div>
+    </div>
+  </div>
+
+  <!-- Saúde dos crons -->
+  <section class="bg-white rounded-2xl p-5 border border-slate-200">
+    <h2 class="font-serif text-lg mb-3" style="color:var(--azul-escuro)">Saúde dos crons (24h)</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <div class="text-2xl font-bold" id="sync-criadas">—</div>
+        <div class="text-xs text-slate-500">criadas</div>
+      </div>
+      <div>
+        <div class="text-2xl font-bold" id="sync-atualizadas">—</div>
+        <div class="text-xs text-slate-500">atualizadas</div>
+      </div>
+      <div>
+        <div class="text-2xl font-bold stat-erro" id="sync-erros">—</div>
+        <div class="text-xs text-slate-500">erros</div>
+      </div>
+      <div>
+        <div class="text-2xl font-bold" id="sync-rodadas">—</div>
+        <div class="text-xs text-slate-500">execuções</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reservas sem hospedin_id -->
+  <section class="bg-white rounded-2xl p-5 border border-slate-200">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="font-serif text-lg" style="color:var(--azul-escuro)">Reservas DG sem hospedin_id</h2>
+      <button onclick="forçarSyncPush()" class="acao-btn">Empurrar tudo pra Hospedin agora</button>
+    </div>
+    <p class="text-sm text-slate-500 mb-3">Reservas que estão no DG mas não têm correspondente na Hospedin. Reservas diretas (canal=direto/VD/PR) deveriam ser empurradas. OTAs não.</p>
+    <div id="lista-sem-hospedin" class="text-sm">Carregando…</div>
+  </section>
+
+  <!-- Última auditoria -->
+  <section class="bg-white rounded-2xl p-5 border border-slate-200">
+    <h2 class="font-serif text-lg mb-3" style="color:var(--azul-escuro)">Últimas 10 ações dos crons</h2>
+    <div id="lista-acoes" class="text-sm">Carregando…</div>
+  </section>
+
+  <!-- Erros -->
+  <section class="bg-white rounded-2xl p-5 border border-slate-200">
+    <h2 class="font-serif text-lg mb-3 stat-erro">Erros recentes</h2>
+    <div id="lista-erros" class="text-sm text-slate-500">Carregando…</div>
+  </section>
+
+</main>
+
+<script>
+const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function carregarTudo() {
+  await Promise.all([carregarStats(), carregarSemHospedin(), carregarAuditoria()]);
+}
+
+async function carregarStats() {
+  // Status sync
+  try {
+    const { data: status } = await db.from('v_status_sync_hospedin').select('*').single();
+    if (status) {
+      document.getElementById('stat-total-hospedin').textContent = status.total_reservas_hospedin || '—';
+      document.getElementById('stat-ultima-sync').textContent = status.segundos_desde_ultima || '—';
+      document.getElementById('sync-criadas').textContent = status.criadas_24h || 0;
+      document.getElementById('sync-atualizadas').textContent = status.atualizadas_24h || 0;
+      document.getElementById('sync-erros').textContent = status.erros_24h || 0;
+    }
+  } catch(e) { console.warn(e); }
+
+  // Total DG
+  const { count: totalDg } = await db.from('reservas')
+    .select('id', { count: 'exact', head: true })
+    .gte('checkout', new Date().toISOString().slice(0,10))
+    .neq('status', 'cancelada');
+  document.getElementById('stat-total-dg').textContent = totalDg || 0;
+
+  // Discrepâncias = diferença
+  const totalH = parseInt(document.getElementById('stat-total-hospedin').textContent) || 0;
+  document.getElementById('stat-diff').textContent = Math.abs((totalDg||0) - totalH);
+
+  // Total rodadas 24h
+  const { count: rodadas } = await db.from('auditoria_sync_hospedin')
+    .select('id', { count: 'exact', head: true })
+    .gte('rodou_em', new Date(Date.now() - 86400000).toISOString());
+  document.getElementById('sync-rodadas').textContent = rodadas || 0;
+}
+
+async function carregarSemHospedin() {
+  const { data } = await db.from('reservas')
+    .select('id, hospede_nome, cama, checkin, checkout, status, canal_codigo')
+    .is('hospedin_id', null)
+    .neq('status', 'cancelada')
+    .gte('checkout', new Date().toISOString().slice(0,10))
+    .order('checkin', { ascending: true })
+    .limit(50);
+
+  const div = document.getElementById('lista-sem-hospedin');
+  if (!data || data.length === 0) {
+    div.innerHTML = '<p class="text-emerald-600 font-medium">✓ Todas as reservas têm correspondente na Hospedin</p>';
+    return;
+  }
+
+  const direta = data.filter(r => ['direto','venda_direta','pre_reserva','VD','PR'].includes(r.canal_codigo));
+  const ota = data.filter(r => !['direto','venda_direta','pre_reserva','VD','PR'].includes(r.canal_codigo));
+
+  div.innerHTML = `
+    <div class="overflow-auto">
+      <table class="w-full">
+        <thead><tr class="text-left text-xs text-slate-500 border-b">
+          <th class="py-2">Hóspede</th><th>Quarto</th><th>Datas</th><th>Canal</th><th>Tipo</th>
+        </tr></thead>
+        <tbody>
+          ${data.map(r => `
+            <tr class="border-b hover:bg-slate-50">
+              <td class="py-2 font-medium">${escapar(r.hospede_nome || '—')}</td>
+              <td>${escapar(r.cama || '?')}</td>
+              <td class="text-xs">${r.checkin} → ${r.checkout}</td>
+              <td><span class="badge badge-pendente">${r.canal_codigo || '?'}</span></td>
+              <td>${['direto','venda_direta','pre_reserva','VD','PR'].includes(r.canal_codigo)
+                ? '<span class="text-amber-600 text-xs">precisa empurrar pra Hospedin</span>'
+                : '<span class="text-slate-400 text-xs">OTA — ok ficar só no DG</span>'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <p class="text-xs text-slate-500 mt-3">${direta.length} diretas + ${ota.length} OTAs</p>
+  `;
+}
+
+async function carregarAuditoria() {
+  const { data } = await db.from('auditoria_sync_hospedin')
+    .select('rodou_em, stats, acoes, erros')
+    .order('rodou_em', { ascending: false })
+    .limit(10);
+
+  const divAcoes = document.getElementById('lista-acoes');
+  const divErros = document.getElementById('lista-erros');
+
+  if (!data || data.length === 0) {
+    divAcoes.innerHTML = '<p class="text-slate-500">Sem dados de sync ainda — aguardando primeira execução.</p>';
+    divErros.innerHTML = '<p class="text-slate-500">—</p>';
+    return;
+  }
+
+  // Achata todas as ações
+  const todasAcoes = [];
+  const todosErros = [];
+  for (const r of data) {
+    (r.acoes || []).forEach(a => todasAcoes.push({ ...a, rodou_em: r.rodou_em }));
+    (r.erros || []).forEach(e => todosErros.push({ ...e, rodou_em: r.rodou_em }));
+  }
+
+  divAcoes.innerHTML = todasAcoes.slice(0, 20).map(a => `
+    <div class="py-2 border-b border-slate-100 flex items-start gap-3">
+      <span class="badge badge-ok">${a.acao}</span>
+      <div class="flex-1">
+        <div class="text-sm">${escapar(a.nome || a.hospede || '—')} · ${escapar(a.cama || '?')}</div>
+        <div class="text-xs text-slate-400">${new Date(a.rodou_em).toLocaleString('pt-BR')}</div>
+      </div>
+    </div>
+  `).join('') || '<p class="text-slate-500">Sem ações recentes.</p>';
+
+  divErros.innerHTML = todosErros.length === 0
+    ? '<p class="text-emerald-600">✓ Sem erros recentes</p>'
+    : todosErros.slice(0, 10).map(e => `
+        <div class="py-2 border-b border-slate-100">
+          <span class="badge badge-erro">erro</span>
+          <span class="text-xs text-slate-500 ml-2">${new Date(e.rodou_em).toLocaleString('pt-BR')}</span>
+          <div class="text-xs text-red-600 mt-1">${escapar(JSON.stringify(e).slice(0, 200))}</div>
+        </div>
+      `).join('');
+}
+
+async function forçarSyncPush() {
+  if (!confirm('Disparar sync DG→Hospedin agora? Reservas diretas serão criadas/atualizadas.')) return;
+  try {
+    const r = await fetch(SUPABASE_URL + '/functions/v1/sync-completo-hospedin-push', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    const d = await r.json();
+    alert(`Sync push rodou: ${d.stats?.criadas||0} criadas, ${d.stats?.atualizadas||0} atualizadas, ${d.stats?.erros||0} erros`);
+    carregarTudo();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+function escapar(s) { return String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+
+carregarTudo();
+setInterval(carregarTudo, 60000);
+</script>
+
+</body>
+</html>
