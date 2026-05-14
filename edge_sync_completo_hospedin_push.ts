@@ -1,14 +1,6 @@
 // =========================================================
 // EDGE FUNCTION: sync-completo-hospedin-push
-//
-// EMPURRA reservas do DG pra Hospedin (caminho inverso do pull).
-//
-// Casos cobertos:
-// 1. Reserva DIRETA no DG (canal=VD/PR/direto) sem hospedin_id → CRIA na Hospedin
-// 2. Reserva DIRETA no DG que mudou (checkout, valor, status) → ATUALIZA na Hospedin (PUT)
-// 3. Reserva CANCELADA no DG mas ainda ativa na Hospedin → cancela lá
-//
-// Estratégia: roda toda 1min em par com o pull. Espelhamento bidirecional.
+// Empurra reservas DG (diretas) pra Hospedin (POST + PUT).
 // =========================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
@@ -26,7 +18,7 @@ const loginHospedin = async (email: string, password: string): Promise<string | 
       });
       const txt = await r.text();
       if (!r.ok) {
-        console.log(`Hospedin login HTTP ${r.status} (tentativa ${tentativa}): ${txt.slice(0, 200)}`);
+        console.log(`Hospedin login HTTP ${r.status} (tent ${tentativa}): ${txt.slice(0, 200)}`);
         if (tentativa < 3) { await new Promise(res => setTimeout(res, 1000 * tentativa)); continue; }
         return null;
       }
@@ -36,11 +28,11 @@ const loginHospedin = async (email: string, password: string): Promise<string | 
       } catch {
         const m = txt.match(/"token"\s*:\s*"([^"]+)"/);
         if (m) return m[1];
-        console.log(`Hospedin login JSON inválido (tentativa ${tentativa}): ${txt.slice(0, 300)}`);
+        console.log(`Hospedin login JSON inválido (tent ${tentativa}): ${txt.slice(0, 300)}`);
       }
       if (tentativa < 3) await new Promise(res => setTimeout(res, 1000 * tentativa));
     } catch (e: any) {
-      console.log(`Hospedin login erro (tentativa ${tentativa}): ${e.message}`);
+      console.log(`Hospedin login erro (tent ${tentativa}): ${e.message}`);
       if (tentativa < 3) await new Promise(res => setTimeout(res, 1000 * tentativa));
     }
   }
@@ -74,7 +66,9 @@ const criarReservaHospedin = async (token: string, reserva: any) => {
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
   });
-  const d = await r.json();
+  const txt = await r.text();
+  let d: any = {};
+  try { d = JSON.parse(txt); } catch {}
   return { ok: r.ok, status: r.status, data: d };
 };
 
@@ -111,7 +105,7 @@ Deno.serve(async (_req) => {
 
   const token = await loginHospedin(EMAIL, PASSWORD);
   if (!token) {
-    return new Response(JSON.stringify({ ok: false, erro: "login Hospedin falhou" }), {
+    return new Response(JSON.stringify({ ok: false, erro: "login Hospedin falhou (3 tentativas)" }), {
       status: 500, headers: { "Content-Type": "application/json" },
     });
   }
@@ -120,7 +114,7 @@ Deno.serve(async (_req) => {
   const acoes: any[] = [];
   const erros: any[] = [];
 
-  // === CASO 1: Reservas DG sem hospedin_id (precisa CRIAR na Hospedin) ===
+  // CASO 1: reservas diretas DG sem hospedin_id → CRIAR
   const { data: paraCriar } = await sb
     .from("reservas")
     .select("*")
@@ -150,7 +144,7 @@ Deno.serve(async (_req) => {
           status_sync_hospedin: "erro",
           erro_sync_hospedin: JSON.stringify(result.data).slice(0, 500),
         }).eq("id", r.id);
-        erros.push({ dg_id: r.id, hospede: r.hospede_nome, status: result.status, erro: result.data });
+        erros.push({ dg_id: r.id, hospede: r.hospede_nome, status: result.status });
       }
       await new Promise(res => setTimeout(res, 400));
     } catch (e: any) {
@@ -159,19 +153,16 @@ Deno.serve(async (_req) => {
     }
   }
 
-  // === CASO 2: Reservas DG diretas COM hospedin_id que mudaram localmente ===
-  // (ex: você editou checkout no DG, precisa propagar pra Hospedin)
-  // Detecta: ultima_sync_hospedin é mais antiga que atualizado_em
+  // CASO 2: reservas DG com hospedin_id que mudaram localmente → ATUALIZAR
   const { data: paraAtualizar } = await sb
     .from("reservas")
     .select("*")
     .in("canal_codigo", ["direto", "venda_direta", "pre_reserva", "VD", "PR"])
     .not("hospedin_id", "is", null)
-    .gte("checkin", new Date(Date.now() - 7*86400000).toISOString().slice(0, 10))
+    .gte("checkin", new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
     .limit(20);
 
   for (const r of (paraAtualizar || [])) {
-    // Se nunca sincronizou ou se o timestamp local é mais novo
     const localMaisNovo = r.atualizado_em && r.ultima_sync_hospedin &&
                          new Date(r.atualizado_em).getTime() > new Date(r.ultima_sync_hospedin).getTime();
     if (!localMaisNovo) continue;
@@ -182,4 +173,19 @@ Deno.serve(async (_req) => {
         await sb.from("reservas").update({
           ultima_sync_hospedin: new Date().toISOString(),
           status_sync_hospedin: "sincronizada",
-       
+        }).eq("id", r.id);
+        stats.atualizadas++;
+        acoes.push({ acao: "atualizada_hospedin", dg_id: r.id, hospedin_id: r.hospedin_id, hospede: r.hospede_nome });
+      } else {
+        stats.erros++;
+        erros.push({ dg_id: r.id, hospedin_id: r.hospedin_id, status: result.status });
+      }
+      await new Promise(res => setTimeout(res, 400));
+    } catch (e: any) {
+      stats.erros++;
+      erros.push({ dg_id: r.id, erro: e.message?.slice(0, 200) });
+    }
+  }
+
+  await sb.from("auditoria_sync_hospedin").insert({
+    rodou_em:
