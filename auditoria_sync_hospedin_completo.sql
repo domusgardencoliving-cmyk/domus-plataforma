@@ -1,8 +1,5 @@
 -- =========================================================
--- AUDITORIA SYNC HOSPEDIN COMPLETO
---
--- Tabela de log + cron 1min que dispara Edge Function de sync FULL
--- + função pra dashboard mostrar status em tempo real
+-- AUDITORIA SYNC HOSPEDIN COMPLETO (PULL + PUSH bidirecional)
 -- =========================================================
 
 -- 1. TABELA DE LOG
@@ -24,7 +21,7 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- 2. STATUS PRO DASHBOARD: última execução + últimas ações + saúde
+-- 2. VIEW status pra dashboard
 CREATE OR REPLACE VIEW public.v_status_sync_hospedin AS
 SELECT
   (SELECT rodou_em FROM auditoria_sync_hospedin ORDER BY rodou_em DESC LIMIT 1) AS ultima_sync,
@@ -39,17 +36,15 @@ SELECT
 
 GRANT SELECT ON public.v_status_sync_hospedin TO anon, authenticated, service_role;
 
--- 3. CRON 1min — substitui o antigo sync-hospedin-reservas
+-- 3. CRONS PULL + PUSH (1min cada)
 DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname='pg_cron') THEN
-    -- desschedula o antigo (que só pegava novas)
     PERFORM cron.unschedule('sync-hospedin-reservas');
 
-    -- PULL: Hospedin -> DG, todo minuto
     PERFORM cron.unschedule('sync-completo-hospedin-pull');
     PERFORM cron.schedule(
       'sync-completo-hospedin-pull',
-      '* * * * *',  -- 1min
+      '* * * * *',
       $cron$
         SELECT net.http_post(
           url := 'https://motwhfbpundrhvuwjntw.supabase.co/functions/v1/sync-completo-hospedin-pull',
@@ -58,11 +53,10 @@ DO $$ BEGIN
       $cron$
     );
 
-    -- PUSH: DG -> Hospedin, todo minuto, deslocado em 30s pra não brigar com o pull
     PERFORM cron.unschedule('sync-completo-hospedin-push');
     PERFORM cron.schedule(
       'sync-completo-hospedin-push',
-      '* * * * *',  -- 1min (Postgres não suporta segundos, mas alterna na execução)
+      '* * * * *',
       $cron$
         SELECT net.http_post(
           url := 'https://motwhfbpundrhvuwjntw.supabase.co/functions/v1/sync-completo-hospedin-push',
@@ -75,6 +69,5 @@ EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'cron erro: %', SQLERRM; END $$;
 
 -- 4. RESULTADO
 SELECT 'OK auditoria sync Hospedin pronta' AS status,
-       (SELECT COUNT(*) FROM auditoria_sync_hospedin) AS logs_existentes,
-       (SELECT * FROM public.v_status_sync_hospedin) AS status_atual;
-    
+       (SELECT COUNT(*) FROM public.auditoria_sync_hospedin) AS logs_existentes,
+       (SELECT row_to_json(s.*) FROM public.v_status_sync_hospedin s) AS status_atual;
