@@ -1,6 +1,18 @@
 {
   "version": 2,
-  "cleanUrls": false,
+  "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": []
+  "rewrites": [
+    { "source": "/reservar", "destination": "/reservar.html" },
+    { "source": "/minha-conta", "destination": "/minha-conta.html" },
+    { "source": "/dominhas", "destination": "/dominhas.html" },
+    { "source": "/cleaner", "destination": "/cleaner.html" },
+    { "source": "/limpeza", "destination": "/cleaner.html" },
+    { "source": "/atrio", "destination": "/sala-conversas.html" },
+    { "source": "/sala-conversas", "destination": "/sala-conversas.html" },
+    { "source": "/instalar", "destination": "/instalar.html" },
+    { "source": "/pms", "destination": "/index.html?login=pms" },
+    { "source": "/dg", "destination": "/index.html?login=dg" },
+    { "source": "/admin", "destination": "/index.html?login=dg" }
+  ]
 }
