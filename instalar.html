@@ -72,9 +72,11 @@
         <p class="text-xs text-domus-texto-suave mt-4">Aponte a câmera do celular pro QR · funciona no iPhone e Android</p>
 
         <div class="grid grid-cols-3 gap-2 mt-6 text-xs">
-          <a href="?app=ocr"  class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">Nota Domus</a>
-          <a href="?app=pms"  class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">PMS</a>
-          <a href="?app=dom"  class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">Portal</a>
+          <a href="?app=atrio"   class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">🏛️ Átrio</a>
+          <a href="?app=pms"     class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">🏨 PMS</a>
+          <a href="?app=ocr"     class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">📸 Nota</a>
+          <a href="?app=dom"     class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">🏡 Portal</a>
+          <a href="?app=cleaner" class="py-2 rounded-lg border border-domus-borda hover:border-domus-azul transition">🧹 Limpeza</a>
         </div>
       </div>
     </div>
@@ -186,17 +188,25 @@
     <div class="bg-white rounded-2xl p-4 border border-domus-borda">
       <p class="text-xs font-semibold text-domus-texto-suave uppercase tracking-wider mb-3">Qual app você quer instalar?</p>
       <div class="grid grid-cols-3 gap-2">
-        <button onclick="trocarApp('ocr')" id="bt-app-ocr" class="py-3 rounded-xl border-2 transition flex flex-col items-center gap-1">
-          <span class="text-2xl">📸</span>
-          <span class="text-xs font-medium">Nota</span>
+        <button onclick="trocarApp('atrio')" id="bt-app-atrio" class="py-3 rounded-xl border-2 transition flex flex-col items-center gap-1">
+          <span class="text-2xl">🏛️</span>
+          <span class="text-xs font-medium">Átrio</span>
         </button>
         <button onclick="trocarApp('pms')" id="bt-app-pms" class="py-3 rounded-xl border-2 transition flex flex-col items-center gap-1">
           <span class="text-2xl">🏨</span>
           <span class="text-xs font-medium">PMS</span>
         </button>
+        <button onclick="trocarApp('ocr')" id="bt-app-ocr" class="py-3 rounded-xl border-2 transition flex flex-col items-center gap-1">
+          <span class="text-2xl">📸</span>
+          <span class="text-xs font-medium">Nota</span>
+        </button>
         <button onclick="trocarApp('dom')" id="bt-app-dom" class="py-3 rounded-xl border-2 transition flex flex-col items-center gap-1">
           <span class="text-2xl">🏡</span>
           <span class="text-xs font-medium">Portal</span>
+        </button>
+        <button onclick="trocarApp('cleaner')" id="bt-app-cleaner" class="py-3 rounded-xl border-2 transition flex flex-col items-center gap-1">
+          <span class="text-2xl">🧹</span>
+          <span class="text-xs font-medium">Limpeza</span>
         </button>
       </div>
       <p class="text-xs text-domus-texto-suave mt-3 text-center" id="app-descricao">Instalando: <strong id="app-label">Nota Domus</strong></p>
@@ -206,12 +216,14 @@
 
   <script>
     const APPS = {
-      ocr: { url: '/notas-ocr.html', nome: 'Nota Domus',  icone: '📸' },
-      pms: { url: '/pms.html',       nome: 'Domus PMS',   icone: '🏨' },
-      dom: { url: '/dominhas.html',  nome: 'Portal Dominhas', icone: '🏡' }
+      atrio:   { url: '/sala-conversas.html', nome: 'Átrio',           icone: '🏛️' },
+      pms:     { url: '/pms.html',            nome: 'Domus PMS',       icone: '🏨' },
+      ocr:     { url: '/notas-ocr.html',      nome: 'Nota Domus',      icone: '📸' },
+      dom:     { url: '/dominhas.html',       nome: 'Portal Dominhas', icone: '🏡' },
+      cleaner: { url: '/cleaner.html',        nome: 'Domus Limpeza',   icone: '🧹' }
     };
 
-    let appAtual = 'ocr';
+    let appAtual = 'atrio';
 
     function detectarPlataforma() {
       const ua = navigator.userAgent.toLowerCase();
@@ -226,7 +238,7 @@
       appAtual = key;
       const app = APPS[key];
       // Atualiza visual
-      ['ocr','pms','dom'].forEach(k => {
+      ['atrio','pms','ocr','dom','cleaner'].forEach(k => {
         const bt = document.getElementById('bt-app-' + k);
         if (k === key) {
           bt.classList.remove('border-domus-borda','bg-white');
@@ -270,33 +282,3 @@
       e.preventDefault();
       deferredPrompt = e;
       const btCard = document.getElementById('bt-instalar-android');
-      if (btCard) btCard.classList.remove('hidden');
-    });
-
-    async function instalarAndroid() {
-      if (!deferredPrompt) {
-        alert('Use o menu do Chrome (⋮) e escolha "Instalar app" — seu navegador não suporta o botão direto.');
-        return;
-      }
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      if (outcome === 'accepted') {
-        document.getElementById('bt-instalar-android').innerHTML = '<div class="text-center py-4"><div class="text-5xl mb-2">✅</div><p class="font-medium text-domus-azul-escuro">Instalado! Procure o ícone da Domus na sua tela inicial.</p></div>';
-      }
-    }
-
-    // Init
-    (function init() {
-      const params = new URLSearchParams(window.location.search);
-      const app = params.get('app');
-      if (app && APPS[app]) appAtual = app;
-      trocarApp(appAtual);
-
-      const plat = detectarPlataforma();
-      document.getElementById('bloco-' + plat).classList.remove('hidden');
-    })();
-  </script>
-
-</body>
-</html>
