@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bem-vinda à Domus — Formalizar entrada</title>
+  <meta name="description" content="Sua entrada na Domus Garden em poucos passos. Escolha a modalidade, envie seus dados e receba o contrato no WhatsApp pra assinar." />
+  <meta property="og:title" content="Bem-vinda à Domus Garden" />
+  <meta property="og:description" content="Formalize sua entrada na Domus de forma simples e segura." />
+  <meta property="og:image" content="https://domusgardencoliving.com/images/og-reservar.jpg" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'domus-azul': '#008B9C',
+            'domus-azul-escuro': '#0A3142',
+            'domus-azul-claro': '#4DC5D0',
+            'domus-dourado': '#C9A961',
+            'domus-rosa': '#FF385C',
+            'domus-rosa-escuro': '#E11D48',
+            'domus-texto': '#222222',
+            'domus-texto-suave': '#717171',
+            'domus-borda': '#EBEBEB',
+            'domus-creme': '#FFF8F0',
+            'domus-bege': '#F5E9D7'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            serif: ['Instrument Serif', 'Georgia', 'serif']
+          }
+        }
+      }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; background: #FFF8F0; }
+    .font-serif { font-family: 'Instrument Serif', Georgia, serif; }
+    .step { animation: fade-up 0.4s ease-out; }
+    @keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .card-modalidade { transition: all 0.25s ease; }
+    .card-modalidade:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,139,156,0.18); }
+    .card-modalidade.selecionado { border-color: #008B9C; background: linear-gradient(180deg, rgba(0,139,156,0.06), rgba(0,139,156,0.02)); box-shadow: 0 8px 24px rgba(0,139,156,0.20); }
+    .upload-box { transition: all 0.2s ease; }
+    .upload-box:hover { border-color: #008B9C; background: rgba(0,139,156,0.03); }
+    .upload-box.uploaded { border-color: #16a34a; background: rgba(34,197,94,0.06); }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <div class="min-h-screen bg-gradient-to-b from-domus-bege via-white to-white pb-20">
+
+    <!-- Header -->
+    <div class="max-w-2xl mx-auto px-6 pt-12 pb-6 text-center">
+      <a href="/" class="inline-block mb-5">
+        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-domus-azul-escuro to-domus-azul flex items-center justify-center mx-auto">
+          <span class="text-white font-bold text-2xl font-serif">D</span>
+        </div>
+      </a>
+      <h1 class="font-serif text-3xl sm:text-4xl text-domus-azul-escuro leading-tight mb-3">Bem-vinda à Domus 🌿</h1>
+      <p class="text-domus-texto-suave text-base max-w-md mx-auto">Sua entrada em poucos passos. No fim, você recebe o contrato no WhatsApp pra assinar — simples assim.</p>
+    </div>
+
+    <!-- Card do Formulário -->
+    <div class="max-w-lg mx-auto px-6">
+      <div class="bg-white rounded-3xl shadow-xl p-8 sm:p-10">
+
+        <!-- Progresso -->
+        <div class="flex items-center gap-1 mb-8">
+          <div id="prog-1" class="flex-1 h-1.5 rounded-full bg-domus-azul transition-all"></div>
+          <div id="prog-2" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+          <div id="prog-3" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+          <div id="prog-4" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+          <div id="prog-5" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+          <div id="prog-6" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+          <div id="prog-7" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- ETAPA 1 — Dados pessoais                    -->
+        <!-- ============================================ -->
+        <div id="step-1" class="step">
+          <h2 class="text-xs font-semibold text-domus-azul uppercase tracking-wider mb-1">Passo 1 de 7</h2>
+          <p class="font-serif text-2xl text-domus-azul-escuro mb-1">Vamos te conhecer</p>
+          <p class="text-xs text-domus-texto-suave mb-5">Dados que vão para o seu contrato.</p>
+
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-domus-texto-suave">Nome completo *</label>
+              <input id="f-nome" type="text" placeholder="Seu nome como aparece no documento" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-domus-texto-suave">Idade *</label>
+                <input id="f-idade" type="number" placeholder="Ex: 28" min="18" max="99" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+              </div>
+              <div>
+                <label class="text-xs text-domus-texto-suave">Profissão *</label>
+                <input id="f-profissao" type="text" placeholder="Ex: Designer" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-domus-texto-suave">CPF *</label>
+                <input id="f-cpf" type="text" placeholder="000.000.000-00" maxlength="14" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+              </div>
+              <div>
+                <label class="text-xs text-domus-texto-suave">RG ou CNH *</label>
+                <input id="f-rg" type="text" placeholder="Documento de identidade" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="text-xs text-domus-texto-suave">Telefone com DDD *</label>
+              <input id="f-telefone" type="tel" placeholder="(11) 99999-9999" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-domus-texto-suave">E-mail *</label>
+              <input id="f-email" type="email" placeholder="seu@email.com" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-domus-texto-suave">Endereço atual (rua, número, cidade) *</label>
+              <input id="f-endereco" type="text" placeholder="Onde você mora hoje" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+            </div>
+
+            <!-- Trabalho -->
+            <div class="p-4 rounded-2xl border border-domus-borda bg-domus-creme/30">
+              <p class="text-xs font-semibold text-domus-azul-escuro mb-2">Você trabalha? *</p>
+              <div class="flex gap-2">
+                <button type="button" onclick="toggleTrabalho('sim')" id="bt-trab-sim" class="flex-1 py-2 rounded-xl border border-domus-borda text-sm font-medium hover:border-domus-azul transition">Sim</button>
+                <button type="button" onclick="toggleTrabalho('nao')" id="bt-trab-nao" class="flex-1 py-2 rounded-xl border border-domus-borda text-sm font-medium hover:border-domus-azul transition">Não</button>
+              </div>
+              <div id="bloco-end-trab" class="hidden mt-3">
+                <label class="text-xs text-domus-texto-suave">Endereço do trabalho</label>
+                <input id="f-end-trabalho" type="text" placeholder="Empresa, rua, número, cidade" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+              </div>
+            </div>
+
+            <!-- Estudo -->
+            <div class="p-4 rounded-2xl border border-domus-borda bg-domus-creme/30">
+              <p class="text-xs font-semibold text-domus-azul-escuro mb-2">Você estuda? *</p>
+              <div class="flex gap-2">
+                <button type="button" onclick="toggleEstudo('sim')" id="bt-est-sim" class="flex-1 py-2 rounded-xl border border-domus-borda text-sm font-medium hover:border-domus-azul transition">Sim</button>
+                <button type="button" onclick="toggleEstudo('nao')" id="bt-est-nao" class="flex-1 py-2 rounded-xl border border-domus-borda text-sm font-medium hover:border-domus-azul transition">Não</button>
+              </div>
+              <div id="bloco-end-est" class="hidden mt-3">
+                <label class="text-xs text-domus-texto-suave">Endereço da instituição de ensino</label>
+                <input id="f-end-estudo" type="text" placeholder="Faculdade/escola, rua, número, cidade" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+              </div>
+            </div>
+          </div>
+          <button onclick="proximo(1)" class="w-full mt-6 py-3 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition">Continuar →</button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- ETAPA 2 — Modalidade                        -->
+        <!-- ============================================ -->
+        <div id="step-2" class="step hidden">
+          <h2 class="text-xs font-semibold text-domus-azul uppercase tracking-wider mb-1">Passo 2 de 7</h2>
+          <p class="font-serif text-2xl text-domus-azul-escuro mb-1">Escolha sua modalidade</p>
+          <p class="text-xs text-domus-texto-suave mb-5">As duas têm vantagens. Escolha a que faz mais sentido pra você.</p>
+
+          <div class="space-y-4">
+            <!-- Card 3 meses -->
+            <div id="card-3" onclick="selecionarModalidade('3')" class="card-modalidade cursor-pointer border-2 border-domus-borda rounded-2xl p-5">
+              <div class="flex items-start justify-between mb-2">
+                <div>
+                  <p class="font-serif text-xl text-domus-azul-escuro">3 meses com caução</p>
+                  <p class="text-xs text-domus-texto-suave">Flexível pra começar</p>
+                </div>
+                <div id="check-3" class="w-6 h-6 rounded-full border-2 border-domus-borda flex items-center justify-center text-white text-sm">✓</div>
+              </div>
+              <div class="bg-domus-creme/60 rounded-xl p-3 mt-3 space-y-1.5">
+                <div class="flex justify-between text-sm"><span class="text-domus-texto-suave">Aluguel mensal</span><span class="font-semibold text-domus-azul-escuro">R$ 1.250,00</span></div>
+                <div class="flex justify-between text-sm"><span class="text-domus-texto-suave">Caução (50% do aluguel)</span><span class="font-semibold text-domus-azul-escuro">R$ 625,00</span></div>
+                <div class="flex justify-between text-sm"><span class="text-domus-texto-suave">Energia elétrica</span><span class="text-domus-texto-suave">rateio mensal à parte</span></div>
+              </div>
+              <div class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
+                <span class="text-amber-600 text-xs mt-0.5">⚠</span>
+                <p class="text-[11px] text-amber-800 leading-relaxed">Saindo antes dos 3 meses: caução retida + 1 aluguel de multa (total <strong>R$ 1.875</strong>).</p>
+              </div>
+            </div>
+
+            <!-- Card 6 meses -->
+            <div id="card-6" onclick="selecionarModalidade('6')" class="card-modalidade cursor-pointer border-2 border-domus-borda rounded-2xl p-5 relative">
+              <span class="absolute -top-3 right-5 bg-domus-dourado text-white text-[10px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Mais escolhida</span>
+              <div class="flex items-start justify-between mb-2">
+                <div>
+                  <p class="font-serif text-xl text-domus-azul-escuro">6 meses tudo incluso</p>
+                  <p class="text-xs text-domus-texto-suave">Sem caução, sem energia separada, sem surpresa</p>
+                </div>
+                <div id="check-6" class="w-6 h-6 rounded-full border-2 border-domus-borda flex items-center justify-center text-white text-sm">✓</div>
+              </div>
+              <div class="bg-domus-creme/60 rounded-xl p-3 mt-3 space-y-1.5">
+                <div class="flex justify-between text-sm"><span class="text-domus-texto-suave">Mensalidade fixa</span><span class="font-semibold text-domus-azul-escuro">R$ 1.450,00</span></div>
+                <div class="flex justify-between text-sm"><span class="text-domus-texto-suave">Caução</span><span class="text-green-700 font-medium">já inclusa</span></div>
+                <div class="flex justify-between text-sm"><span class="text-domus-texto-suave">Energia elétrica</span><span class="text-green-700 font-medium">já inclusa</span></div>
+              </div>
+              <div class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
+                <span class="text-amber-600 text-xs mt-0.5">⚠</span>
+                <p class="text-[11px] text-amber-800 leading-relaxed">Saindo antes dos 6 meses: multa de 1 aluguel e meio (<strong>R$ 2.175</strong>).</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button onclick="voltar(2)" class="flex-1 py-3 rounded-xl border border-domus-borda text-domus-texto-suave font-medium hover:bg-gray-50 transition">← Voltar</button>
+            <button onclick="proximo(2)" id="btn-step-2" class="flex-1 py-3 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>Continuar →</button>
+          </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- ETAPA 3 — Data de entrada + cronograma      -->
+        <!-- ============================================ -->
+        <div id="step-3" class="step hidden">
+          <h2 class="text-xs font-semibold text-domus-azul uppercase tracking-wider mb-1">Passo 3 de 7</h2>
+          <p class="font-serif text-2xl text-domus-azul-escuro mb-5">Quando será sua mudança?</p>
+
+          <div class="space-y-4">
+            <div>
+              <label class="text-xs text-domus-texto-suave">Data prevista de entrada *</label>
+              <input id="f-data-entrada" type="date" onchange="atualizarCronograma()" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+              <p class="text-[11px] text-domus-texto-suave mt-1">As mensalidades vencem todo dia 15.</p>
+            </div>
+
+            <div id="bloco-data-caucao" class="hidden">
+              <label class="text-xs text-domus-texto-suave">Quando você vai pagar a caução? *</label>
+              <input id="f-data-caucao" type="date" onchange="atualizarCronograma()" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+              <p class="text-[11px] text-domus-texto-suave mt-1">A caução pode ser antecipada pra garantir sua vaga.</p>
+            </div>
+
+            <!-- Cronograma dinâmico -->
+            <div id="cronograma-box" class="hidden">
+              <div id="cronograma-lista" class="space-y-2"></div>
+              <div class="mt-3 p-3 rounded-lg bg-domus-azul/5 border border-domus-azul/20">
+                <p id="cronograma-explicacao" class="text-[11px] text-domus-azul-escuro"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button onclick="voltar(3)" class="flex-1 py-3 rounded-xl border border-domus-borda text-domus-texto-suave font-medium hover:bg-gray-50 transition">← Voltar</button>
+            <button onclick="proximo(3)" id="btn-step-3" class="flex-1 py-3 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>Continuar →</button>
+          </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- ETAPA 4 — Contatos de emergência            -->
+        <!-- ============================================ -->
+        <div id="step-4" class="step hidden">
+          <h2 class="text-xs font-semibold text-domus-azul uppercase tracking-wider mb-1">Passo 4 de 7</h2>
+          <p class="font-serif text-2xl text-domus-azul-escuro mb-1">Contatos de emergência</p>
+          <p class="text-xs text-domus-texto-suave mb-5">Duas pessoas que a gente possa acionar se acontecer alguma coisa.</p>
+
+          <div class="space-y-4">
+            <div class="p-4 rounded-2xl border border-domus-borda">
+              <p class="text-xs font-semibold text-domus-azul-escuro mb-3">Contato 1</p>
+              <div class="space-y-2">
+                <input id="f-emerg1-nome" type="text" placeholder="Nome completo" class="w-full px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+                <div class="grid grid-cols-2 gap-2">
+                  <input id="f-emerg1-tel" type="tel" placeholder="(11) 99999-9999" class="w-full px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+                  <input id="f-emerg1-rel" type="text" placeholder="Relação (ex: mãe)" class="w-full px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+                </div>
+              </div>
+            </div>
+            <div class="p-4 rounded-2xl border border-domus-borda">
+              <p class="text-xs font-semibold text-domus-azul-escuro mb-3">Contato 2</p>
+              <div class="space-y-2">
+                <input id="f-emerg2-nome" type="text" placeholder="Nome completo" class="w-full px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+                <div class="grid grid-cols-2 gap-2">
+                  <input id="f-emerg2-tel" type="tel" placeholder="(11) 99999-9999" class="w-full px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+                  <input id="f-emerg2-rel" type="text" placeholder="Relação (ex: irmã)" class="w-full px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button onclick="voltar(4)" class="flex-1 py-3 rounded-xl border border-domus-borda text-domus-texto-suave font-medium hover:bg-gray-50 transition">← Voltar</button>
+            <button onclick="proximo(4)" class="flex-1 py-3 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition">Continuar →</button>
+          </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- ETAPA 5 — Documentos                        -->
+        <!-- ============================================ -->
+        <div id="step-5" class="step hidden">
+          <h2 class="text-xs font-semibold text-domus-azul uppercase tracking-wider mb-1">Passo 5 de 7</h2>
+          <p class="font-serif text-2xl text-domus-azul-escuro mb-1">Documentos</p>
+          <p class="text-xs text-domus-texto-suave mb-5">Tudo confidencial, fica só no seu cadastro.</p>
+
+          <div class="space-y-3">
+            <!-- Doc Frente -->
+            <label class="upload-box block border-2 border-dashed border-domus-borda rounded-2xl p-4 cursor-pointer" id="box-doc-frente">
+              <input type="file" id="f-doc-frente" accept="image/*,application/pdf" onchange="onUpload('doc-frente', this)" class="hidden" />
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-domus-azul/10 flex items-center justify-center text-2xl">📄</div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-domus-azul-escuro">RG ou CNH — frente</p>
+                  <p id="label-doc-frente" class="text-xs text-domus-texto-suave">Toque para enviar (foto ou PDF)</p>
+                </div>
+              </div>
+            </label>
+
+            <!-- Doc Verso -->
+            <label class="upload-box block border-2 border-dashed border-domus-borda rounded-2xl p-4 cursor-pointer" id="box-doc-verso">
+              <input type="file" id="f-doc-verso" accept="image/*,application/pdf" onchange="onUpload('doc-verso', this)" class="hidden" />
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-domus-azul/10 flex items-center justify-center text-2xl">📄</div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-domus-azul-escuro">RG ou CNH — verso</p>
+                  <p id="label-doc-verso" class="text-xs text-domus-texto-suave">Toque para enviar (foto ou PDF)</p>
+                </div>
+              </div>
+            </label>
+
+            <!-- CPF -->
+            <label class="upload-box block border-2 border-dashed border-domus-borda rounded-2xl p-4 cursor-pointer" id="box-doc-cpf">
+              <input type="file" id="f-doc-cpf" accept="image/*,application/pdf" onchange="onUpload('doc-cpf', this)" class="hidden" />
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-domus-azul/10 flex items-center justify-center text-2xl">🪪</div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-domus-azul-escuro">CPF</p>
+                  <p id="label-doc-cpf" class="text-xs text-domus-texto-suave">Documento com seu CPF (se seu RG já tem CPF, pode anexar a frente dele de novo)</p>
+                </div>
+              </div>
+            </label>
+
+            <!-- Selfie -->
+            <label class="upload-box block border-2 border-dashed border-domus-borda rounded-2xl p-4 cursor-pointer" id="box-selfie">
+              <input type="file" id="f-selfie" accept="image/*" capture="user" onchange="onUpload('selfie', this)" class="hidden" />
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-domus-azul/10 flex items-center justify-center text-2xl">🤳</div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-domus-azul-escuro">Selfie segurando o documento</p>
+                  <p id="label-selfie" class="text-xs text-domus-texto-suave">Toque para tirar a foto agora</p>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button onclick="voltar(5)" class="flex-1 py-3 rounded-xl border border-domus-borda text-domus-texto-suave font-medium hover:bg-gray-50 transition">← Voltar</button>
+            <button onclick="proximo(5)" id="btn-step-5" class="flex-1 py-3 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>Continuar →</button>
+          </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- ETAPA 6 — Revisão e aceite                  -->
+        <!-- ============================================ -->
+        <div id="step-6" class="step hidden">
+          <h2 class="text-xs font-semibold text-domus-azul uppercase tracking-wider mb-1">Passo 6 de 7</h2>
+          <p class="font-serif text-2xl text-domus-azul-escuro mb-1">Confira tudo</p>
+          <p class="text-xs text-domus-texto-suave mb-5">Última revisão antes de gerar o contrato.</p>
+
+          <div id="revisao-box" class="space-y-3 text-sm"></div>
+
+          <!-- Aviso de multa destacado -->
+          <div class="mt-5 p-4 rounded-2xl bg-amber-50 border border-amber-300">
+            <p class="text-sm font-semibold text-amber-900 mb-2">⚠ Importante — multa por rescisão antecipada</p>
+            <p id="aviso-multa" class="text-xs text-amber-800 leading-relaxed"></p>
+            <p class="text-[11px] text-amber-700/80 mt-2 italic">Está tudo previsto na Cláusula Décima do contrato.</p>
+          </div>
+
+          <!-- Regulamento -->
+          <div class="mt-4 p-4 rounded-2xl bg-domus-creme/40 border border-domus-borda">
+            <p class="text-xs font-semibold text-domus-azul-escuro mb-2">📋 Regras de convivência (Regulamento Interno):</p>
+            <ul class="text-[11px] text-domus-texto-suave space-y-1 ml-3 list-disc">
+              <li>Coliving exclusivamente feminino — visitas só de mulheres, com aviso prévio.</li>
+              <li>Silêncio das 23h às 7h.</li>
+              <li>Limpeza da louça imediatamente após o uso.</li>
+              <li>Cuidar dos espaços comuns (cozinha, banheiro, áreas de convivência).</li>
+              <li>Comunicar danos ou avarias logo que perceber.</li>
+              <li>O contrato traz todas as regras detalhadas — você recebe a cópia completa pra assinar.</li>
+            </ul>
+          </div>
+
+          <!-- Checkbox -->
+          <div class="mt-5">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input id="f-aceite" type="checkbox" onchange="toggleAceite()" class="mt-1 accent-domus-azul w-4 h-4" />
+              <span class="text-xs text-domus-texto-suave leading-relaxed">Li e aceito todas as condições do <strong>Contrato de Prestação de Serviços</strong> e do <strong>Regulamento Interno</strong> da Domus Garden Coliving, incluindo a regra de multa por rescisão antecipada.</span>
+            </label>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button onclick="voltar(6)" class="flex-1 py-3 rounded-xl border border-domus-borda text-domus-texto-suave font-medium hover:bg-gray-50 transition">← Voltar</button>
+            <button onclick="finalizar()" id="btn-finalizar" class="flex-1 py-3 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>Gerar contrato 🌿</button>
+          </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- ETAPA 7 — Sucesso                           -->
+        <!-- ============================================ -->
+        <div id="step-7" class="step hidden text-center py-8">
+          <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5 text-4xl">✓</div>
+          <h2 class="font-serif text-2xl text-domus-azul-escuro mb-3">Tudo registrado!</h2>
+          <p class="text-sm text-domus-texto-suave mb-6 max-w-md mx-auto">Em poucos minutos você receberá o contrato no seu WhatsApp pelo ZapSign. Só assinar e pronto — a Gabi assina logo em seguida.</p>
+          <div class="bg-domus-creme/50 rounded-2xl p-5 max-w-sm mx-auto border border-domus-borda">
+            <p class="text-xs text-domus-texto-suave">Qualquer dúvida me chama no WhatsApp:</p>
+            <a href="https://wa.me/5511943330911" target="_blank" class="text-domus-azul font-semibold text-sm hover:underline">(11) 94333-0911</a>
+          </div>
+        </div>
+
+      </div>
+
+      <p class="text-center text-[11px] text-domus-texto-suave mt-6">🔒 Seus dados ficam protegidos e são usados apenas pra emitir o contrato.</p>
+    </div>
+  </div>
+
+  <script>
+    // PORTEIRO DE ERROS
+    window.addEventListener('error', function(e){ if(!e || !e.message) return; console.error('[porteiro]', e.message); });
+    window.addEventListener('unhandledrejection', function(e){ console.error('[porteiro] promise:', e.reason); });
+
+    // Supabase
+    const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.ovFAr_kSeKLs9CFBNAlxK2NyvA5HoqVfM7CFCmoUjJM';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    // Estado
+    const estado = {
+      modalidade: null,    // '3' ou '6'
+      dataEntrada: null,
+      dataCaucao: null,
+      trabalha: null,      // 'sim' ou 'nao'
+      estuda: null,        // 'sim' ou 'nao'
+      cronograma: [],
+      uploads: { 'doc-frente': null, 'doc-verso': null, 'doc-cpf': null, 'selfie': null }
+    };
+
+    // ==========================================
+    // TOGGLES — trabalho e estudo
+    // ==========================================
+    function toggleTrabalho(v) {
+      estado.trabalha = v;
+      document.getElementById('bt-trab-sim').classList.toggle('bg-domus-azul', v === 'sim');
+      document.getElementById('bt-trab-sim').classList.toggle('text-white', v === 'sim');
+      document.getElementById('bt-trab-sim').classList.toggle('border-domus-azul', v === 'sim');
+      document.getElementById('bt-trab-nao').classList.toggle('bg-domus-azul', v === 'nao');
+      document.getElementById('bt-trab-nao').classList.toggle('text-white', v === 'nao');
+      document.getElementById('bt-trab-nao').classList.toggle('border-domus-azul', v === 'nao');
+      const bloco = document.getElementById('bloco-end-trab');
+      if (v === 'sim') bloco.classList.remove('hidden');
+      else { bloco.classList.add('hidden'); document.getElementById('f-end-trabalho').value = ''; }
+    }
+    function toggleEstudo(v) {
+      estado.estuda = v;
+      document.getElementById('bt-est-sim').classList.toggle('bg-domus-azul', v === 'sim');
+      document.getElementById('bt-est-sim').classList.toggle('text-white', v === 'sim');
+      document.getElementById('bt-est-sim').classList.toggle('border-domus-azul', v === 'sim');
+      document.getElementById('bt-est-nao').classList.toggle('bg-domus-azul', v === 'nao');
+      document.getElementById('bt-est-nao').classList.toggle('text-white', v === 'nao');
+      document.getElementById('bt-est-nao').classList.toggle('border-domus-azul', v === 'nao');
+      const bloco = document.getElementById('bloco-end-est');
+      if (v === 'sim') bloco.classList.remove('hidden');
+      else { bloco.classList.add('hidden'); document.getElementById('f-end-estudo').value = ''; }
+    }
+
+    // ==========================================
+    // NAVEGAÇÃO
+    // ==========================================
+    function mostrarStep(n) {
+      for (let i = 1; i <= 7; i++) {
+        document.getElementById('step-' + i).classList.add('hidden');
+        document.getElementById('prog-' + i).classList.toggle('bg-domus-azul', i <= n);
+        document.getElementById('prog-' + i).classList.toggle('bg-gray-200', i > n);
+      }
+      document.getElementById('step-' + n).classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function proximo(atual) {
+      if (atual === 1 && !validarStep1()) return;
+      if (atual === 4 && !validarStep4()) return;
+      if (atual === 5) montarRevisao();
+      mostrarStep(atual + 1);
+    }
+    function voltar(atual) { mostrarStep(atual - 1); }
+
+    function validarStep4() {
+      const obrigatorios = ['f-emerg1-nome','f-emerg1-tel','f-emerg1-rel','f-emerg2-nome','f-emerg2-tel','f-emerg2-rel'];
+      for (const id of obrigatorios) {
+        const el = document.getElementById(id);
+        if (!el.value || el.value.trim().length < 2) {
+          el.focus();
+          el.classList.add('border-red-400');
+          setTimeout(() => el.classList.remove('border-red-400'), 2000);
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // ==========================================
+    // VALIDAÇÃO PASSO 1
+    // ==========================================
+    function validarStep1() {
+      const obrigatorios = ['f-nome','f-idade','f-profissao','f-cpf','f-rg','f-telefone','f-email','f-endereco'];
+      for (const id of obrigatorios) {
+        const el = document.getElementById(id);
+        if (!el.value || el.value.trim().length < 2) {
+          el.focus();
+          el.classList.add('border-red-400');
+          setTimeout(() => el.classList.remove('border-red-400'), 2000);
+          return false;
+        }
+      }
+      if (!estado.trabalha) {
+        document.getElementById('bt-trab-sim').classList.add('border-red-400');
+        document.getElementById('bt-trab-nao').classList.add('border-red-400');
+        setTimeout(() => {
+          document.getElementById('bt-trab-sim').classList.remove('border-red-400');
+          document.getElementById('bt-trab-nao').classList.remove('border-red-400');
+        }, 2000);
+        return false;
+      }
+      if (estado.trabalha === 'sim' && (document.getElementById('f-end-trabalho').value || '').trim().length < 3) {
+        const el = document.getElementById('f-end-trabalho');
+        el.focus(); el.classList.add('border-red-400');
+        setTimeout(() => el.classList.remove('border-red-400'), 2000);
+        return false;
+      }
+      if (!estado.estuda) {
+        document.getElementById('bt-est-sim').classList.add('border-red-400');
+        document.getElementById('bt-est-nao').classList.add('border-red-400');
+        setTimeout(() => {
+          document.getElementById('bt-est-sim').classList.remove('border-red-400');
+          document.getElementById('bt-est-nao').classList.remove('border-red-400');
+        }, 2000);
+        return false;
+      }
+      if (estado.estuda === 'sim' && (document.getElementById('f-end-estudo').value || '').trim().length < 3) {
+        const el = document.getElementById('f-end-estudo');
+        el.focus(); el.classList.add('border-red-400');
+        setTimeout(() => el.classList.remove('border-red-400'), 2000);
+        return false;
+      }
+      return true;
+    }
+
+    // ==========================================
+    // MODALIDADE
+    // ==========================================
+    function selecionarModalidade(m) {
+      estado.modalidade = m;
+      document.getElementById('card-3').classList.toggle('selecionado', m === '3');
+      document.getElementById('card-6').classList.toggle('selecionado', m === '6');
+      document.getElementById('check-3').classList.toggle('bg-domus-azul', m === '3');
+      document.getElementById('check-3').classList.toggle('border-domus-azul', m === '3');
+      document.getElementById('check-6').classList.toggle('bg-domus-azul', m === '6');
+      document.getElementById('check-6').classList.toggle('border-domus-azul', m === '6');
+      document.getElementById('btn-step-2').disabled = false;
+      // Mostra/esconde campo de data caução conforme modalidade
+      const blocoCaucao = document.getElementById('bloco-data-caucao');
+      if (m === '3') blocoCaucao.classList.remove('hidden');
+      else blocoCaucao.classList.add('hidden');
+      // Recalcula se ja tem data
+      if (document.getElementById('f-data-entrada').value) atualizarCronograma();
+    }
+
+    // ==========================================
+    // CRONOGRAMA — ciclo 15 ao 14 do mes seguinte
+    // ==========================================
+    function atualizarCronograma() {
+      const dataStr = document.getElementById('f-data-entrada').value;
+      const dataCaucaoStr = document.getElementById('f-data-caucao').value;
+      if (!dataStr || !estado.modalidade) return;
+      if (estado.modalidade === '3' && !dataCaucaoStr) {
+        // Aguarda usuario informar a data da caução tambem
+        document.getElementById('btn-step-3').disabled = true;
+        return;
+      }
+      const dt = new Date(dataStr + 'T12:00:00');
+      const dtCaucao = dataCaucaoStr ? new Date(dataCaucaoStr + 'T12:00:00') : null;
+      const lista = montarCronograma(estado.modalidade, dt, dtCaucao);
+      estado.cronograma = lista;
+      estado.dataEntrada = dataStr;
+      estado.dataCaucao = dataCaucaoStr || null;
+      renderizarCronograma(lista);
+      document.getElementById('btn-step-3').disabled = false;
+    }
+
+    function montarCronograma(modalidade, dataEntrada, dataCaucao) {
+      const lista = [];
+      const meses = modalidade === '6' ? 6 : 3;
+      const aluguel = modalidade === '6' ? 1450 : 1250;
+      const caucao = modalidade === '6' ? 0 : 625;
+      const incluiEnergia = modalidade === '3';
+
+      const ano = dataEntrada.getFullYear();
+      const mes = dataEntrada.getMonth();
+      const dia = dataEntrada.getDate();
+
+      // Proximo dia 15 a partir da entrada
+      let primeiroDia15;
+      if (dia <= 14) {
+        primeiroDia15 = new Date(ano, mes, 15);
+      } else {
+        primeiroDia15 = new Date(ano, mes + 1, 15);
+      }
+
+      // 1) Caução: parcela separada (so na modalidade 3 meses)
+      if (caucao > 0 && dataCaucao) {
+        lista.push({
+          data: formatarData(dataCaucao),
+          valor: caucao,
+          composicao: 'Caução (50% do aluguel)',
+          obs: 'Garante sua vaga'
+        });
+      }
+
+      // 2) Dias proporcionais: vencimento no dia da entrada
+      const msDia = 24 * 60 * 60 * 1000;
+      const diasProporcionais = Math.max(1, Math.round((primeiroDia15 - dataEntrada) / msDia));
+      const valorProporcional = +((aluguel / 30) * diasProporcionais).toFixed(2);
+      if (diasProporcionais > 0 && diasProporcionais < 30) {
+        lista.push({
+          data: formatarData(dataEntrada),
+          valor: valorProporcional,
+          composicao: diasProporcionais + ' dias proporcionais (dia ' + dia + ' ao dia 14)',
+          obs: 'Cobre os dias até o primeiro vencimento mensal'
+        });
+      }
+
+      // 3) Mensalidades — sempre dia 15
+      for (let i = 0; i < meses; i++) {
+        const dtParcela = new Date(primeiroDia15);
+        dtParcela.setMonth(dtParcela.getMonth() + i);
+        const dtFim = new Date(dtParcela);
+        dtFim.setMonth(dtFim.getMonth() + 1);
+        dtFim.setDate(14);
+
+        let composicao = 'Aluguel mês cheio (' + formatarData(dtParcela) + ' a ' + formatarData(dtFim) + ')';
+        if (incluiEnergia && i >= 1) composicao += ' + rateio da energia';
+
+        const obs = (i === meses - 1)
+          ? 'Última mensalidade do contrato — depois, renova mensalmente'
+          : '';
+
+        lista.push({
+          data: formatarData(dtParcela),
+          valor: aluguel,
+          composicao: composicao,
+          obs: obs
+        });
+      }
+      return lista;
+    }
+    function formatarData(d) { return ('0'+d.getDate()).slice(-2) + '/' + ('0'+(d.getMonth()+1)).slice(-2) + '/' + d.getFullYear(); }
+    function fmt(v) { return v.toFixed(2).replace('.', ','); }
+
+    function renderizarCronograma(lista) {
+      const box = document.getElementById('cronograma-box');
+      const cont = document.getElementById('cronograma-lista');
+      const explic = document.getElementById('cronograma-explicacao');
+      box.classList.remove('hidden');
+
+      // Texto explicativo conforme modalidade
+      if (estado.modalidade === '3') {
+        explic.innerHTML = '<strong>💡 Como funciona:</strong> Primeiro vem a caução pra garantir a vaga. Depois os dias proporcionais (do dia da entrada até o dia 14). A partir do próximo dia 15, mensalidades cheias — e a energia entra a partir do 2º boleto.';
+      } else {
+        explic.innerHTML = '<strong>💡 Como funciona:</strong> No dia da entrada você paga os dias proporcionais (do dia da entrada até o dia 14). A partir do dia 15 seguinte, mensalidade fixa todo mês — sem caução e sem energia separada.';
+      }
+      cont.innerHTML = lista.map((p, i) => `
+        <div class="flex items-start gap-3 p-3 rounded-xl ${i === 0 ? 'bg-domus-azul/8 border border-domus-azul/30' : 'bg-domus-creme/40 border border-domus-borda'}">
+          <div class="text-xs font-semibold text-domus-azul-escuro min-w-[70px]">${p.data}</div>
+          <div class="flex-1 text-[11px]">
+            <p class="font-semibold text-domus-azul-escuro">R$ ${fmt(p.valor)}${(p.composicao||'').includes('rateio da energia') ? ' <span class="text-domus-texto-suave font-normal">+ energia</span>' : ''}</p>
+            <p class="text-domus-texto-suave">${p.composicao}</p>
+            ${p.obs ? `<p class="text-[10px] text-domus-azul mt-0.5 italic">${p.obs}</p>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ==========================================
+    // UPLOADS
+    // ==========================================
+    async function onUpload(tipo, input) {
+      const file = input.files?.[0];
+      if (!file) return;
+      const label = document.getElementById('label-' + tipo);
+      const box = document.getElementById('box-' + tipo);
+      label.textContent = 'Enviando...';
+      try {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = 'pendentes/' + Date.now() + '-' + tipo + '.' + ext;
+        const { error } = await db.storage.from('contratos-dominhas').upload(path, file, { upsert: true });
+        if (error) throw error;
+        estado.uploads[tipo] = path;
+        label.textContent = '✓ ' + (file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name);
+        box.classList.add('uploaded');
+        verificarUploads();
+      } catch (err) {
+        console.error('[upload]', err);
+        label.textContent = 'Erro ao enviar. Toque pra tentar de novo.';
+      }
+    }
+    function verificarUploads() {
+      const ok = Object.values(estado.uploads).every(Boolean);
+      document.getElementById('btn-step-5').disabled = !ok;
+    }
+
+    // ==========================================
+    // REVISÃO
+    // ==========================================
+    function montarRevisao() {
+      const dados = coletarDados();
+      const aluguel = estado.modalidade === '6' ? 1450 : 1250;
+      const multa = estado.modalidade === '6' ? 2175 : 1875;
+      const modLabel = estado.modalidade === '6' ? '6 meses tudo incluso' : '3 meses com caução';
+      const modDetalhe = estado.modalidade === '6'
+        ? 'R$ 1.450/mês (caução e energia inclusas)'
+        : 'R$ 1.250/mês + caução R$ 625 + energia (rateio à parte)';
+      const html = `
+        <div class="p-3 rounded-xl bg-domus-azul/5 border border-domus-azul/15">
+          <p class="text-[10px] font-semibold text-domus-azul uppercase tracking-wider mb-1">Você</p>
+          <p class="font-semibold">${dados.nome}</p>
+          <p class="text-xs text-domus-texto-suave">${dados.idade} anos · ${dados.profissao}</p>
+          <p class="text-xs text-domus-texto-suave">CPF ${dados.cpf} · ${dados.rg}</p>
+          <p class="text-xs text-domus-texto-suave">${dados.telefone} · ${dados.email}</p>
+        </div>
+        <div class="p-3 rounded-xl bg-domus-azul/5 border border-domus-azul/15">
+          <p class="text-[10px] font-semibold text-domus-azul uppercase tracking-wider mb-1">Modalidade</p>
+          <p class="font-semibold">${modLabel}</p>
+          <p class="text-xs text-domus-texto-suave">${modDetalhe}</p>
+          <p class="text-xs text-domus-texto-suave">Entrada: ${estado.dataEntrada ? formatarData(new Date(estado.dataEntrada + 'T12:00:00')) : '—'}</p>
+        </div>
+        <div class="p-3 rounded-xl bg-domus-azul/5 border border-domus-azul/15">
+          <p class="text-[10px] font-semibold text-domus-azul uppercase tracking-wider mb-1">Contatos de emergência</p>
+          <p class="text-xs"><strong>${dados.emerg1Nome || '—'}</strong> · ${dados.emerg1Tel || '—'} ${dados.emerg1Rel ? '(' + dados.emerg1Rel + ')' : ''}</p>
+          <p class="text-xs"><strong>${dados.emerg2Nome || '—'}</strong> · ${dados.emerg2Tel || '—'} ${dados.emerg2Rel ? '(' + dados.emerg2Rel + ')' : ''}</p>
+        </div>
+        <div class="p-3 rounded-xl bg-green-50 border border-green-200">
+          <p class="text-[10px] font-semibold text-green-800 uppercase tracking-wider mb-1">Documentos enviados</p>
+          <p class="text-xs text-green-800">✓ Frente do documento · ✓ Verso · ✓ CPF · ✓ Selfie</p>
+        </div>
+      `;
+      document.getElementById('revisao-box').innerHTML = html;
+
+      // Aviso de multa específico da modalidade
+      const avisoMulta = estado.modalidade === '6'
+        ? `Se você sair antes de cumprir os <strong>6 meses</strong> de contrato, será cobrada multa de <strong>1 aluguel e meio (R$ ${fmt(multa)})</strong>.`
+        : `Se você sair antes de cumprir os <strong>3 meses</strong> de contrato, a caução de R$ 625 será retida e ainda será cobrada multa de 1 aluguel adicional. Total: <strong>R$ ${fmt(multa)}</strong>.`;
+      document.getElementById('aviso-multa').innerHTML = avisoMulta;
+    }
+    function toggleAceite() {
+      document.getElementById('btn-finalizar').disabled = !document.getElementById('f-aceite').checked;
+    }
+
+    function coletarDados() {
+      return {
+        nome: document.getElementById('f-nome').value.trim(),
+        idade: document.getElementById('f-idade').value.trim(),
+        profissao: document.getElementById('f-profissao').value.trim(),
+        cpf: document.getElementById('f-cpf').value.trim(),
+        rg: document.getElementById('f-rg').value.trim(),
+        telefone: document.getElementById('f-telefone').value.trim(),
+        email: document.getElementById('f-email').value.trim(),
+        endereco: document.getElementById('f-endereco').value.trim(),
+        trabalha: estado.trabalha,
+        endTrabalho: document.getElementById('f-end-trabalho').value.trim(),
+        estuda: estado.estuda,
+        endEstudo: document.getElementById('f-end-estudo').value.trim(),
+        emerg1Nome: document.getElementById('f-emerg1-nome').value.trim(),
+        emerg1Tel: document.getElementById('f-emerg1-tel').value.trim(),
+        emerg1Rel: document.getElementById('f-emerg1-rel').value.trim(),
+        emerg2Nome: document.getElementById('f-emerg2-nome').value.trim(),
+        emerg2Tel: document.getElementById('f-emerg2-tel').value.trim(),
+        emerg2Rel: document.getElementById('f-emerg2-rel').value.trim()
+      };
+    }
+
+    // ==========================================
+    // FINALIZAR
+    // ==========================================
+    async function finalizar() {
+      const btn = document.getElementById('btn-finalizar');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+      try {
+        const dados = coletarDados();
+        const aluguel = estado.modalidade === '6' ? 1450 : 1250;
+        const caucao = estado.modalidade === '6' ? 0 : 625;
+        const meses = estado.modalidade === '6' ? 6 : 3;
+        const multa = estado.modalidade === '6' ? 2175 : 1875;
+
+        const payload = {
+          p_nome: dados.nome,
+          p_idade: parseInt(dados.idade) || null,
+          p_profissao: dados.profissao,
+          p_cpf: dados.cpf,
+          p_rg: dados.rg,
+          p_telefone: dados.telefone,
+          p_email: dados.email,
+          p_endereco: dados.endereco,
+          p_emerg1_nome: dados.emerg1Nome, p_emerg1_tel: dados.emerg1Tel, p_emerg1_rel: dados.emerg1Rel,
+          p_emerg2_nome: dados.emerg2Nome, p_emerg2_tel: dados.emerg2Tel, p_emerg2_rel: dados.emerg2Rel,
+          p_modalidade: estado.modalidade,
+          p_meses: meses,
+          p_aluguel: aluguel,
+          p_caucao: caucao,
+          p_multa_rescisao: multa,
+          p_data_entrada: estado.dataEntrada,
+          p_data_caucao: estado.dataCaucao,
+          p_cronograma: estado.cronograma,
+          p_doc_frente_path: estado.uploads['doc-frente'],
+          p_doc_verso_path: estado.uploads['doc-verso'],
+          p_doc_cpf_path: estado.uploads['doc-cpf'],
+          p_selfie_path: estado.uploads['selfie']
+        };
+
+        const { data, error } = await db.rpc('submeter_contrato_dominha', payload);
+        if (error) throw error;
+        if (!data || !data.success) throw new Error(data?.erro || 'erro');
+        mostrarStep(7);
+      } catch (err) {
+        console.error('[finalizar]', err);
+        btn.disabled = false;
+        btn.textContent = 'Gerar contrato 🌿';
+        alert('Tivemos um erro ao enviar. Tente novamente ou chame no WhatsApp (11) 94333-0911.');
+      }
+    }
+
+    // Máscaras simples
+    document.getElementById('f-cpf').addEventListener('input', function(e) {
+      let v = e.target.value.replace(/\D/g,'');
+      if (v.length > 11) v = v.slice(0, 11);
+      v = v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+      e.target.value = v;
+    });
+    document.getElementById('f-telefone').addEventListener('input', function(e) {
+      let v = e.target.value.replace(/\D/g,'').slice(0, 11);
+      if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{1,4}).*/,'($1) $2-$3');
+      else if (v.length > 2) v = v.replace(/(\d{2})(\d{1,5}).*/,'($1) $2');
+      e.target.value = v;
+    });
+  </script>
+</body>
+</html>
