@@ -196,19 +196,20 @@ serve(async (req: Request): Promise<Response> => {
     const data_to_send = Object.entries(vars).map(([k, v]) => ({ de: `{{${k}}}`, para: v || " " }));
     const zsPayload = {
       sandbox: ZAPSIGN_SANDBOX,
+      template_id: template_id,
       name: `Contrato ${c.unidade} - ${c.nome}`,
       signer_name: c.nome,
       signer_email: c.email || "",
       signer_phone_country: "55",
       signer_phone_number: (c.telefone || "").replace(/\D/g, ""),
       send_automatic_email: true,
-      send_automatic_whatsapp: false, // ativar quando configurar WhatsApp tokens
+      send_automatic_whatsapp: false,
       lang: "pt-br",
       external_id: contrato_id,
       data: data_to_send,
     };
 
-    const r = await fetch(`https://api.zapsign.com.br/api/v1/models/${template_id}/create-doc-from-template/`, {
+    const r = await fetch(`https://api.zapsign.com.br/api/v1/models/create-doc/`, {
       method: "POST",
       headers: { "Authorization": `Bearer ${ZAPSIGN_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify(zsPayload),
@@ -241,3 +242,4 @@ serve(async (req: Request): Promise<Response> => {
     return json({ error: e.message }, 500);
   }
 });
+                                         
