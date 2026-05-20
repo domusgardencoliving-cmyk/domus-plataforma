@@ -5341,29 +5341,29 @@
       const btn = document.getElementById('btnRemoverBloqueio');
       if (btn) { btn.disabled = true; btn.textContent = 'Removendo...'; }
       try {
-        // Tenta DELETE primeiro (limpo, libera o slot na EXCLUSION CONSTRAINT)
-        const { error: errDel } = await db
+        // UPDATE status='cancelada' (em vez de DELETE) pra que o sync push
+        // consiga empurrar o cancelamento pro Hospedin. Se deletássemos local,
+        // a linha sumiria antes do PUT chegar lá.
+        const agora = new Date().toISOString();
+        const { error: errUpd } = await db
           .from('reservas')
-          .delete()
+          .update({
+            status: 'cancelada',
+            nao_contabilizar: true,
+            cancelado_em: agora,
+            atualizado_em: agora,
+            motivo_cancelamento: 'Bloqueio removido pelo PMS',
+            status_sync_hospedin: 'pendente',
+            hospedin_sync_status: 'pendente'
+          })
           .eq('id', reservaIdLocal)
           .eq('canal_codigo', 'bloqueio');
-        if (errDel) {
-          console.warn('[removerBloqueio] DELETE falhou, tentando UPDATE:', errDel);
-          // Fallback: marcar como cancelada (também sai dos filtros do mapa)
-          const { error: errUpd } = await db
-            .from('reservas')
-            .update({ status: 'cancelada', nao_contabilizar: true, cancelado_em: new Date().toISOString() })
-            .eq('id', reservaIdLocal)
-            .eq('canal_codigo', 'bloqueio');
-          if (errUpd) {
-            console.error('[removerBloqueio] UPDATE também falhou:', errUpd);
-            mostrarToast('Erro ao remover bloqueio: ' + (errUpd.message || 'desconhecido'), 'error');
-            return;
-          }
-          mostrarToast('Bloqueio removido (cancelado) ✅', 'success');
-        } else {
-          mostrarToast('Bloqueio removido — quarto liberado ✅', 'success');
+        if (errUpd) {
+          console.error('[removerBloqueio] UPDATE falhou:', errUpd);
+          mostrarToast('Erro ao remover bloqueio: ' + (errUpd.message || 'desconhecido'), 'error');
+          return;
         }
+        mostrarToast('Bloqueio removido — sincronizando com o Hospedin… ✅', 'success');
         closeAcaoModal();
         // Recarrega vista atual
         if (typeof currentView !== 'undefined') {

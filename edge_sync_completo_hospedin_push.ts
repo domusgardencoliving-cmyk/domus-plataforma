@@ -40,24 +40,29 @@ const loginHospedin = async (email: string, password: string): Promise<string | 
 };
 
 const criarReservaHospedin = async (token: string, reserva: any) => {
+  // Bloqueios viram reservas-fake no Hospedin com hospede "BLOQUEIO – motivo"
+  const ehBloqueio = reserva.canal_codigo === "bloqueio" || reserva.plataforma === "Bloqueio";
+  const motivoBloqueio = (reserva.observacoes || (reserva.hospede_nome || "").replace(/^\[BLOQUEIO\]\s*/i, "") || "Sem motivo").trim();
   const body = {
     reservation: {
       check_in: reserva.checkin,
       check_out: reserva.checkout,
-      total_value: Number(reserva.valor_total) || 0,
+      total_value: ehBloqueio ? 0 : (Number(reserva.valor_total) || 0),
       guest_attributes: {
-        name: reserva.hospede_nome || "Reserva Direta",
-        phone_number: reserva.hospede_contato || "",
-        email: reserva.hospede_email || "",
+        name: ehBloqueio ? `BLOQUEIO – ${motivoBloqueio}` : (reserva.hospede_nome || "Reserva Direta"),
+        phone_number: ehBloqueio ? "" : (reserva.hospede_contato || ""),
+        email: ehBloqueio ? "" : (reserva.hospede_email || ""),
       },
       reservation_items_attributes: [{
         accommodation_id: reserva.hospedin_accommodation_id || null,
         check_in: reserva.checkin,
         check_out: reserva.checkout,
-        adults: reserva.adultos || 1,
-        children: reserva.criancas || 0,
+        adults: ehBloqueio ? 1 : (reserva.adultos || 1),
+        children: 0,
       }],
-      observation: `Reserva DG (canal: ${reserva.canal_codigo || "direto"}). Sync auto.`,
+      observation: ehBloqueio
+        ? `Bloqueio sincronizado do DG Gestão. Motivo: ${motivoBloqueio}`
+        : `Reserva DG (canal: ${reserva.canal_codigo || "direto"}). Sync auto.`,
       status: reserva.status === "confirmada" ? "confirmed" : "pending",
     },
   };
@@ -117,7 +122,7 @@ Deno.serve(async (_req) => {
   const { data: paraCriar } = await sb
     .from("reservas")
     .select("*")
-    .in("canal_codigo", ["direto", "venda_direta", "pre_reserva", "VD", "PR"])
+    .in("canal_codigo", ["direto", "venda_direta", "pre_reserva", "VD", "PR", "bloqueio"])
     .is("hospedin_id", null)
     .neq("status", "cancelada")
     .gte("checkin", new Date().toISOString().slice(0, 10))
@@ -125,6 +130,16 @@ Deno.serve(async (_req) => {
 
   for (const r of (paraCriar || [])) {
     try {
+      // Defensivo: pular se accommodation_id é null (mapping cama→place_id incompleto)
+      if (!r.hospedin_accommodation_id) {
+        await sb.from("reservas").update({
+          status_sync_hospedin: "erro",
+          erro_sync_hospedin: `cama ${r.cama || "desconhecida"} sem hospedin_accommodation_id (popular quartos_mapping)`,
+        }).eq("id", r.id);
+        erros.push({ dg_id: r.id, cama: r.cama, erro: "sem accommodation_id" });
+        stats.erros++;
+        continue;
+      }
       const result = await criarReservaHospedin(token, r);
       if (result.ok) {
         const novoId = result.data?.reservation?.id || result.data?.id;
@@ -155,7 +170,7 @@ Deno.serve(async (_req) => {
   const { data: paraAtualizar } = await sb
     .from("reservas")
     .select("*")
-    .in("canal_codigo", ["direto", "venda_direta", "pre_reserva", "VD", "PR"])
+    .in("canal_codigo", ["direto", "venda_direta", "pre_reserva", "VD", "PR", "bloqueio"])
     .not("hospedin_id", "is", null)
     .gte("checkin", new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
     .limit(20);
