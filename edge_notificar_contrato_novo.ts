@@ -135,7 +135,7 @@ Notificação automática do <a href="https://domusgardencoliving.com" style="co
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Domus Garden <contratos@domusgardencoliving.com>",
+        from: "Domus Garden <onboarding@resend.dev>",
         to: toEmail,
         subject,
         html,
