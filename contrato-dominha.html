@@ -160,8 +160,24 @@
         <!-- ============================================ -->
         <div id="step-2" class="step hidden">
           <h2 class="text-xs font-semibold text-domus-azul uppercase tracking-wider mb-1">Passo 2 de 7</h2>
-          <p class="font-serif text-2xl text-domus-azul-escuro mb-1">Escolha sua modalidade</p>
-          <p class="text-xs text-domus-texto-suave mb-5">As duas têm vantagens. Escolha a que faz mais sentido pra você.</p>
+          <p class="font-serif text-2xl text-domus-azul-escuro mb-1">Qual unidade?</p>
+          <p class="text-xs text-domus-texto-suave mb-5">As duas casas ficam na Vila Olímpia. Escolha a sua.</p>
+
+          <div class="grid grid-cols-2 gap-3 mb-6">
+            <div id="card-unidade-AP" onclick="selecionarUnidade('AP')" class="card-modalidade cursor-pointer border-2 border-domus-borda rounded-2xl p-4 text-center">
+              <p class="font-serif text-base text-domus-azul-escuro">Andrade Pertence</p>
+              <p class="text-[10px] text-domus-texto-suave mt-1">Coliving feminino + hostel misto</p>
+              <p class="text-[10px] text-domus-texto-suave">Rua Andrade Pertence, 73</p>
+            </div>
+            <div id="card-unidade-Rib" onclick="selecionarUnidade('Rib')" class="card-modalidade cursor-pointer border-2 border-domus-borda rounded-2xl p-4 text-center">
+              <p class="font-serif text-base text-domus-azul-escuro">Ribeirão Claro</p>
+              <p class="text-[10px] text-domus-texto-suave mt-1">Coliving exclusivamente feminino</p>
+              <p class="text-[10px] text-domus-texto-suave">Rua Ribeirão Claro, 547</p>
+            </div>
+          </div>
+
+          <p class="font-serif text-lg text-domus-azul-escuro mb-1">Modalidade</p>
+          <p class="text-xs text-domus-texto-suave mb-3">As duas têm vantagens. Escolha a que faz mais sentido pra você.</p>
 
           <div class="space-y-4">
             <!-- Card 3 meses -->
@@ -415,6 +431,7 @@
 
     // Estado
     const estado = {
+      unidade: null,
       modalidade: null,    // '3' ou '6'
       dataEntrada: null,
       dataCaucao: null,
@@ -536,6 +553,19 @@
     // ==========================================
     // MODALIDADE
     // ==========================================
+    function selecionarUnidade(u) {
+      estado.unidade = u;
+      document.getElementById('card-unidade-AP').classList.toggle('selecionado', u === 'AP');
+      document.getElementById('card-unidade-Rib').classList.toggle('selecionado', u === 'Rib');
+      verificarStep2();
+    }
+
+    function verificarStep2() {
+      const ok = !!estado.unidade && !!estado.modalidade;
+      const btn = document.getElementById('btn-step-2');
+      if (btn) btn.disabled = !ok;
+    }
+
     function selecionarModalidade(m) {
       estado.modalidade = m;
       document.getElementById('card-3').classList.toggle('selecionado', m === '3');
@@ -544,7 +574,7 @@
       document.getElementById('check-3').classList.toggle('border-domus-azul', m === '3');
       document.getElementById('check-12').classList.toggle('bg-domus-azul', m === '12');
       document.getElementById('check-12').classList.toggle('border-domus-azul', m === '12');
-      document.getElementById('btn-step-2').disabled = false;
+      verificarStep2();
       // Recalcula se ja tem data
       if (document.getElementById('f-data-entrada').value) atualizarCronograma();
     }
@@ -783,6 +813,7 @@
           p_data_entrada: estado.dataEntrada,
           p_data_caucao: estado.dataCaucao,
           p_cronograma: estado.cronograma,
+          p_unidade: estado.unidade,
           p_doc_frente_path: estado.uploads['doc-frente'],
           p_doc_verso_path: estado.uploads['doc-verso'],
           p_doc_cpf_path: estado.uploads['doc-cpf'],
