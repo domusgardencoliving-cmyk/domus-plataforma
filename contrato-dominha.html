@@ -592,22 +592,22 @@
         });
       }
 
-      // 2) Aluguel proporcional: sempre 14 dias (dia 1 ao 14 do mes seguinte). Vence dia 15.
-      const dia15ProxMes = new Date(ano, mes + 1, 15);
+      // 2) Aluguel proporcional: vence dia 01 do mes seguinte, cobre 14 dias (dia 1 ao 14).
+      const dia01ProxMes = new Date(ano, mes + 1, 1);
       const dtFimProporcional = new Date(ano, mes + 1, 14);
       const diasProporcionais = 14;
       const valorProporcional = +((aluguel / 30) * diasProporcionais).toFixed(2);
       lista.push({
-        data: formatarData(dia15ProxMes),
+        data: formatarData(dia01ProxMes),
         valor: valorProporcional,
         composicao: '14 dias proporcionais (dia 01 a ' + formatarData(dtFimProporcional) + ')',
-        obs: 'Cobre do início do mês seguinte até o ciclo começar dia 15'
+        obs: 'Cobre do início do mês até o ciclo começar dia 15'
       });
 
       // 3) Mensalidades cheias — ciclo 15 ao 14, vence dia 15
       for (let i = 0; i < meses; i++) {
-        const dtParcela = new Date(ano, mes + 2 + i, 15);
-        const dtFim = new Date(ano, mes + 3 + i, 14);
+        const dtParcela = new Date(ano, mes + 1 + i, 15);
+        const dtFim = new Date(ano, mes + 2 + i, 14);
 
         let composicao = 'Aluguel cheio (' + formatarData(dtParcela) + ' a ' + formatarData(dtFim) + ')';
         if (incluiEnergia) composicao += ' + rateio da energia';
