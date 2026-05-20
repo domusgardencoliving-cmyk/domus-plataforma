@@ -418,6 +418,22 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
+    /* FIX TAILWIND CDN: 'hidden md:block' nao funcionava em desktop porque
+       a classe .hidden vinha depois de .md\:block na cascade, ganhando especificidade.
+       Forçamos a precedencia correta com !important. */
+    @media (min-width: 768px) {
+      .hidden.md\:block { display: block !important; }
+      .hidden.md\:flex { display: flex !important; }
+      .hidden.md\:grid { display: grid !important; }
+      .hidden.md\:inline-block { display: inline-block !important; }
+      .hidden.md\:inline { display: inline !important; }
+    }
+    @media (min-width: 1024px) {
+      .hidden.lg\:block { display: block !important; }
+      .hidden.lg\:flex { display: flex !important; }
+      .hidden.lg\:grid { display: grid !important; }
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -647,23 +663,24 @@
 
     .mapa-reserva-bar {
       position: absolute;
-      top: 14px;
-      bottom: 14px;
+      top: 32px;   /* deixa espaco em cima pro valor R$ ficar visivel */
+      bottom: 6px;
       color: white;
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 600;
       display: flex;
       align-items: center;
-      padding: 0 10px;
+      padding: 0 14px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       cursor: pointer;
       z-index: 1;
-      transition: filter 0.15s ease, box-shadow 0.15s ease, z-index 0s;
+      transition: filter 0.15s ease, z-index 0s;
       letter-spacing: 0.1px;
-      border-radius: 6px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      /* Paralelogramo estilo Hospedin: canto superior esquerdo recuado, canto inferior direito recuado.
+         Combinado com posicao meio-da-coluna, cria o V diagonal perfeito entre reservas consecutivas. */
+      clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
     }
 
     .mapa-reserva-bar span {
@@ -673,8 +690,7 @@
     }
 
     .mapa-reserva-bar:hover {
-      filter: brightness(0.95);
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+      filter: brightness(0.92);
       z-index: 2;
     }
 
@@ -1230,34 +1246,35 @@
         <div id="hospedesView" class="view hidden">
           <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
-              <h2 class="text-2xl font-semibold text-domus-texto">Hóspedes — CRM</h2>
+              <h2 class="text-xl sm:text-2xl font-semibold text-domus-texto">Hóspedes — CRM</h2>
               <p class="text-xs text-domus-texto-suave mt-1">Quem já passou pela Domus, quem volta, quem gasta mais</p>
             </div>
             <input
               id="searchHospedes"
               type="text"
               placeholder="Buscar por nome ou e-mail..."
-              class="px-4 py-2 border border-domus-borda rounded text-sm w-64"
+              class="px-4 py-2 border border-domus-borda rounded text-sm w-full sm:w-64"
               oninput="filtrarHospedes()"
             />
           </div>
 
-          <!-- KPIs do CRM -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-5" id="crmKpis">
+          <!-- KPIs do CRM (2x2 no mobile, 7 colunas em telas grandes) -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-5" id="crmKpis">
             <!-- preenchido por JS -->
           </div>
 
-          <!-- Filtros rápidos -->
-          <div class="flex gap-2 mb-4 flex-wrap">
-            <button class="crm-filtro tab-button active" data-crm="todos" onclick="setFiltroCRM('todos')">Todos</button>
-            <button class="crm-filtro tab-button" data-crm="vip" onclick="setFiltroCRM('vip')">⭐ VIP (5+)</button>
-            <button class="crm-filtro tab-button" data-crm="recorrentes" onclick="setFiltroCRM('recorrentes')">Recorrentes (2+)</button>
-            <button class="crm-filtro tab-button" data-crm="unicos" onclick="setFiltroCRM('unicos')">Só uma vez</button>
-            <button class="crm-filtro tab-button" data-crm="risco" onclick="setFiltroCRM('risco')">Em risco (>180d)</button>
-            <button class="crm-filtro tab-button" data-crm="ativos" onclick="setFiltroCRM('ativos')">Hospedados agora</button>
+          <!-- Filtros rápidos — scroll horizontal no mobile -->
+          <div class="flex gap-2 mb-4 flex-nowrap md:flex-wrap overflow-x-auto pb-1 -mx-1 px-1">
+            <button class="crm-filtro tab-button active whitespace-nowrap" data-crm="todos" onclick="setFiltroCRM('todos')">Todos</button>
+            <button class="crm-filtro tab-button whitespace-nowrap" data-crm="vip" onclick="setFiltroCRM('vip')">⭐ VIP (5+)</button>
+            <button class="crm-filtro tab-button whitespace-nowrap" data-crm="recorrentes" onclick="setFiltroCRM('recorrentes')">Recorrentes (2+)</button>
+            <button class="crm-filtro tab-button whitespace-nowrap" data-crm="unicos" onclick="setFiltroCRM('unicos')">Só uma vez</button>
+            <button class="crm-filtro tab-button whitespace-nowrap" data-crm="risco" onclick="setFiltroCRM('risco')">Em risco (>180d)</button>
+            <button class="crm-filtro tab-button whitespace-nowrap" data-crm="ativos" onclick="setFiltroCRM('ativos')">Hospedados agora</button>
           </div>
 
-          <div class="table-container">
+          <!-- Tabela: só em md+. No mobile usamos cards renderizados em #hospedesCards -->
+          <div class="table-container hidden md:block">
             <table>
               <thead>
                 <tr>
@@ -1274,6 +1291,262 @@
                 <!-- Populated by JS -->
               </tbody>
             </table>
+          </div>
+
+          <!-- Cards verticais — só no mobile -->
+          <div id="hospedesCards" class="md:hidden space-y-2">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!--
+          ============================================================
+          PERFIL DO HÓSPEDE — página completa dentro do PMS
+          ============================================================
+          SQL sugerido pra rodar no Supabase (uma vez só):
+
+          ALTER TABLE public.hospedes
+            ADD COLUMN IF NOT EXISTS notas_internas    text,
+            ADD COLUMN IF NOT EXISTS selfie_url        text,
+            ADD COLUMN IF NOT EXISTS nacionalidade     text,
+            ADD COLUMN IF NOT EXISTS motivo_hospedagem text,
+            ADD COLUMN IF NOT EXISTS observacoes_reserva_padrao text,
+            ADD COLUMN IF NOT EXISTS enviar_obs_limpeza boolean DEFAULT true;
+
+          ============================================================
+        -->
+        <div id="hospedePerfilView" class="view hidden">
+          <!-- Cabeçalho com voltar -->
+          <div class="flex items-center justify-between mb-4">
+            <button onclick="voltarParaListaHospedes()" class="flex items-center gap-2 text-sm text-domus-azul hover:text-domus-azul-escuro font-medium transition">
+              <span>←</span>
+              <span>Voltar pra lista</span>
+            </button>
+            <div class="flex gap-2">
+              <button id="hpEditarBtn" onclick="editarHospedeStub()" class="px-3 py-1.5 rounded-lg text-xs border border-domus-borda text-domus-texto hover:bg-gray-50 transition">Editar dados</button>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-4">
+
+            <!-- COLUNA ESQUERDA (cabeçalho + dados + reserva atual) -->
+            <div class="md:col-span-2 space-y-4">
+
+              <!-- Cabeçalho do perfil -->
+              <div class="bg-white rounded-2xl border border-domus-borda p-6">
+                <div class="flex items-start gap-4">
+                  <div id="hpAvatarWrap" class="w-20 h-20 rounded-full bg-domus-azul flex items-center justify-center text-white font-semibold text-2xl shrink-0 overflow-hidden">
+                    <span id="hpAvatarIniciais">—</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h3 id="hpNome" class="text-xl font-semibold text-domus-texto">—</h3>
+                      <span id="hpBadgeStatus" class="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium hidden">—</span>
+                      <span id="hpBadgeRecorrente" class="text-xs px-2.5 py-0.5 rounded-full bg-domus-azul-claro text-domus-azul-escuro font-medium hidden">—</span>
+                      <span id="hpBadgeVip" class="text-xs px-2.5 py-0.5 rounded-full font-medium hidden" style="background:#FBBF24;color:#7C2D12;">⭐ VIP</span>
+                    </div>
+                    <p id="hpResumo" class="text-sm text-domus-texto-suave mt-1">—</p>
+
+                    <!-- Botões de contato -->
+                    <div class="flex gap-2 mt-3 flex-wrap">
+                      <a id="hpWhatsBtn" href="#" target="_blank" rel="noopener" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition">
+                        <span>💬</span><span>WhatsApp</span>
+                      </a>
+                      <a id="hpEmailBtn" href="#" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-domus-azul text-white text-xs font-medium hover:bg-domus-azul-escuro transition">
+                        <span>✉️</span><span>E-mail</span>
+                      </a>
+                      <a id="hpLigarBtn" href="#" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-domus-borda text-domus-texto text-xs font-medium hover:bg-gray-50 transition">
+                        <span>📞</span><span>Ligar</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dados pessoais -->
+              <div class="bg-white rounded-2xl border border-domus-borda p-6">
+                <h4 class="text-sm font-semibold text-domus-texto-suave uppercase tracking-wider mb-4">Dados pessoais</h4>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Nome completo</p>
+                    <p id="hpDadoNome" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Data de nascimento</p>
+                    <p id="hpDadoNascimento" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Documento</p>
+                    <p id="hpDadoDocumento" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Nacionalidade</p>
+                    <p id="hpDadoNacionalidade" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Telefone</p>
+                    <p id="hpDadoTelefone" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">E-mail</p>
+                    <p id="hpDadoEmail" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Sexo</p>
+                    <p id="hpDadoSexo" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Motivo da hospedagem</p>
+                    <p id="hpDadoMotivo" class="font-medium text-domus-texto">—</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Reserva atual / próxima -->
+              <div id="hpReservaAtualWrap" class="bg-white rounded-2xl border border-domus-borda p-6 hidden">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="text-sm font-semibold text-domus-texto-suave uppercase tracking-wider" id="hpReservaTitulo">Reserva atual</h4>
+                  <span id="hpReservaStatus" class="text-xs px-2.5 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600">—</span>
+                </div>
+                <div class="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Check-in</p>
+                    <p id="hpResCheckin" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Check-out</p>
+                    <p id="hpResCheckout" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Noites</p>
+                    <p id="hpResNoites" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Quarto</p>
+                    <p id="hpResQuarto" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Plataforma</p>
+                    <p id="hpResPlataforma" class="font-medium text-domus-texto">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Valor total</p>
+                    <p id="hpResValor" class="font-medium text-domus-azul">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Status pagamento</p>
+                    <p id="hpResStatusPag" class="font-medium text-emerald-600">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-domus-texto-suave">Diária média</p>
+                    <p id="hpResDiaria" class="font-medium text-domus-texto">—</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Observações da reserva -->
+              <div id="hpObsWrap" class="bg-white rounded-2xl border-2 border-amber-200 p-6 hidden">
+                <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <h4 class="text-sm font-semibold text-domus-texto-suave uppercase tracking-wider">Observações da reserva</h4>
+                  </div>
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input id="hpObsEnviarLimpeza" type="checkbox" checked class="w-3.5 h-3.5 rounded border-gray-300 accent-domus-azul">
+                    <span class="text-[10px] text-domus-texto-suave">Enviar pra limpeza no dia do check-in</span>
+                  </label>
+                </div>
+                <textarea id="hpObsTexto" class="w-full p-3 rounded-lg border border-domus-borda text-sm text-domus-texto resize-none focus:border-domus-azul focus:outline-none" rows="3" placeholder="Observações internas sobre esta reserva (só a equipe vê)..."></textarea>
+                <div class="flex items-center justify-between mt-3 flex-wrap gap-2">
+                  <p class="text-[10px] text-domus-texto-suave">Visível apenas para: Gabi, Denilton e equipe de limpeza (quando marcado acima)</p>
+                  <button onclick="salvarObsReserva()" class="px-3 py-1.5 rounded-lg bg-domus-azul text-white text-xs hover:bg-domus-azul-escuro transition">Salvar observação</button>
+                </div>
+                <!-- Preview do que a limpeza vai ver -->
+                <div class="mt-4 p-3 rounded-lg bg-domus-azul-claro border border-dashed border-domus-azul/40">
+                  <p class="text-[10px] text-domus-azul-escuro uppercase tracking-wider font-medium mb-1">Preview — o que a equipe de limpeza recebe:</p>
+                  <p id="hpObsPreviewHead" class="text-xs text-domus-texto"><strong>—</strong></p>
+                  <p id="hpObsPreviewTexto" class="text-xs text-domus-texto-suave mt-1 italic">—</p>
+                </div>
+              </div>
+
+              <!-- Histórico de hospedagens -->
+              <div class="bg-white rounded-2xl border border-domus-borda p-6">
+                <h4 class="text-sm font-semibold text-domus-texto-suave uppercase tracking-wider mb-4">Histórico de hospedagens</h4>
+                <div id="hpHistoricoLista" class="space-y-2 text-sm">
+                  <p class="text-xs text-domus-texto-suave text-center py-4">Sem hospedagens registradas.</p>
+                </div>
+                <div id="hpHistoricoTotais" class="mt-3 p-3 rounded-lg bg-domus-azul-claro text-center hidden">
+                  <p class="text-xs text-domus-azul-escuro">
+                    <strong>Total gasto:</strong> <span id="hpTotalGasto">R$ 0,00</span> em <span id="hpTotalEstadias">0</span> hospedagens
+                    · <strong>Ticket médio:</strong> <span id="hpTicketMedio">R$ 0,00</span>
+                    · <strong>Noites totais:</strong> <span id="hpNoitesTotais">0</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- COLUNA DIREITA (insights, notas, documentos, comunicação, carteira) -->
+            <div class="space-y-4">
+
+              <!-- Insights da Domus IA -->
+              <div class="bg-gradient-to-br from-domus-azul-claro to-white rounded-2xl border border-domus-azul/30 p-5">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-lg">✨</span>
+                  <h4 class="text-sm font-semibold text-domus-azul-escuro">Insights da Domus</h4>
+                </div>
+                <ul id="hpInsightsLista" class="space-y-2 text-xs text-domus-texto">
+                  <li class="text-domus-texto-suave italic">Carregando análise…</li>
+                </ul>
+                <!-- TODO: chamar Edge Function /insights-hospede pra trocar por análise IA real -->
+              </div>
+
+              <!-- Notas internas -->
+              <div class="bg-white rounded-2xl border border-domus-borda p-5">
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-sm font-semibold text-domus-texto-suave uppercase tracking-wider">Notas internas</h4>
+                  <span id="hpNotasStatus" class="text-[10px] text-domus-texto-suave">—</span>
+                </div>
+                <p class="text-[10px] text-domus-texto-suave mb-2">Só Gabi e Denilton veem. Salva automaticamente.</p>
+                <textarea id="hpNotasInternas"
+                  class="w-full p-3 rounded-lg border border-domus-borda text-sm text-domus-texto resize-none focus:border-domus-azul focus:outline-none"
+                  rows="4"
+                  placeholder="Anote aqui qualquer coisa que ajude a equipe a lembrar dessa pessoa..."></textarea>
+              </div>
+
+              <!-- Documentos -->
+              <div class="bg-white rounded-2xl border border-domus-borda p-5">
+                <h4 class="text-sm font-semibold text-domus-texto-suave uppercase tracking-wider mb-3">Documentos</h4>
+                <div id="hpDocumentosGrid" class="grid grid-cols-3 gap-2">
+                  <div class="aspect-square rounded-lg bg-gray-50 border border-dashed border-domus-borda flex items-center justify-center text-[10px] text-domus-texto-suave text-center p-2">Sem documento</div>
+                  <div class="aspect-square rounded-lg bg-gray-50 border border-dashed border-domus-borda flex items-center justify-center text-[10px] text-domus-texto-suave text-center p-2">Sem selfie</div>
+                  <div class="aspect-square rounded-lg bg-gray-50 border border-dashed border-domus-borda flex items-center justify-center text-[10px] text-domus-texto-suave text-center p-2">Sem contrato</div>
+                </div>
+              </div>
+
+              <!-- Comunicação -->
+              <div class="bg-white rounded-2xl border border-domus-borda p-5">
+                <h4 class="text-sm font-semibold text-domus-texto-suave uppercase tracking-wider mb-3">Comunicação</h4>
+                <div id="hpComunicacao" class="text-xs text-domus-texto-suave italic">
+                  TODO: histórico WhatsApp (tabela whatsapp_mensagens).
+                </div>
+              </div>
+
+              <!-- Carteira -->
+              <div class="bg-white rounded-2xl border border-domus-borda p-5">
+                <h4 class="text-sm font-semibold text-domus-texto-suave uppercase tracking-wider mb-3">Carteira</h4>
+                <div class="grid grid-cols-2 gap-3 text-center">
+                  <div class="p-3 rounded-lg bg-domus-areia">
+                    <div id="hpCupons" class="text-lg font-bold text-domus-azul-escuro">0</div>
+                    <div class="text-[10px] text-domus-texto-suave uppercase tracking-wider">Cupons usados</div>
+                  </div>
+                  <div class="p-3 rounded-lg bg-domus-areia">
+                    <div id="hpIndicacoes" class="text-lg font-bold text-domus-azul-escuro">0</div>
+                    <div class="text-[10px] text-domus-texto-suave uppercase tracking-wider">Indicações</div>
+                  </div>
+                </div>
+                <p class="text-[10px] text-domus-texto-suave italic text-center mt-2">TODO: integrar com módulo de fidelidade.</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1464,10 +1737,19 @@
       <div class="bg-white rounded-lg shadow-lg p-8 max-w-lg pointer-events-auto max-h-96 overflow-y-auto">
         <h3 class="text-xl font-semibold text-domus-texto mb-6">Nova Reserva</h3>
         <form id="novaReservaForm" class="space-y-4">
-          <div>
+          <div class="relative">
             <label class="block text-sm font-medium text-domus-texto mb-1">Nome do Hóspede *</label>
-            <input id="nrNome" type="text" required placeholder="Nome completo"
-              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            <div class="relative">
+              <input id="nrNome" type="text" required placeholder="Digite pra buscar no CRM..." autocomplete="off"
+                oninput="buscarHospedesAutocomplete(this.value)"
+                onfocus="if(this.value) buscarHospedesAutocomplete(this.value)"
+                class="w-full px-4 py-2 pr-10 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+              <button type="button" onclick="abrirNovoCliente()" title="Cadastrar novo cliente"
+                class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-domus-azul text-white text-lg flex items-center justify-center hover:bg-domus-azul-escuro">+</button>
+            </div>
+            <div id="nrNomeResults" class="hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-domus-borda rounded-lg shadow-lg max-h-64 overflow-y-auto"></div>
+            <input type="hidden" id="nrHospedeId" value="" />
+            <p id="nrNomeStatus" class="text-[11px] text-domus-texto-suave mt-1 hidden"></p>
           </div>
 
           <div>
@@ -1476,11 +1758,26 @@
               class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
           </div>
 
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">Check-in *</label>
+              <input id="nrCheckin" type="date" required
+                onchange="atualizarQuartosDisponiveis('nrQuarto','nrCheckin','nrCheckout')"
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">Check-out *</label>
+              <input id="nrCheckout" type="date" required
+                onchange="atualizarQuartosDisponiveis('nrQuarto','nrCheckin','nrCheckout')"
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            </div>
+          </div>
+
           <div>
             <label class="block text-sm font-medium text-domus-texto mb-1">Quarto *</label>
-            <select id="nrQuarto" required
-              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul">
-              <option value="">Selecione um quarto...</option>
+            <select id="nrQuarto" required disabled
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul disabled:bg-gray-100 disabled:cursor-not-allowed">
+              <option value="">Preencha as datas primeiro...</option>
               <option value="Studio 1">Studio 1</option>
               <option value="Studio 2">Studio 2</option>
               <option value="Individual 3">Individual 3</option>
@@ -1495,19 +1792,7 @@
               <option value="Hostel 7 - Cama 7">H7 · Cama 7</option>
               <option value="Hostel 7 - Cama 8">H7 · Cama 8</option>
             </select>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-domus-texto mb-1">Check-in *</label>
-              <input id="nrCheckin" type="date" required
-                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-domus-texto mb-1">Check-out *</label>
-              <input id="nrCheckout" type="date" required
-                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
-            </div>
+            <p id="nrQuartoStatus" class="text-[11px] text-domus-texto-suave mt-1">Selecione check-in e check-out pra ver os quartos disponíveis.</p>
           </div>
 
           <div>
@@ -1696,11 +1981,26 @@
       <div class="bg-white rounded-lg shadow-lg p-8 max-w-lg pointer-events-auto">
         <h3 class="text-xl font-semibold text-domus-texto mb-6">🔒 Bloquear Quarto</h3>
         <form id="bloqueioForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">De *</label>
+              <input id="blDe" type="date" required
+                onchange="atualizarQuartosDisponiveis('blQuarto','blDe','blAte')"
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">Até *</label>
+              <input id="blAte" type="date" required
+                onchange="atualizarQuartosDisponiveis('blQuarto','blDe','blAte')"
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" />
+            </div>
+          </div>
+
           <div>
             <label class="block text-sm font-medium text-domus-texto mb-1">Quarto *</label>
-            <select id="blQuarto" required
-              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400">
-              <option value="">Selecione um quarto...</option>
+            <select id="blQuarto" required disabled
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 disabled:bg-gray-100 disabled:cursor-not-allowed">
+              <option value="">Preencha as datas primeiro...</option>
               <option value="Studio 1">Studio 1</option>
               <option value="Studio 2">Studio 2</option>
               <option value="Individual 3">Individual 3</option>
@@ -1715,19 +2015,7 @@
               <option value="Hostel 7 - Cama 7">H7 · Cama 7</option>
               <option value="Hostel 7 - Cama 8">H7 · Cama 8</option>
             </select>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-domus-texto mb-1">De *</label>
-              <input id="blDe" type="date" required
-                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-domus-texto mb-1">Até *</label>
-              <input id="blAte" type="date" required
-                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" />
-            </div>
+            <p id="blQuartoStatus" class="text-[11px] text-domus-texto-suave mt-1">Selecione as datas pra ver o que está livre.</p>
           </div>
 
           <div>
@@ -1865,6 +2153,162 @@
 
   <script>
     // ==========================================
+    // ==========================================
+    // SYNC HOSPEDIN — fila de reservas diretas pendentes de envio
+    // ==========================================
+    // place_id e canal_id capturados do app web da Hospedin em 18/05/2026
+    const HOSPEDIN_SLUG = 'domus-garden-coliving-894c75e4-0dae-4a75-8dca-9a8ee53a2369';
+    const HOSPEDIN_BASE = 'https://pms.hospedin.com/' + HOSPEDIN_SLUG;
+    const HOSPEDIN_PLACE_IDS = {
+      'Studio 1': '335187', 'Studio 2': '335188',
+      'Individual 3': '335189', 'Individual 4': '335190', 'Individual 5': '335191',
+      'Hostel 6 - Cama 1': '335192', 'Hostel 6 - Cama 2': '338390',
+      'Hostel 6 - Cama 3': '338391', 'Hostel 6 - Cama 4': '338392',
+      'Hostel 7 - Cama 5': '338393', 'Hostel 7 - Cama 6': '338394',
+      'Hostel 7 - Cama 7': '348425', 'Hostel 7 - Cama 8': '348426'
+    };
+    const HOSPEDIN_CANAIS = {
+      'Direto': '33933', 'Venda Direta': '33933',
+      'Booking': '32944', 'Booking.com': '32944',
+      'Airbnb': '32942', 'AIRBNBV2': '91050',
+      'Hotels.com': '91051', 'Mobile': '223477', 'Widget': '211366'
+    };
+
+    // Indicador visual (canto inferior direito)
+    function setHospedinSyncStatus(state, msg) {
+      let ind = document.getElementById('hospedin-sync-ind');
+      if (!ind) {
+        ind = document.createElement('div');
+        ind.id = 'hospedin-sync-ind';
+        ind.style.cssText = 'position:fixed;bottom:12px;right:12px;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:600;z-index:9999;box-shadow:0 2px 6px rgba(0,0,0,0.15);cursor:default;transition:all .3s;';
+        document.body.appendChild(ind);
+      }
+      var cores = {ok:'#27AE60', sync:'#5B9BD5', fila:'#F59E0B', erro:'#DC2626', off:'#9CA3AF'};
+      ind.style.background = cores[state] || cores.off;
+      ind.style.color = 'white';
+      ind.title = msg || '';
+      var emoji = {ok:'✓', sync:'⟳', fila:'⏳', erro:'⚠', off:'○'};
+      ind.textContent = (emoji[state]||'•') + ' Hospedin: ' + (msg||state);
+    }
+
+    // Processa um item da fila — POST /services/reservations + marca enviado
+    async function processarItemFilaHospedin(item) {
+      try {
+        // Busca o guest no Hospedin pelo nome+telefone (ou cria pelo form)
+        // Pra simplificar: usa form de criação direta com guest novo se necessario
+        // Por enquanto: tenta encontrar guest por nome
+        const r0 = await fetch(HOSPEDIN_BASE + '/reservations/new', { credentials: 'include' });
+        if (!r0.ok) throw new Error('Hospedin offline (status ' + r0.status + ')');
+        const html0 = await r0.text();
+        const csrf = (html0.match(/name="authenticity_token"[^>]*value="([^"]+)"/) || [])[1];
+        if (!csrf) throw new Error('Sem sessao Hospedin — faca login em pms.hospedin.com');
+
+        const placeId = HOSPEDIN_PLACE_IDS[item.payload.cama];
+        if (!placeId) throw new Error('Cama sem mapeamento: ' + item.payload.cama);
+        const canalId = HOSPEDIN_CANAIS[item.payload.plataforma] || HOSPEDIN_CANAIS['Direto'];
+
+        // Formata datas dd/mm/aaaa
+        function fmtBR(iso) { const [y,m,d] = iso.split('-'); return d+'/'+m+'/'+y; }
+        const periodo = fmtBR(item.payload.checkin) + ' - ' + fmtBR(item.payload.checkout);
+        const noites = Math.max(1, (new Date(item.payload.checkout) - new Date(item.payload.checkin)) / 86400000);
+        const daily = (Number(item.payload.valor_total||0) / noites).toFixed(2).replace('.', ',');
+
+        const fd = new FormData();
+        fd.append('utf8', '✓');
+        fd.append('authenticity_token', csrf);
+        fd.append('reservation[status]', 'reservation');
+        fd.append('reservation[period]', periodo);
+        fd.append('reservation[place_id]', placeId);
+        fd.append('reservation[daily]', daily);
+        fd.append('reservation[sale_channel_id]', canalId);
+        fd.append('reservation[adults]', '1');
+        fd.append('reservation[children]', '0');
+        fd.append('reservation[note]', 'Sync auto via DG Gestao — ' + new Date().toLocaleString('pt-BR') + ' — ' + (item.payload.observacoes || ''));
+        // Guest: cria novo via form aninhado
+        fd.append('guest[name]', item.payload.hospede_nome || 'Hospede Direto');
+        const tel = String(item.payload.hospede_contato||'').replace(/[^0-9]/g, '');
+        if (tel.length >= 10) {
+          fd.append('guest[contact_attributes][ddi]', tel.startsWith('55') ? '55' : '55');
+          fd.append('guest[contact_attributes][phone]', tel.startsWith('55') ? tel.slice(2) : tel);
+        }
+        fd.append('commit', 'Salvar');
+
+        const r = await fetch(HOSPEDIN_BASE + '/reservations', { method:'POST', body:fd, credentials:'include' });
+        const body = await r.text();
+        const erros = Array.from(body.matchAll(/<(?:div|p|span)[^>]+class="[^"]*(?:error|alert|invalid)[^"]*"[^>]*>([^<]{5,200})</g)).map(m=>m[1].trim()).filter(Boolean);
+        const sucesso = r.url.includes('/reservations/') && !r.url.endsWith('/reservations') && !r.url.endsWith('/new');
+
+        if (sucesso) {
+          // Captura code (VD:XXXX, BO:XXXX, AI:XXXX) e id Hospedin via fetch services/reservations
+          let code = null, hospedinId = null;
+          try {
+            const list = await (await fetch(HOSPEDIN_BASE + '/services/reservations.json', { credentials: 'include' })).json();
+            const m = list.find(x => x.place_id == placeId && x.check_in === fmtBR(item.payload.checkin));
+            if (m) { code = m.code; hospedinId = String(m.id); }
+          } catch(e) {}
+
+          // Marca fila como enviado
+          await db.from('fila_sync_hospedin').update({
+            status: 'enviado',
+            processado_em: new Date().toISOString(),
+            hospedin_code: code
+          }).eq('id', item.id);
+          // Atualiza reserva original
+          const updates = { codigo_externo: code };
+          if (hospedinId) updates.hospedin_id = hospedinId;
+          await db.from('reservas').update(updates).eq('id', item.reserva_id);
+          return { ok:true, code };
+        } else {
+          throw new Error(erros.join(' | ') || 'POST nao redirecionou');
+        }
+      } catch (e) {
+        await db.from('fila_sync_hospedin').update({
+          status: item.tentativas >= 4 ? 'erro' : 'pendente',
+          tentativas: (item.tentativas||0) + 1,
+          erro_msg: String(e.message || e).substring(0, 500)
+        }).eq('id', item.id);
+        throw e;
+      }
+    }
+
+    // Loop principal — roda a cada 30s
+    let _syncHospedinAtivo = false;
+    async function processarFilaSyncHospedin() {
+      if (_syncHospedinAtivo) return;
+      _syncHospedinAtivo = true;
+      try {
+        const { data: fila, error } = await db.from('fila_sync_hospedin')
+          .select('*')
+          .eq('status', 'pendente')
+          .lt('tentativas', 5)
+          .order('criado_em', { ascending: true })
+          .limit(5);
+        if (error) { setHospedinSyncStatus('erro', 'banco offline'); return; }
+        if (!fila || fila.length === 0) {
+          setHospedinSyncStatus('ok', 'tudo sincronizado');
+          return;
+        }
+        setHospedinSyncStatus('sync', fila.length + ' pendente(s)…');
+        let sucessos = 0, falhas = 0;
+        for (const item of fila) {
+          try { await processarItemFilaHospedin(item); sucessos++; }
+          catch (e) { falhas++; console.error('[sync hospedin]', e); }
+        }
+        if (falhas === 0) setHospedinSyncStatus('ok', sucessos + ' sincronizada(s) agora');
+        else setHospedinSyncStatus('fila', sucessos + ' ok, ' + falhas + ' tentar depois');
+      } finally {
+        _syncHospedinAtivo = false;
+      }
+    }
+
+    // Inicia loop quando PMS carrega
+    function iniciarSyncHospedinLoop() {
+      setHospedinSyncStatus('off', 'iniciando…');
+      processarFilaSyncHospedin();
+      setInterval(processarFilaSyncHospedin, 30 * 1000);
+    }
+
+    // ==========================================
     // CONSTANTS
     // ==========================================
     const QUARTOS = [
@@ -1894,8 +2338,14 @@
     // MATCH QUARTO (aliases)
     // ==========================================
     function matchQuarto(cama, quarto) {
-      if (!cama) return false;
-      const c = cama.toLowerCase().trim();
+      // Se cama veio como objeto reserva (uso novo), tenta cama -> quarto -> tipo_quarto.
+      // Se veio como string (uso antigo), usa direto. Isso pega reservas vindas de Booking/Airbnb
+      // que populam SO o campo `quarto` em vez de `cama`.
+      let c = null;
+      if (typeof cama === 'string') c = cama;
+      else if (cama && typeof cama === 'object') c = cama.cama || cama.quarto || cama.tipo_quarto || null;
+      if (!c) return false;
+      c = String(c).toLowerCase().trim();
       if (c === quarto.id.toLowerCase()) return true;
       if (c.includes(quarto.id.toLowerCase())) return true;
       if (quarto.aliases) {
@@ -2136,6 +2586,8 @@
       setupSidebarNavigation();
       loadView('home');
       iniciarRealtimeLimpezas();
+      // SYNC HOSPEDIN — processa fila a cada 30s enquanto PMS aberto
+      try { iniciarSyncHospedinLoop(); } catch(e) { console.warn('[sync hospedin] falha ao iniciar:', e); }
     }
 
     // Realtime: quando Vivian inicia/finaliza limpeza no app /cleaner,
@@ -2180,6 +2632,15 @@
 
       currentView = view;
 
+      // FILTROS DA TOP-BAR (Todos/Disponivel/Ocupado/etc) só fazem sentido na Home.
+      // Esconde em outras views pra evitar confusao de "filtros que nao filtram".
+      // Botoes Bloquear Quarto e Nova Reserva continuam visiveis sempre.
+      try {
+        document.querySelectorAll('.status-filter').forEach(btn => {
+          btn.style.display = view === 'home' ? '' : 'none';
+        });
+      } catch(e) {}
+
       if (view === 'home') loadHome();
       else if (view === 'indicadores') loadIndicadores();
       else if (view === 'mapa') loadMapa();
@@ -2197,12 +2658,13 @@
       const hoje = hojeISO();
 
       try {
+        // OCUPAÇÃO: tudo que está ativo hoje (não cancelada/rescindida)
         const { data: reservas } = await db
           .from('reservas')
           .select('*')
           .lte('checkin', hoje)
           .gte('checkout', hoje)
-          .in('status', ['confirmada', 'check-in', 'check_in'])
+          .not('status', 'in', '(cancelada,rescindida)')
           .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
 
         const ocupados = (reservas || []).length;
@@ -2211,20 +2673,20 @@
         document.getElementById('statusAvailable').textContent = disponiveis;
         document.getElementById('statusOccupied').textContent = ocupados;
 
-        // ENTRA HOJE: só quem ainda NÃO fez check-in (status='confirmada')
+        // ENTRA HOJE: quem ainda NÃO fez check-in (qualquer status menos cancelada/check-in/check-out)
         const { data: entradaHoje } = await db
           .from('reservas')
           .select('*')
           .eq('checkin', hoje)
-          .eq('status', 'confirmada')
+          .not('status', 'in', '(cancelada,rescindida,check-in,check_in,check-out,check_out)')
           .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
 
-        // SAI HOJE: só quem ainda NÃO fez check-out (status confirmada ou check-in)
+        // SAI HOJE: quem ainda NÃO fez check-out (não cancelada e não saiu ainda)
         const { data: saidaHoje } = await db
           .from('reservas')
           .select('*')
           .eq('checkout', hoje)
-          .in('status', ['confirmada','check-in','check_in'])
+          .not('status', 'in', '(cancelada,rescindida,check-out,check_out)')
           .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
 
         document.getElementById('statusCheckIn').textContent = (entradaHoje || []).length;
@@ -2237,7 +2699,7 @@
             .from('tarefas_limpeza')
             .select('id, status, ambiente_id, ambientes(nome)')
             .eq('data', hoje)
-            .eq('status', 'em_andamento');
+            .in('status', ['pendente', 'em_andamento']);
 
           ambientesEmLimpeza = (limpezasHoje || [])
             .map(l => (l.ambientes?.nome || '').toLowerCase().trim())
@@ -2271,10 +2733,13 @@
 
         Object.values(grupos).forEach(grupo => {
           grupo.forEach(quarto => {
-            // Busca nas reservas ativas (ocupados) E nas entradas/saídas de hoje
-            let reserva = reservas?.find(r => matchQuarto(r.cama, quarto));
-            const reservaEntrada = !reserva ? (entradaHoje || []).find(r => matchQuarto(r.cama, quarto)) : null;
-            const reservaSaida = !reserva ? (saidaHoje || []).find(r => matchQuarto(r.cama, quarto)) : null;
+            // Busca TODAS as reservas ativas que batem com esse quarto.
+            // Se houver mais de 1 no mesmo dia (overbooking historico), todas
+            // viram cards visiveis ao inves de esconder o problema.
+            const reservasDoQuarto = (reservas || []).filter(r => matchQuarto(r, quarto));
+            let reserva = reservasDoQuarto[0] || null;
+            const reservaEntrada = !reserva ? (entradaHoje || []).find(r => matchQuarto(r, quarto)) : null;
+            const reservaSaida = !reserva ? (saidaHoje || []).find(r => matchQuarto(r, quarto)) : null;
 
             // Se não tem reserva ativa mas tem entrada hoje, usa essa
             const displayReserva = reserva || reservaEntrada || reservaSaida;
@@ -2282,11 +2747,15 @@
             const isCheckin = (reserva && entraHojeIds.includes(reserva.id)) || !!reservaEntrada;
             const isCheckout = (reserva && saiHojeIds.includes(reserva.id)) || !!reservaSaida;
             const isCleaning = ambientesEmLimpeza.some(n => matchQuarto(n, quarto));
-            // Cleaning sobrepõe os outros (visualmente dá pra ver na hora que tá sendo arrumado)
-            const headerClass = isCleaning ? 'cleaning' : (isOccupied || isCheckin) ? 'occupied' : 'available';
+            // Visualmente, "em limpeza" sempre laranja (Vivian precisa ver de longe).
+            // Mas as TAGS do filtro continuam cumulativas — card aparece tambem em "Ocupado".
+            const headerClass = isCleaning ? 'cleaning' : ((isOccupied || isCheckin) ? 'occupied' : 'available');
 
-            // Tags de filtro
-            let filterTags = isCleaning ? 'cleaning' : (isOccupied ? 'occupied' : 'available');
+            // Tags de filtro — ACUMULATIVAS. Um quarto pode ser ocupado E em limpeza
+            // ao mesmo tempo (caso real: check-in feito antes da Vivian terminar).
+            // Isso faz o card aparecer em AMBOS os filtros (Ocupado + Em limpeza).
+            let filterTags = isOccupied ? 'occupied' : 'available';
+            if (isCleaning) filterTags += ' cleaning';
             if (isCheckin) filterTags += ' checkin';
             if (isCheckout) filterTags += ' checkout';
 
@@ -2296,7 +2765,9 @@
             card.innerHTML = `
               <div class="room-card-header ${headerClass}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
                 <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${quarto.label}</span>
-                ${isCleaning ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🧹 em limpeza</span>'
+                ${(isOccupied || isCheckin) && isCleaning
+                    ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;color:#F59E0B;" title="Hospede dentro + limpeza pendente — atencao!">🧹 limpeza pendente</span>'
+                  : isCleaning ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🧹 em limpeza</span>'
                   : isCheckin ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🟢 entra hoje</span>'
                   : isCheckout ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🔴 sai hoje</span>'
                   : ''}
@@ -2319,6 +2790,46 @@
               </div>
             `;
             container.appendChild(card);
+
+            // Se houver mais de 1 reserva no mesmo quarto hoje, renderiza cada uma.
+            // Distingue OVERBOOKING REAL (datas se sobrepoe) de TROCA LEGITIMA (checkout==checkin)
+            for (let i = 1; i < reservasDoQuarto.length; i++) {
+              const rDup = reservasDoQuarto[i];
+              const rPrim = reservasDoQuarto[0];
+              // Overbooking REAL: as duas datas se sobrepoe (intervalo aberto-fechado [ci, co))
+              const overbookingReal = rPrim.checkin < rDup.checkout && rDup.checkin < rPrim.checkout
+                && !(rPrim.checkout === rDup.checkin || rDup.checkout === rPrim.checkin);
+              const isCIextra = entraHojeIds.includes(rDup.id);
+              const isCOextra = saiHojeIds.includes(rDup.id);
+              let tagsExtra = 'occupied';
+              if (isCIextra) tagsExtra += ' checkin';
+              if (isCOextra) tagsExtra += ' checkout';
+              const cardDup = document.createElement('div');
+              cardDup.className = 'room-card';
+              cardDup.setAttribute('data-room-filter', tagsExtra);
+              if (overbookingReal) cardDup.style.borderTop = '3px solid #DC2626';
+              const badge = overbookingReal
+                ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;color:#DC2626;font-weight:700;" title="Duas reservas se sobrepoe nesse quarto — conflito real">⚠️ DUPLICATA</span>'
+                : (isCIextra ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🟢 entra hoje</span>'
+                : isCOextra ? '<span style="font-size:11px;flex-shrink:0;white-space:nowrap;">🔴 sai hoje</span>' : '');
+              cardDup.innerHTML = `
+                <div class="room-card-header occupied" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                  <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${quarto.label}</span>
+                  ${badge}
+                </div>
+                <div class="room-card-body">
+                  <div class="room-guest-name">${formatarNomeHospede(rDup)}</div>
+                  <div class="room-date-range">
+                    ${fmtDataCurta(rDup.checkin)}
+                    a ${fmtDataCurta(rDup.checkout)}
+                  </div>
+                  <div class="room-actions">
+                    <button class="room-action-btn" onclick="abrirAcaoModal('${rDup.id}')">⋮ Ações</button>
+                  </div>
+                </div>
+              `;
+              container.appendChild(cardDup);
+            }
           });
         });
 
@@ -2370,6 +2881,10 @@
 
     document.getElementById('refreshHome').addEventListener('click', loadHome);
     document.getElementById('novaReservaBtn').addEventListener('click', () => {
+      try { document.getElementById('nrQuarto').value = ''; } catch(e){}
+      try { document.getElementById('nrCheckin').value = ''; } catch(e){}
+      try { document.getElementById('nrCheckout').value = ''; } catch(e){}
+      try { resetarDropdownQuartos('nrQuarto','nrQuartoStatus'); } catch(e){}
       document.getElementById('novaReservaModal').classList.remove('hidden');
     });
 
@@ -2457,7 +2972,7 @@
       _chartHospedes = new Chart(document.getElementById('chartHospedes'), {
         type: 'line',
         data: { labels, datasets: [
-          { label: 'Hospedes ativos', data: hospedesPorDia, borderColor: '#27AE60', backgroundColor: 'rgba(39,174,96,0.15)', fill: true, tension: 0.3 }
+          { label: 'Hóspedes ativos', data: hospedesPorDia, borderColor: '#27AE60', backgroundColor: 'rgba(39,174,96,0.15)', fill: true, tension: 0.3 }
         ]},
         options: opcoesBase
       });
@@ -2669,9 +3184,9 @@
           .from('reservas')
           .select('*')
           .lt('checkin', endDate.toISOString().split('T')[0])
-          .gt('checkout', startDate.toISOString().split('T')[0])
+          .gte('checkout', startDate.toISOString().split('T')[0])  // inclui reservas que terminam HOJE (check-out feito hoje continua visivel)
           .neq('status', 'cancelada')
-          .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
+          .or('nao_contabilizar.is.null,nao_contabilizar.eq.false,plataforma.eq.Bloqueio');  // bloqueios têm nao_contabilizar=true por design, mas precisam aparecer no mapa
 
         // Buscar tarefas de limpeza em andamento (pra colorir cinza)
         let limpezasAtivas = [];
@@ -2679,7 +3194,7 @@
           const { data: lp } = await db
             .from('tarefas_limpeza')
             .select('id, ambiente_id, ambientes(nome), status, data_tarefa')
-            .eq('status', 'em_andamento');
+            .in('status', ['pendente', 'em_andamento']);
           limpezasAtivas = lp || [];
         } catch (e) { /* ok */ }
 
@@ -2785,8 +3300,18 @@
           cell.appendChild(precoSpan);
 
           cell.onclick = () => {
-            document.getElementById('nrQuarto').value = quarto.id;
+            // Pré-preenche: quarto da célula, check-in no dia clicado e check-out no dia seguinte
+            const proxDia = new Date(d); proxDia.setDate(proxDia.getDate() + 1);
+            const checkoutStr = proxDia.toISOString().slice(0,10);
             document.getElementById('nrCheckin').value = dateStr;
+            document.getElementById('nrCheckout').value = checkoutStr;
+            // Roda o filtro de disponibilidade (vai habilitar o dropdown)
+            atualizarQuartosDisponiveis('nrQuarto','nrCheckin','nrCheckout').then(() => {
+              // Tenta deixar o quarto pré-selecionado, se estiver livre
+              const sel = document.getElementById('nrQuarto');
+              const opt = Array.from(sel.options).find(o => o.value === quarto.id);
+              if (opt && !opt.disabled) sel.value = quarto.id;
+            });
             document.getElementById('novaReservaModal').classList.remove('hidden');
           };
           // Drop target pra drag-and-drop
@@ -2803,7 +3328,7 @@
         });
 
         // Encontrar reservas deste quarto e renderizar barras contínuas
-        const quartoReservas = reservas.filter(r => matchQuarto(r.cama, quarto));
+        const quartoReservas = reservas.filter(r => matchQuarto(r, quarto));
 
         // Remover duplicatas (mesmo id)
         const seen = new Set();
@@ -2831,7 +3356,10 @@
             if (barEnd < 0) barEnd = mapaDias;
           }
 
-          if (barEnd <= barStart) return;
+          // Se a reserva termina no PRIMEIRO dia da janela (ex: hoje), barEnd === barStart === 0.
+          // Nesse caso ainda queremos mostrar uma barrinha pequena na metade esquerda do dia
+          // pra deixar visivel a reserva que acabou hoje (igual Hospedin faz).
+          if (barEnd < barStart) return;
 
           const bar = document.createElement('div');
           bar.className = 'mapa-reserva-bar';
@@ -2851,13 +3379,23 @@
           };
           bar.ondragend = () => { bar.style.opacity = '1'; };
 
-          // Posicionar: cada coluna é (100/mapaDias)% da largura
+          // Posicionar EXATAMENTE igual Hospedin:
+          //   - Comeca no MEIO da coluna do checkin (chegou a tarde)
+          //   - Termina no MEIO da coluna do checkout (saiu de manha)
+          // Quando uma reserva sai e outra entra no mesmo dia, formam o V diagonal natural
           const colWidth = 100 / mapaDias;
-          bar.style.left = (barStart * colWidth) + '%';
-          // Estende meio dia pra direita (visual de "saída de manhã" — igual Hospedin)
-          const eMeioDia = (barEnd < mapaDias);
-          const larguraExtra = eMeioDia ? 0.5 : 0;
-          bar.style.width = ((barEnd - barStart + larguraExtra) * colWidth) + '%';
+          // Caso especial: reserva termina no PRIMEIRO dia da janela (checkin antes, checkout=hoje).
+          //   barStart=0, barEnd=0 → mostra so a METADE esquerda da coluna (0 ate 0.5).
+          let leftCol = barStart + 0.5;
+          let widthCols = barEnd - barStart;
+          if (barEnd === barStart) {
+            // reserva acabou hoje (ou antes) — mostra metade esquerda da coluna hoje
+            leftCol = barStart;
+            widthCols = 0.5;
+          }
+          // 2px de margem em cada lado pra criar o pequeno espacinho diagonal entre reservas consecutivas
+          bar.style.left = 'calc(' + (leftCol * colWidth) + '% + 2px)';
+          bar.style.width = 'calc(' + (widthCols * colWidth) + '% - 4px)';
 
           // Cor por status (regra solicitada pela Gabi):
           //   Amarelo = pré-reserva (status pendente / proforma)
@@ -2930,12 +3468,123 @@
       // Limpa pré-seleção de quarto/data
       try { document.getElementById('nrQuarto').value = ''; } catch(e){}
       try { document.getElementById('nrCheckin').value = ''; } catch(e){}
+      try { document.getElementById('nrCheckout').value = ''; } catch(e){}
+      resetarDropdownQuartos('nrQuarto','nrQuartoStatus');
       document.getElementById('novaReservaModal').classList.remove('hidden');
     }
     function abrirBloqueioDoMapa() {
       document.getElementById('mapaAddMenu').style.display = 'none';
       try { document.getElementById('blQuarto').value = ''; } catch(e){}
+      try { document.getElementById('blDe').value = ''; } catch(e){}
+      try { document.getElementById('blAte').value = ''; } catch(e){}
+      resetarDropdownQuartos('blQuarto','blQuartoStatus');
       document.getElementById('bloqueioModal').classList.remove('hidden');
+    }
+
+    // ==========================================
+    // FILTRO DE QUARTOS DISPONÍVEIS POR PERÍODO
+    // ==========================================
+    // Reseta o dropdown pro estado inicial (desabilitado, todas options sem prefixo)
+    function resetarDropdownQuartos(selectId, statusId) {
+      const sel = document.getElementById(selectId);
+      const status = document.getElementById(statusId);
+      if (!sel) return;
+      sel.disabled = true;
+      sel.value = '';
+      Array.from(sel.options).forEach(opt => {
+        opt.disabled = false;
+        // Remove sufixo "(ocupado)" se houver
+        opt.text = opt.text.replace(/\s*— ocupado$/, '');
+        if (!opt.value) opt.text = 'Preencha as datas primeiro...';
+      });
+      if (status) {
+        status.textContent = 'Selecione as datas pra ver os quartos disponíveis.';
+        status.classList.remove('text-red-500');
+      }
+    }
+
+    // Consulta o Supabase e marca as camas ocupadas no período
+    async function atualizarQuartosDisponiveis(selectId, checkinId, checkoutId) {
+      const sel = document.getElementById(selectId);
+      const checkin = document.getElementById(checkinId)?.value;
+      const checkout = document.getElementById(checkoutId)?.value;
+      const statusId = selectId + 'Status';
+      const status = document.getElementById(statusId);
+      if (!sel) return;
+
+      // Se uma das datas tá vazia, mantém desabilitado
+      if (!checkin || !checkout) {
+        resetarDropdownQuartos(selectId, statusId);
+        return;
+      }
+      // Validação básica
+      if (checkin >= checkout) {
+        sel.disabled = true;
+        if (status) { status.textContent = 'Check-out tem que ser depois do check-in.'; status.classList.add('text-red-500'); }
+        return;
+      }
+
+      if (status) { status.textContent = 'Verificando disponibilidade...'; status.classList.remove('text-red-500'); }
+
+      try {
+        // Reservas que conflitam com o período (overlap):
+        //   reserva.checkin < nosso_checkout  E  reserva.checkout > nosso_checkin
+        const { data, error } = await db.from('reservas')
+          .select('cama, quarto, status, nao_contabilizar')
+          .lt('checkin', checkout)
+          .gt('checkout', checkin);
+        if (error) throw error;
+
+        // Status que NÃO ocupam o quarto (canceladas, no-show etc)
+        const naoOcupa = new Set(['cancelada','cancelado','no_show','noshow','cancelada_sync']);
+        const ocupadasReservas = (data || []).filter(r =>
+          (r.cama || r.quarto) &&
+          !naoOcupa.has((r.status||'').toLowerCase()) &&
+          r.nao_contabilizar !== true
+        );
+
+        // Marca options usando matchQuarto (que cobre aliases + capitalizacao + espacos)
+        let livres = 0, ocupadasCount = 0;
+        Array.from(sel.options).forEach(opt => {
+          if (!opt.value) { opt.text = 'Selecione um quarto...'; return; }
+          // Texto base sem sufixo
+          const baseText = opt.text.replace(/\s*— ocupado$/, '');
+          // Acha o objeto QUARTO correspondente ao value do option
+          const quartoObj = QUARTOS.find(q => q.id === opt.value);
+          // Checa se ALGUMA reserva ocupa este quarto (com aliases)
+          const ocupado = quartoObj
+            ? ocupadasReservas.some(r => matchQuarto(r, quartoObj))
+            : ocupadasReservas.some(r => r.cama === opt.value);
+          if (ocupado) {
+            opt.disabled = true;
+            opt.text = baseText + ' — ocupado';
+            ocupadasCount++;
+          } else {
+            opt.disabled = false;
+            opt.text = baseText;
+            livres++;
+          }
+        });
+
+        sel.disabled = false;
+        // Se o quarto que estava selecionado virou ocupado, limpa
+        if (sel.value) {
+          const quartoSel = QUARTOS.find(q => q.id === sel.value);
+          const aindaOcupado = quartoSel
+            ? ocupadasReservas.some(r => matchQuarto(r, quartoSel))
+            : ocupadasReservas.some(r => r.cama === sel.value);
+          if (aindaOcupado) sel.value = '';
+        }
+
+        if (status) {
+          status.textContent = livres + ' quarto(s) livre(s), ' + ocupadasCount + ' ocupado(s) nesse período.';
+          status.classList.remove('text-red-500');
+        }
+      } catch (err) {
+        console.error('Erro ao consultar disponibilidade:', err);
+        sel.disabled = false; // libera tudo, melhor permitir do que travar
+        if (status) { status.textContent = 'Erro ao consultar disponibilidade — selecione com cuidado.'; status.classList.add('text-red-500'); }
+      }
     }
 
     // Toggle do menu Adicionar
@@ -3290,7 +3939,7 @@
     // ============================================================
     // CRM HOSPEDES — Estado e helpers
     // ============================================================
-    let _crmTodos = [];        // [{ nome, email, contato, qtde, total, primeira, ultima, hospedadoAgora }]
+    let _crmTodos = [];        // [{ nome, email, contato, qtde, total, primeira, última, hospedadoAgora }]
     let _crmFiltroAtivo = 'todos';
 
     function setFiltroCRM(filtro) {
@@ -3327,12 +3976,17 @@
       lista.sort((a,b) => (b.qtde - a.qtde) || (b.total - a.total));
 
       const tbody = document.getElementById('hospedesTable');
+      const cardsEl = document.getElementById('hospedesCards');
       if (!lista.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">Nenhum hóspede encontrado</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">Nenhum hóspede encontrado</td></tr>';
+        if (cardsEl) cardsEl.innerHTML = '<div style="text-align:center;color:#999;padding:24px;">Nenhum hóspede encontrado</div>';
         return;
       }
 
-      tbody.innerHTML = lista.slice(0, 200).map(h => {
+      const recorte = lista.slice(0, 200);
+
+      // ---- versão tabela (desktop) ----
+      if (tbody) tbody.innerHTML = recorte.map(h => {
         const isVip = h.qtde >= 5;
         const isRecorrente = h.qtde >= 2;
         const isAtivo = h.hospedadoAgora;
@@ -3346,16 +4000,13 @@
         else if (emRisco) badge = '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b;">⚠️ em risco</span>';
 
         const inicial = (h.nome||'?').charAt(0).toUpperCase();
-        // Cor do avatar varia por status
         const corAvatar = isVip ? 'linear-gradient(135deg,#FBBF24,#F59E0B)' : isRecorrente ? 'linear-gradient(135deg,#1BA8B8,#0A6B75)' : '#5B9BD5';
 
-        // Telefone normalizado pro WhatsApp
         const telWpp = (h.contato || '').replace(/[^0-9]/g, '');
         const wppBtn = telWpp.length >= 10
           ? '<a href="https://wa.me/' + telWpp + '" target="_blank" onclick="event.stopPropagation()" title="Abrir WhatsApp" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#25D366;color:white;text-decoration:none;font-size:14px;margin-left:6px;">💬</a>'
           : '';
 
-        // Indicador de quantidade que se destaca
         const qtdeBadge = h.qtde >= 5
           ? '<span style="font-size:13px;font-weight:700;color:#92400E;">' + h.qtde + 'ª</span>'
           : h.qtde >= 2
@@ -3372,6 +4023,50 @@
           <td>${badge}</td>
         </tr>`;
       }).join('');
+
+      // ---- versão cards (mobile) ----
+      if (cardsEl) cardsEl.innerHTML = recorte.map(h => {
+        const isVip = h.qtde >= 5;
+        const isRecorrente = h.qtde >= 2;
+        const isAtivo = h.hospedadoAgora;
+        const diasUlt = h.ultima ? Math.floor((new Date(hojeISO) - new Date(h.ultima)) / 86400000) : null;
+        const emRisco = h.qtde >= 1 && diasUlt !== null && diasUlt > 180;
+
+        let badge = '';
+        if (isAtivo) badge = '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#dcfce7;color:#166534;">🟢 hospedado</span>';
+        else if (isVip) badge = '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fef3c7;color:#92400e;">⭐ VIP</span>';
+        else if (isRecorrente) badge = '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#dbeafe;color:#1e40af;">💚 recorrente</span>';
+        else if (emRisco) badge = '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b;">⚠️ em risco</span>';
+
+        const inicial = (h.nome||'?').charAt(0).toUpperCase();
+        const corAvatar = isVip ? 'linear-gradient(135deg,#FBBF24,#F59E0B)' : isRecorrente ? 'linear-gradient(135deg,#1BA8B8,#0A6B75)' : '#5B9BD5';
+
+        const telWpp = (h.contato || '').replace(/[^0-9]/g, '');
+        const wppBtn = telWpp.length >= 10
+          ? '<a href="https://wa.me/' + telWpp + '" target="_blank" onclick="event.stopPropagation()" title="Abrir WhatsApp" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#25D366;color:white;text-decoration:none;font-size:16px;flex-shrink:0;">💬</a>'
+          : '';
+
+        const nomeEsc = (h.nome||'').replace(/'/g, "\\'");
+
+        return `<div onclick="abrirDetalheHospedeNome('${nomeEsc}')" class="bg-white border border-domus-borda rounded-xl p-3 active:bg-gray-50 cursor-pointer flex gap-3">
+          <div style="width:44px;height:44px;border-radius:50%;background:${corAvatar};color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;box-shadow:0 1px 3px rgba(0,0,0,0.1);flex-shrink:0;">${inicial}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="font-semibold text-sm text-domus-texto truncate">${h.nome}</div>
+                ${h.contato ? '<div class="text-xs text-domus-texto-suave truncate">'+h.contato+'</div>' : ''}
+              </div>
+              ${badge}
+            </div>
+            <div class="flex items-center justify-between gap-2 mt-2 text-xs">
+              <div class="text-domus-texto-suave"><strong class="text-domus-texto">${h.qtde}</strong> estadia${h.qtde===1?'':'s'}</div>
+              <div class="text-domus-texto-suave"><strong class="text-domus-texto">R$ ${h.total.toLocaleString('pt-BR',{minimumFractionDigits:0, maximumFractionDigits:0})}</strong></div>
+              <div class="text-domus-texto-suave">${h.ultima ? fmtData(h.ultima) : '—'}</div>
+            </div>
+          </div>
+          ${wppBtn}
+        </div>`;
+      }).join('');
     }
 
     // hoje em SP — duplicado pra ficar acessível neste escopo
@@ -3384,8 +4079,421 @@
     function abrirDetalheHospedeNome(nome) {
       const h = _crmTodos.find(x => x.nome === nome);
       if (!h) return;
-      const fakeHospede = { nome: h.nome, email: h.email, telefone: h.contato, contato: h.contato };
-      abrirDetalheHospede(fakeHospede, h.reservas || []);
+      // NOVO: abre a página completa de perfil em vez do modal antigo
+      abrirPerfilHospede({ nome: h.nome, telefone: h.contato || h.telefone, agrupado: h });
+      // FALLBACK (deixado comentado por garantia):
+      // const fakeHospede = { nome: h.nome, email: h.email, telefone: h.contato, contato: h.contato };
+      // abrirDetalheHospede(fakeHospede, h.reservas || []);
+    }
+
+    // =====================================================
+    // PERFIL DO HÓSPEDE — página completa (substitui modal)
+    // =====================================================
+    let _hpHospedeAtual = null;       // registro de public.hospedes (se existir)
+    let _hpReservaAtualSel = null;    // reserva mostrada no bloco "Reserva atual"
+    let _hpReservasLista = [];        // lista de reservas do hóspede
+    let _hpNotasDebounce = null;
+
+    async function abrirPerfilHospede({ id = null, nome = null, telefone = null, agrupado = null } = {}) {
+      // 1) Esconde a lista de CRM, mostra a página de perfil
+      const listaView = document.getElementById('hospedesView');
+      const perfilView = document.getElementById('hospedePerfilView');
+      if (listaView) listaView.classList.add('hidden');
+      if (perfilView) perfilView.classList.remove('hidden');
+
+      // 2) Pré-popula com o que já temos (responsividade)
+      preencherCabecalhoBasico({ nome, telefone, agrupado });
+
+      // 3) Tenta achar o hóspede real na tabela public.hospedes
+      let hospede = null;
+      try {
+        if (id) {
+          const { data } = await db.from('hospedes').select('*').eq('id', id).maybeSingle();
+          hospede = data;
+        }
+        if (!hospede && telefone) {
+          const telNorm = (telefone || '').replace(/[^0-9]/g, '');
+          if (telNorm.length >= 10) {
+            const { data } = await db.from('hospedes').select('*').ilike('telefone', '%' + telNorm.slice(-9) + '%').limit(1);
+            if (data && data.length) hospede = data[0];
+          }
+        }
+        if (!hospede && nome) {
+          const { data } = await db.from('hospedes').select('*').ilike('nome', nome).limit(1);
+          if (data && data.length) hospede = data[0];
+        }
+      } catch (e) { console.warn('abrirPerfilHospede: falha ao buscar hóspede real:', e); }
+
+      _hpHospedeAtual = hospede;
+
+      // 4) Busca reservas (por hospede_id ou por nome/telefone)
+      let reservas = [];
+      try {
+        if (hospede && hospede.id) {
+          const r1 = await db.from('reservas').select('*').eq('hospede_id', hospede.id).order('checkin', { ascending: false });
+          if (r1.data) reservas = r1.data;
+        }
+        if (!reservas.length && telefone) {
+          const telNorm = (telefone || '').replace(/[^0-9]/g, '');
+          if (telNorm.length >= 10) {
+            const r2 = await db.from('reservas').select('*').ilike('hospede_contato', '%' + telNorm.slice(-9) + '%').order('checkin', { ascending: false });
+            if (r2.data) reservas = r2.data;
+          }
+        }
+        if (!reservas.length && nome) {
+          const r3 = await db.from('reservas').select('*').ilike('hospede_nome', nome).order('checkin', { ascending: false });
+          if (r3.data) reservas = r3.data;
+        }
+      } catch (e) { console.warn('abrirPerfilHospede: falha ao buscar reservas:', e); }
+
+      _hpReservasLista = reservas || [];
+
+      // 5) Popula tudo
+      popularDadosPessoais(hospede, { nomeFallback: nome, telefoneFallback: telefone });
+      popularReservaAtual(_hpReservasLista);
+      popularHistorico(_hpReservasLista);
+      popularInsights(hospede, _hpReservasLista, agrupado);
+      popularNotasInternas(hospede);
+      popularDocumentos(hospede);
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function preencherCabecalhoBasico({ nome, telefone, agrupado }) {
+      const iniciais = (nome || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p.charAt(0).toUpperCase()).join('') || '?';
+      document.getElementById('hpAvatarIniciais').textContent = iniciais;
+      // limpa avatar (selfie eventual entra depois em popularDadosPessoais)
+      const wrap = document.getElementById('hpAvatarWrap');
+      wrap.innerHTML = '<span id="hpAvatarIniciais">' + iniciais + '</span>';
+
+      document.getElementById('hpNome').textContent = nome || '—';
+
+      // badges
+      const badgeStatus = document.getElementById('hpBadgeStatus');
+      const badgeRec = document.getElementById('hpBadgeRecorrente');
+      const badgeVip = document.getElementById('hpBadgeVip');
+      badgeStatus.classList.add('hidden');
+      badgeRec.classList.add('hidden');
+      badgeVip.classList.add('hidden');
+
+      if (agrupado) {
+        if (agrupado.hospedadoAgora) {
+          badgeStatus.textContent = 'Hospedada agora';
+          badgeStatus.className = 'text-xs px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium';
+        } else {
+          badgeStatus.textContent = 'Já se hospedou';
+          badgeStatus.className = 'text-xs px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium';
+        }
+        if (agrupado.qtde >= 2) {
+          badgeRec.textContent = 'Recorrente (' + agrupado.qtde + 'x)';
+          badgeRec.classList.remove('hidden');
+        }
+        if (agrupado.qtde >= 5) badgeVip.classList.remove('hidden');
+      }
+
+      // resumo + botões de contato
+      document.getElementById('hpResumo').textContent = telefone ? telefone : '—';
+      const wppBtn = document.getElementById('hpWhatsBtn');
+      const ligarBtn = document.getElementById('hpLigarBtn');
+      const telNorm = (telefone || '').replace(/[^0-9]/g, '');
+      if (telNorm.length >= 10) {
+        const fone55 = telNorm.startsWith('55') ? telNorm : ('55' + telNorm);
+        const txt = encodeURIComponent('Oi ' + (nome ? nome.split(' ')[0] : '') + ', aqui é da Domus...');
+        wppBtn.href = 'https://wa.me/' + fone55 + '?text=' + txt;
+        wppBtn.classList.remove('hidden');
+        ligarBtn.href = 'tel:+' + fone55;
+        ligarBtn.classList.remove('hidden');
+      } else {
+        wppBtn.classList.add('hidden');
+        ligarBtn.classList.add('hidden');
+      }
+      document.getElementById('hpEmailBtn').classList.add('hidden');
+    }
+
+    function popularDadosPessoais(hospede, { nomeFallback, telefoneFallback }) {
+      const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v || '—'; };
+
+      // Selfie (se houver)
+      if (hospede && hospede.selfie_url) {
+        const wrap = document.getElementById('hpAvatarWrap');
+        wrap.innerHTML = '<img src="' + hospede.selfie_url + '" alt="Selfie" class="w-full h-full object-cover">';
+      }
+
+      const nomeCompleto = (hospede && (hospede.nome + (hospede.sobrenome ? ' ' + hospede.sobrenome : ''))) || nomeFallback || '—';
+      document.getElementById('hpNome').textContent = nomeCompleto;
+      setText('hpDadoNome', nomeCompleto);
+
+      // Data de nascimento + idade
+      const dn = hospede && hospede.data_nascimento;
+      if (dn) {
+        const idade = calcularIdade(dn);
+        setText('hpDadoNascimento', fmtData(dn) + (idade ? ' (' + idade + ' anos)' : ''));
+      } else setText('hpDadoNascimento', '—');
+
+      // Documento — mascara CPF se houver
+      let doc = (hospede && (hospede.cpf || hospede.documento)) || '';
+      if (doc) {
+        const digitos = doc.replace(/\D/g, '');
+        if (digitos.length === 11) {
+          doc = 'CPF ***.' + digitos.slice(3,6) + '.***-' + digitos.slice(9,11);
+        }
+      }
+      setText('hpDadoDocumento', doc);
+
+      setText('hpDadoNacionalidade', hospede && hospede.nacionalidade);
+      const tel = (hospede && hospede.telefone) || telefoneFallback;
+      setText('hpDadoTelefone', tel);
+      setText('hpDadoEmail', hospede && hospede.email);
+      setText('hpDadoSexo', hospede && hospede.sexo);
+      setText('hpDadoMotivo', hospede && hospede.motivo_hospedagem);
+
+      // Botão e-mail
+      const emailBtn = document.getElementById('hpEmailBtn');
+      if (hospede && hospede.email) {
+        emailBtn.href = 'mailto:' + hospede.email;
+        emailBtn.classList.remove('hidden');
+      } else {
+        emailBtn.classList.add('hidden');
+      }
+    }
+
+    function popularReservaAtual(reservas) {
+      const wrap = document.getElementById('hpReservaAtualWrap');
+      const obsWrap = document.getElementById('hpObsWrap');
+      if (!reservas || !reservas.length) {
+        wrap.classList.add('hidden');
+        obsWrap.classList.add('hidden');
+        return;
+      }
+      const hoje = (typeof hojeISO_ === 'function' ? hojeISO_() : new Date().toISOString().slice(0,10));
+      // Primeiro tenta "em andamento", depois próxima futura, depois mais recente passada
+      let alvo = reservas.find(r => r.checkin <= hoje && r.checkout > hoje && r.status !== 'cancelada');
+      let titulo = 'Reserva atual';
+      if (!alvo) {
+        alvo = reservas.find(r => r.checkin > hoje && r.status !== 'cancelada');
+        if (alvo) titulo = 'Próxima reserva';
+      }
+      if (!alvo) {
+        alvo = reservas.find(r => r.status !== 'cancelada') || reservas[0];
+        titulo = 'Última reserva';
+      }
+      if (!alvo) {
+        wrap.classList.add('hidden');
+        obsWrap.classList.add('hidden');
+        return;
+      }
+      _hpReservaAtualSel = alvo;
+      wrap.classList.remove('hidden');
+      obsWrap.classList.remove('hidden');
+
+      document.getElementById('hpReservaTitulo').textContent = titulo;
+
+      const noites = calcularNoites(alvo.checkin, alvo.checkout);
+      const valor = parseFloat(alvo.valor_total || 0);
+      const diaria = noites > 0 ? (valor / noites) : 0;
+
+      document.getElementById('hpResCheckin').innerHTML = fmtData(alvo.checkin) + ' <span class="text-domus-texto-suave text-xs">16h</span>';
+      document.getElementById('hpResCheckout').innerHTML = fmtData(alvo.checkout) + ' <span class="text-domus-texto-suave text-xs">11h</span>';
+      document.getElementById('hpResNoites').textContent = noites + ' noite' + (noites !== 1 ? 's' : '');
+      document.getElementById('hpResQuarto').textContent = alvo.quarto || '—';
+      document.getElementById('hpResPlataforma').textContent = alvo.canal || alvo.plataforma || 'Direto';
+      document.getElementById('hpResValor').textContent = 'R$ ' + valor.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+      document.getElementById('hpResStatusPag').textContent = alvo.status_pagamento || (alvo.pago ? 'Pago' : 'A confirmar');
+      document.getElementById('hpResDiaria').textContent = 'R$ ' + diaria.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+      const stEl = document.getElementById('hpReservaStatus');
+      stEl.textContent = alvo.status || '—';
+      stEl.className = 'text-xs px-2.5 py-0.5 rounded-full font-medium ' +
+        (alvo.status === 'cancelada' ? 'bg-red-100 text-red-700'
+         : alvo.status === 'confirmada' ? 'bg-blue-100 text-blue-700'
+         : 'bg-green-100 text-green-700');
+
+      // Observações
+      document.getElementById('hpObsTexto').value = alvo.observacoes || alvo.observacao || '';
+      document.getElementById('hpObsEnviarLimpeza').checked = alvo.enviar_obs_limpeza !== false;
+      atualizarPreviewObs();
+      document.getElementById('hpObsTexto').oninput = atualizarPreviewObs;
+      document.getElementById('hpObsEnviarLimpeza').onchange = atualizarPreviewObs;
+    }
+
+    function atualizarPreviewObs() {
+      if (!_hpReservaAtualSel) return;
+      const enviar = document.getElementById('hpObsEnviarLimpeza').checked;
+      const head = document.getElementById('hpObsPreviewHead');
+      const texto = document.getElementById('hpObsPreviewTexto');
+      if (!enviar) {
+        head.innerHTML = '<em class="text-domus-texto-suave">Limpeza não receberá observação dessa reserva.</em>';
+        texto.textContent = '';
+        return;
+      }
+      const quarto = _hpReservaAtualSel.quarto || '—';
+      const nome = _hpReservaAtualSel.hospede_nome || document.getElementById('hpNome').textContent;
+      head.innerHTML = '<strong>' + quarto + '</strong> · Próxima hóspede: <strong>' + nome + '</strong>';
+      const obs = document.getElementById('hpObsTexto').value.trim();
+      texto.textContent = obs || '(sem observação adicional)';
+    }
+
+    async function salvarObsReserva() {
+      if (!_hpReservaAtualSel || !_hpReservaAtualSel.id) {
+        try { mostrarToast && mostrarToast('Sem reserva ativa pra salvar.'); } catch(e){}
+        return;
+      }
+      const obs = document.getElementById('hpObsTexto').value;
+      const enviar = document.getElementById('hpObsEnviarLimpeza').checked;
+      try {
+        const { error } = await db.from('reservas')
+          .update({ observacoes: obs, enviar_obs_limpeza: enviar })
+          .eq('id', _hpReservaAtualSel.id);
+        if (error) throw error;
+        _hpReservaAtualSel.observacoes = obs;
+        _hpReservaAtualSel.enviar_obs_limpeza = enviar;
+        try { mostrarToast && mostrarToast('Observação salva.'); } catch(e){}
+      } catch (err) {
+        console.error(err);
+        try { mostrarToast && mostrarToast('Erro ao salvar observação.'); } catch(e){}
+      }
+    }
+
+    function popularHistorico(reservas) {
+      const cont = document.getElementById('hpHistoricoLista');
+      const totaisWrap = document.getElementById('hpHistoricoTotais');
+      if (!reservas || !reservas.length) {
+        cont.innerHTML = '<p class="text-xs text-domus-texto-suave text-center py-4">Sem hospedagens registradas.</p>';
+        totaisWrap.classList.add('hidden');
+        return;
+      }
+      const hoje = (typeof hojeISO_ === 'function' ? hojeISO_() : new Date().toISOString().slice(0,10));
+      cont.innerHTML = reservas.map(r => {
+        const noites = calcularNoites(r.checkin, r.checkout);
+        const valor = parseFloat(r.valor_total || 0);
+        const ehAtual = (r.checkin <= hoje && r.checkout > hoje && r.status !== 'cancelada');
+        const badge = ehAtual
+          ? '<span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Atual</span>'
+          : r.status === 'cancelada'
+            ? '<span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">Cancelada</span>'
+            : '<span class="text-xs text-domus-texto-suave">R$ ' + valor.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2}) + '</span>';
+        return '<div class="flex items-center justify-between p-3 rounded-lg bg-gray-50">' +
+          '<div>' +
+            '<p class="font-medium text-domus-texto">' + fmtData(r.checkin) + ' — ' + fmtData(r.checkout) + '</p>' +
+            '<p class="text-xs text-domus-texto-suave">' + (r.quarto || '—') + ' · ' + (r.canal || 'Direto') + ' · ' + noites + ' noite' + (noites !== 1 ? 's' : '') + '</p>' +
+          '</div>' + badge +
+        '</div>';
+      }).join('');
+
+      // Totais (ignora canceladas)
+      const validas = reservas.filter(r => r.status !== 'cancelada');
+      const totalGasto = validas.reduce((s, r) => s + parseFloat(r.valor_total || 0), 0);
+      const noitesTot = validas.reduce((s, r) => s + calcularNoites(r.checkin, r.checkout), 0);
+      const qtd = validas.length;
+      const ticket = qtd > 0 ? (totalGasto / qtd) : 0;
+      document.getElementById('hpTotalGasto').textContent = 'R$ ' + totalGasto.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+      document.getElementById('hpTotalEstadias').textContent = qtd;
+      document.getElementById('hpTicketMedio').textContent = 'R$ ' + ticket.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+      document.getElementById('hpNoitesTotais').textContent = noitesTot;
+      totaisWrap.classList.remove('hidden');
+    }
+
+    function popularInsights(hospede, reservas, agrupado) {
+      const lista = document.getElementById('hpInsightsLista');
+      const validas = (reservas || []).filter(r => r.status !== 'cancelada');
+      const insights = [];
+
+      if (validas.length >= 2) {
+        const noites = validas.reduce((s, r) => s + calcularNoites(r.checkin, r.checkout), 0);
+        const media = (noites / validas.length).toFixed(1);
+        insights.push('Costuma ficar em média ' + media + ' noites por estadia.');
+      }
+      // Canal preferido
+      const canais = {};
+      validas.forEach(r => { const c = r.canal || 'Direto'; canais[c] = (canais[c] || 0) + 1; });
+      const preferido = Object.entries(canais).sort((a,b) => b[1] - a[1])[0];
+      if (preferido && preferido[1] >= 2) insights.push('Plataforma preferida: ' + preferido[0] + ' (' + preferido[1] + 'x).');
+
+      // Fim de semana
+      const fdsCount = validas.filter(r => {
+        if (!r.checkin) return false;
+        const d = new Date(r.checkin + 'T00:00').getDay();
+        return d === 5 || d === 6;
+      }).length;
+      if (validas.length >= 3 && fdsCount / validas.length >= 0.6) insights.push('Costuma chegar nos fins de semana.');
+
+      // Score de retenção
+      if (agrupado && agrupado.qtde >= 5) insights.push('Score de retenção: alto (VIP).');
+      else if (agrupado && agrupado.qtde >= 2) insights.push('Score de retenção: médio (recorrente).');
+      else insights.push('Primeira hospedagem registrada na Domus.');
+
+      if (!insights.length) insights.push('Sem padrão claro ainda — poucas reservas pra cruzar.');
+
+      lista.innerHTML = insights.map(t => '<li class="flex gap-2"><span class="text-domus-azul">•</span><span>' + t + '</span></li>').join('');
+    }
+
+    function popularNotasInternas(hospede) {
+      const ta = document.getElementById('hpNotasInternas');
+      const status = document.getElementById('hpNotasStatus');
+      ta.value = (hospede && hospede.notas_internas) || '';
+      status.textContent = hospede ? '' : 'Hóspede não cadastrado — notas não serão salvas';
+      ta.disabled = !hospede;
+      ta.oninput = () => {
+        if (!hospede || !hospede.id) return;
+        status.textContent = 'Salvando…';
+        clearTimeout(_hpNotasDebounce);
+        _hpNotasDebounce = setTimeout(async () => {
+          try {
+            const { error } = await db.from('hospedes')
+              .update({ notas_internas: ta.value })
+              .eq('id', hospede.id);
+            if (error) throw error;
+            status.textContent = 'Salvo';
+            setTimeout(() => { status.textContent = ''; }, 1500);
+          } catch (err) {
+            console.error(err);
+            status.textContent = 'Erro ao salvar';
+          }
+        }, 1000);
+      };
+    }
+
+    function popularDocumentos(hospede) {
+      const grid = document.getElementById('hpDocumentosGrid');
+      const docUrl = hospede && hospede.doc_url;
+      const selfieUrl = hospede && hospede.selfie_url;
+      const contratoUrl = hospede && hospede.contrato_url;
+      const box = (url, label) => url
+        ? '<a href="' + url + '" target="_blank" class="aspect-square rounded-lg bg-gray-50 border border-domus-borda overflow-hidden hover:border-domus-azul transition flex items-center justify-center" title="' + label + '"><img src="' + url + '" alt="' + label + '" class="w-full h-full object-cover"></a>'
+        : '<div class="aspect-square rounded-lg bg-gray-50 border border-dashed border-domus-borda flex items-center justify-center text-[10px] text-domus-texto-suave text-center p-2">Sem ' + label.toLowerCase() + '</div>';
+      grid.innerHTML = box(docUrl, 'Documento') + box(selfieUrl, 'Selfie') + box(contratoUrl, 'Contrato');
+    }
+
+    function voltarParaListaHospedes() {
+      document.getElementById('hospedePerfilView').classList.add('hidden');
+      document.getElementById('hospedesView').classList.remove('hidden');
+      _hpHospedeAtual = null;
+      _hpReservaAtualSel = null;
+      _hpReservasLista = [];
+    }
+
+    function editarHospedeStub() {
+      try { mostrarToast && mostrarToast('Em breve — formulário de edição completa.'); } catch(e){}
+      // TODO: abrir modal/inline de edição dos campos de hospedes (nome, e-mail, sexo, etc)
+    }
+
+    function calcularIdade(dataIso) {
+      if (!dataIso) return null;
+      try {
+        const hoje = new Date();
+        const nasc = new Date(dataIso + (dataIso.length === 10 ? 'T00:00:00' : ''));
+        let idade = hoje.getFullYear() - nasc.getFullYear();
+        const m = hoje.getMonth() - nasc.getMonth();
+        if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+        return idade > 0 && idade < 130 ? idade : null;
+      } catch (e) { return null; }
+    }
+
+    function calcularNoites(ci, co) {
+      if (!ci || !co) return 0;
+      try {
+        const a = new Date(ci); const b = new Date(co);
+        return Math.max(0, Math.round((b - a) / 86400000));
+      } catch (e) { return 0; }
     }
 
     async function loadHospedes() {
@@ -3407,12 +4515,27 @@
           // Buscar reservas ativas hoje pra marcar quem está hospedado agora
           const { data: ativasHoje } = await db
             .from('reservas')
-            .select('hospede_contato')
+            .select('hospede_nome, hospede_contato')
             .lte('checkin', hojeISO).gte('checkout', hojeISO)
             .neq('status', 'cancelada');
-          const telefonesAtivos = new Set((ativasHoje || []).map(r =>
-            (r.hospede_contato || '').replace(/[^0-9]/g, '')
-          ).filter(t => t.length >= 10));
+          // Matching robusto: telefone normalizado OU nome normalizado.
+          // Reservas Booking/Airbnb frequentemente vem com email no campo hospede_contato.
+          function _normTel(s) {
+            let t = String(s||'').replace(/[^0-9]/g, '');
+            if (t.length === 13 && t.startsWith('55')) t = t.slice(2);
+            return t.length >= 10 ? t : null;
+          }
+          function _normNome(s) {
+            return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+          }
+          const telefonesAtivos = new Set();
+          const nomesAtivos = new Set();
+          (ativasHoje || []).forEach(r => {
+            const t = _normTel(r.hospede_contato);
+            if (t) telefonesAtivos.add(t);
+            const n = _normNome(r.hospede_nome);
+            if (n && n.length >= 3) nomesAtivos.add(n);
+          });
 
           _crmTodosLocal = vipsConsolidados.map(h => ({
             nome: h.nome || '(sem nome)',
@@ -3424,8 +4547,8 @@
             qtde_canceladas: h.estadias_canceladas || 0,
             total: parseFloat(h.valor_total_gasto || 0),
             primeira: h.primeira_estadia,
-            ultima: h.ultima_estadia,
-            hospedadoAgora: telefonesAtivos.has(h.tel_norm),
+            última: h.ultima_estadia,
+            hospedadoAgora: telefonesAtivos.has(h.tel_norm) || nomesAtivos.has(_normNome(h.nome)),
             status_fidelidade: h.status_fidelidade,
             emoji_fidelidade: h.emoji_fidelidade,
             canais_usados: h.canais_usados || [],
@@ -3446,7 +4569,7 @@
             const k = nome.toLowerCase();
             if (!map[k]) map[k] = {
               nome, email: null, contato: r.hospede_contato || null,
-              qtde: 0, total: 0, primeira: null, ultima: null, hospedadoAgora: false, reservas: []
+              qtde: 0, total: 0, primeira: null, última: null, hospedadoAgora: false, reservas: []
             };
             map[k].qtde++;
             map[k].total += parseFloat(r.valor_total || 0);
@@ -3466,8 +4589,9 @@
         // KPIs
         const total = _crmTodos.length;
         const vips = _crmTodos.filter(h => h.qtde >= 5).length;
-        const recorrentes = _crmTodos.filter(h => h.qtde >= 2).length;
+        const recorrentes = _crmTodos.filter(h => h.qtde >= 2 && h.qtde < 5).length;
         const unicos = _crmTodos.filter(h => h.qtde === 1).length;
+        const semEstadia = _crmTodos.filter(h => !h.qtde || h.qtde === 0).length;
         const ativos = _crmTodos.filter(h => h.hospedadoAgora).length;
         const seisMesesAtras = new Date(Date.now() - 180*24*3600*1000).toISOString().slice(0,10);
         const emRisco = _crmTodos.filter(h => h.qtde >= 1 && h.ultima < seisMesesAtras).length;
@@ -3478,10 +4602,11 @@
           { label: 'VIP (5+)', valor: vips, cor: 'bg-amber-50 text-amber-700 border-amber-200' },
           { label: 'Recorrentes', valor: recorrentes, cor: 'bg-blue-50 text-blue-700 border-blue-200' },
           { label: 'Só 1x', valor: unicos, cor: 'bg-violet-50 text-violet-700 border-violet-200' },
+          { label: 'Sem estadia', valor: semEstadia, cor: 'bg-gray-50 text-gray-700 border-gray-200' },
           { label: 'Em risco', valor: emRisco, cor: 'bg-rose-50 text-rose-700 border-rose-200' }
-        ].map(k => `<div class="rounded-lg p-3 border ${k.cor} text-center">
-          <div class="text-2xl font-bold">${k.valor}</div>
-          <div class="text-[10px] uppercase tracking-wide opacity-80 font-semibold mt-1">${k.label}</div>
+        ].map(k => `<div class="rounded-lg p-2 sm:p-3 border ${k.cor} text-center">
+          <div class="text-lg sm:text-2xl font-bold">${k.valor}</div>
+          <div class="text-[9px] sm:text-[10px] uppercase tracking-wide opacity-80 font-semibold mt-1 leading-tight">${k.label}</div>
         </div>`).join('');
 
         const kpisEl = document.getElementById('crmKpis');
@@ -3940,16 +5065,91 @@
       const valor = document.getElementById('nrValor').value;
 
       try {
+        // CHECAGEM PREVIA — antes do INSERT, verifica se cama ja tem reserva
+        // sobrepondo (usando matchQuarto pra cobrir aliases).
+        const quartoObj = QUARTOS.find(q => q.id === quarto);
+        const { data: conflitos } = await db.from('reservas')
+          .select('id, cama, quarto, status, nao_contabilizar, hospede_nome, checkin, checkout')
+          .lt('checkin', checkout)
+          .gt('checkout', checkin)
+          .neq('status', 'cancelada');
+        const ocupando = (conflitos || []).filter(r => r.nao_contabilizar !== true).find(r =>
+          quartoObj ? matchQuarto(r, quartoObj) : (r.cama === quarto || r.quarto === quarto)
+        );
+        if (ocupando) {
+          mostrarToast('Conflito: ' + ocupando.hospede_nome + ' ja esta nesse quarto ' + (ocupando.checkin||'') + ' a ' + (ocupando.checkout||''), 'error');
+          return;
+        }
+
         const { error } = await db.from('reservas').insert({
           hospede_nome: nome, cama: quarto, checkin, checkout, plataforma,
           valor_total: parseFloat(valor), status: 'confirmada'
         });
-        if (error) throw error;
+        if (error) {
+          // Banco rejeitou (provavel: EXCLUSION CONSTRAINT pegou conflito que escapou da pre-checagem)
+          if ((error.message||'').includes('reservas_no_overbooking') || error.code === '23P01') {
+            mostrarToast('Esse quarto acabou de ser reservado por outra pessoa. Tente outro.', 'error');
+          } else throw error;
+          return;
+        }
         closeNovaReservaModal();
         mostrarToast('Reserva criada com sucesso!');
         if (currentView === 'home') loadHome();
         else if (currentView === 'reservas') loadReservas();
       } catch (err) { console.error('Erro:', err); mostrarToast('Erro ao criar reserva'); }
+    });
+
+    // BLOQUEAR QUARTO — cria uma reserva especial com plataforma='Bloqueio'.
+    // A trava EXCLUSION CONSTRAINT do banco protege contra duplicacao.
+    document.getElementById('bloqueioForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Bloqueando...'; }
+      try {
+        const de = document.getElementById('blDe').value;
+        const ate = document.getElementById('blAte').value;
+        const cama = document.getElementById('blQuarto').value;
+        const motivo = (document.getElementById('blMotivo').value || '').trim();
+        if (!de || !ate || !cama) {
+          mostrarToast('Preencha datas e quarto', 'error');
+          return;
+        }
+        if (ate <= de) {
+          mostrarToast('Data "Até" precisa ser depois de "De"', 'error');
+          return;
+        }
+        const { error } = await db.from('reservas').insert({
+          hospede_nome: '[BLOQUEIO] ' + (motivo || 'Sem motivo'),
+          plataforma: 'Bloqueio',
+          canal_codigo: 'bloqueio',
+          cama: cama,
+          checkin: de,
+          checkout: ate,
+          status: 'confirmada',
+          valor_total: 0,
+          nao_contabilizar: true,
+          observacoes: motivo || null
+        });
+        if (error) {
+          // Mais provavel: trava EXCLUSION CONSTRAINT pegou conflito
+          if ((error.message||'').includes('reservas_no_overbooking') || error.code === '23P01') {
+            mostrarToast('Esse quarto ja esta ocupado/reservado nesse periodo. Veja no mapa.', 'error');
+          } else {
+            console.error('[bloquear] erro:', error);
+            mostrarToast('Erro ao bloquear. Tente de novo.', 'error');
+          }
+          return;
+        }
+        mostrarToast('Quarto bloqueado com sucesso ✅', 'success');
+        closeBloqueioModal();
+        if (currentView === 'home') loadHome();
+        else if (currentView === 'mapa') { try { renderMapa(); } catch(err){} }
+      } catch (err) {
+        console.error('[bloquear] excecao:', err);
+        mostrarToast('Erro inesperado. Tente de novo.', 'error');
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Bloquear'; }
+      }
     });
 
     document.getElementById('novoCupomForm')?.addEventListener('submit', async (e) => {
@@ -4100,6 +5300,10 @@
       if (!_currentReservaId) return;
       if (!confirm('Fazer check-out desta reserva? Vai abrir o WhatsApp do hóspede pra você enviar a mensagem.')) return;
 
+      // ABRE A JANELA AQUI, no user gesture context (browsers bloqueiam window.open depois de await)
+      // Vamos setar a URL real ao final.
+      const wppWin = window.open('about:blank', '_blank');
+
       const reservaIdLocal = _currentReservaId;
 
       // 1) Buscar dados da reserva
@@ -4121,13 +5325,19 @@
         .eq('id', reservaIdLocal)
         .select('id, status');
       if (errStatus) {
+        try { if (wppWin) wppWin.close(); } catch(e){}
         mostrarToast('Erro ao fazer check-out: ' + (errStatus.message || ''), 'error');
         return;
       }
       if (!upd || !upd.length) {
+        try { if (wppWin) wppWin.close(); } catch(e){}
         mostrarToast('Mudança bloqueada (sem permissão).', 'error');
         return;
       }
+
+      // 2b) NOTA: tarefa de limpeza é criada automaticamente pelo trigger SQL
+      // trg_criar_tarefa_apos_reserva (em automatizar_tarefas_limpeza.sql).
+      // O quarto vai aparecer como "em limpeza" no Home ate Vivian finalizar.
 
       // 3) Detectar tipo de hóspede pra escolher mensagem
       const cama = (reserva.cama || '').toLowerCase();
@@ -4160,15 +5370,77 @@
       else if (eCompartilhado) { msg = msgCompartilhado; tipoMsg = 'compartilhado'; }
       else { msg = msgPadrao; tipoMsg = 'padrão'; }
 
-      // 5) Abrir WhatsApp
-      const tel = normalizarTelefone(reserva.hospede_contato || reserva.hospede_telefone || '');
-      if (!tel) {
-        mostrarToast('Check-out feito, mas sem telefone do hóspede. Copie a mensagem do console.', 'info');
-        console.log('===== MENSAGEM CHECK-OUT (' + tipoMsg + ') =====\n' + msg.replace(/\\n/g,'\n'));
-      } else {
-        const url = 'https://wa.me/' + String(tel).replace(/\\D/g,'') + '?text=' + encodeURIComponent(msg.replace(/\\n/g,'\n'));
-        window.open(url, '_blank');
+      // 5) Tentar achar telefone do hospede (reserva > tabela hospedes)
+      let tel = normalizarTelefone(reserva.hospede_contato || reserva.hospede_telefone || '');
+      if (!tel && reserva.hospede_id) {
+        try {
+          const { data: h } = await db.from('hospedes').select('telefone').eq('id', reserva.hospede_id).maybeSingle();
+          if (h && h.telefone) tel = normalizarTelefone(h.telefone);
+        } catch(e) { /* ok */ }
+      }
+      if (!tel && reserva.hospede_nome) {
+        try {
+          const { data: h2 } = await db.from('hospedes').select('telefone').ilike('nome', reserva.hospede_nome).limit(1);
+          if (h2 && h2[0] && h2[0].telefone) tel = normalizarTelefone(h2[0].telefone);
+        } catch(e) { /* ok */ }
+      }
+
+      // Limpa telefone pra so digitos (regex correta — versao anterior tinha \\D que nao funciona)
+      const telDigitos = tel ? String(tel).replace(/\D/g,'') : '';
+
+      // 6) Abrir WhatsApp ou mostrar modal copy-paste se nao tem telefone
+      if (telDigitos) {
+        const url = 'https://wa.me/' + telDigitos + '?text=' + encodeURIComponent(msg);
+        try {
+          if (wppWin && !wppWin.closed) {
+            wppWin.location.href = url;
+          } else {
+            window.open(url, '_blank');
+          }
+        } catch(eWpp) {
+          window.open(url, '_blank');
+        }
         mostrarToast('Check-out feito! WhatsApp aberto (' + tipoMsg + ')');
+      } else {
+        // Fechar janela em branco
+        try { if (wppWin) wppWin.close(); } catch(e){}
+        // Mostrar MODAL com a mensagem pra Gabi copiar manualmente
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px;';
+        overlay.innerHTML = `
+          <div style="background:#fff;border-radius:14px;max-width:520px;width:100%;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,0.2);">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
+              <h3 style="margin:0;font-family:Georgia,serif;font-size:18px;color:#0A3142;">📋 Mensagem pra ${(reserva.hospede_nome||'hospede').split(' ')[0]}</h3>
+              <button id="ck-close" style="background:none;border:0;font-size:22px;cursor:pointer;color:#5A6B7B;line-height:1;">×</button>
+            </div>
+            <div style="background:#FEF3C7;border-left:4px solid #F59E0B;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;color:#92400E;">
+              ⚠️ Esse hóspede não tem telefone cadastrado (provavelmente reserva Booking sem contato). Copie a mensagem abaixo e envie pelo canal correto.
+            </div>
+            <textarea id="ck-msg" readonly style="width:100%;min-height:200px;padding:12px;border:1px solid #E5E5E5;border-radius:8px;font-size:13px;font-family:'Segoe UI',sans-serif;resize:vertical;background:#F8F5F0;">${msg}</textarea>
+            <div style="display:flex;gap:10px;margin-top:14px;">
+              <button id="ck-copy" style="flex:1;padding:12px;background:#008B9C;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">📋 Copiar mensagem</button>
+              <button id="ck-ok" style="padding:12px 20px;background:#fff;color:#5A6B7B;border:1px solid #E5E5E5;border-radius:8px;cursor:pointer;font-size:14px;">Fechar</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        const fechar = () => { try { overlay.remove(); } catch(e){} };
+        overlay.querySelector('#ck-close').onclick = fechar;
+        overlay.querySelector('#ck-ok').onclick = fechar;
+        overlay.querySelector('#ck-copy').onclick = async () => {
+          try {
+            await navigator.clipboard.writeText(msg);
+            const b = overlay.querySelector('#ck-copy');
+            b.textContent = '✅ Copiado!';
+            b.style.background = '#15803D';
+            setTimeout(fechar, 900);
+          } catch(e) {
+            overlay.querySelector('#ck-msg').select();
+            document.execCommand('copy');
+            mostrarToast('Mensagem copiada (use Ctrl+V pra colar)');
+          }
+        };
+        mostrarToast('Check-out feito! Hospede sem telefone — mensagem aberta pra copiar (' + tipoMsg + ')', 'info');
       }
 
       // 6) Recarregar
@@ -4328,29 +5600,31 @@
       sel.innerHTML = '<option value="">Carregando...</option>';
 
       try {
-        // Busca todas reservas que sobrepõem essa janela (excluindo a atual)
+        // Busca todas reservas que sobrepõem essa janela (excluindo a atual e canceladas/marcadas)
         const { data: conflitos } = await db
           .from('reservas')
-          .select('id, cama, quarto, hospede_nome, checkin, checkout')
+          .select('id, cama, quarto, hospede_nome, checkin, checkout, status, nao_contabilizar')
           .neq('id', reservaAtualId)
           .neq('status', 'cancelada')
           .lt('checkin', checkout)
           .gt('checkout', checkin);
 
-        const ocupados = new Set();
-        (conflitos || []).forEach(c => {
-          const ocupado = (c.cama || c.quarto || '').trim();
-          if (ocupado) ocupados.add(ocupado.toLowerCase());
-        });
+        // Filtra fora marcadas pra nao contar
+        const reservasConflitantes = (conflitos || []).filter(r => r.nao_contabilizar !== true);
 
         sel.innerHTML = '';
         QUARTOS.forEach(q => {
-          const ocupado = ocupados.has(q.id.toLowerCase());
+          // Usa matchQuarto pra cobrir aliases (uppercase/underscore/etc)
+          const ocupado = reservasConflitantes.some(r => matchQuarto(r, q));
+          const ehAtual = quartoAtual && (
+            (quartoAtual||'').toLowerCase().trim() === q.id.toLowerCase() ||
+            matchQuarto(quartoAtual, q)
+          );
           const opt = document.createElement('option');
           opt.value = q.id;
           opt.textContent = q.label + (ocupado ? ' — OCUPADO' : '') + ' · R$ ' + q.preco;
-          opt.disabled = ocupado && q.id.toLowerCase() !== quartoAtual.toLowerCase();
-          if (q.id.toLowerCase() === quartoAtual.toLowerCase()) opt.selected = true;
+          opt.disabled = ocupado && !ehAtual;
+          if (ehAtual) opt.selected = true;
           sel.appendChild(opt);
         });
         hint.textContent = 'Disponíveis no período ' + checkin + ' a ' + checkout + '. Quartos ocupados ficam desabilitados.';
@@ -4481,7 +5755,109 @@
     function closeNovaReservaModal() {
       document.getElementById('novaReservaModal').classList.add('hidden');
       try { document.getElementById('novaReservaForm').reset(); } catch(e){}
+      var res = document.getElementById('nrNomeResults'); if (res) res.classList.add('hidden');
+      var st = document.getElementById('nrNomeStatus'); if (st) st.classList.add('hidden');
+      var hid = document.getElementById('nrHospedeId'); if (hid) hid.value = '';
     }
+
+    // ============ AUTOCOMPLETE CRM ===========
+    let _hospAcDeb;
+    async function buscarHospedesAutocomplete(termo) {
+      const box = document.getElementById('nrNomeResults');
+      if (!box) return;
+      // Quando seleciona, limpa o hidden pra forcar nova busca/selecao
+      var hid = document.getElementById('nrHospedeId'); if (hid) hid.value = '';
+      clearTimeout(_hospAcDeb);
+      termo = (termo || '').trim();
+      if (termo.length < 2) { box.classList.add('hidden'); box.innerHTML=''; return; }
+      _hospAcDeb = setTimeout(async () => {
+        try {
+          // Busca em "hospedes" (CRM consolidado). Se nao existir, tenta em reservas (distinto)
+          let lista = [];
+          try {
+            const r = await db.from('hospedes')
+              .select('id, nome, email, telefone, total_estadias')
+              .ilike('nome', '%' + termo + '%')
+              .order('total_estadias', { ascending: false, nullsFirst: false })
+              .limit(8);
+            lista = r.data || [];
+          } catch (e) { /* tabela pode nao existir */ }
+          // Fallback: distinct em reservas
+          if (!lista.length) {
+            const r2 = await db.from('reservas')
+              .select('hospede_nome, hospede_contato')
+              .ilike('hospede_nome', '%' + termo + '%')
+              .neq('hospede_nome','')
+              .limit(20);
+            const seen = new Set();
+            (r2.data || []).forEach(x => {
+              const k = (x.hospede_nome||'').toLowerCase();
+              if (k && !seen.has(k)) {
+                seen.add(k);
+                lista.push({ id: null, nome: x.hospede_nome, telefone: x.hospede_contato || '', email: '' });
+              }
+            });
+            lista = lista.slice(0, 8);
+          }
+          renderHospedesAutocomplete(lista, termo);
+        } catch (err) {
+          console.warn('autocomplete err:', err);
+          box.classList.add('hidden');
+        }
+      }, 250);
+    }
+
+    function renderHospedesAutocomplete(lista, termo) {
+      const box = document.getElementById('nrNomeResults');
+      if (!box) return;
+      if (!lista.length) {
+        box.innerHTML = '<div class="p-3 text-sm text-domus-texto-suave">Ninguém com esse nome ainda. Clique no <strong>+</strong> pra cadastrar.</div>';
+        box.classList.remove('hidden');
+        return;
+      }
+      const rows = lista.map(h => {
+        const sub = [h.telefone, h.email].filter(Boolean).join(' · ');
+        const estadias = h.total_estadias ? '<span class="ml-2 text-[10px] bg-domus-azul/10 text-domus-azul px-1.5 py-0.5 rounded-full">'+h.total_estadias+'×</span>' : '';
+        const dataAttr = 'data-id="' + (h.id || '') + '" data-nome="' + (h.nome||'').replace(/"/g,'&quot;') + '" data-tel="' + (h.telefone||'').replace(/"/g,'&quot;') + '" data-email="' + (h.email||'').replace(/"/g,'&quot;') + '"';
+        return '<button type="button" ' + dataAttr + ' onclick="selecionarHospede(this)" class="w-full text-left px-3 py-2 hover:bg-domus-azul/5 border-b border-gray-100 last:border-0">'
+          + '<div class="text-sm text-domus-texto font-medium">' + (h.nome||'') + estadias + '</div>'
+          + (sub ? '<div class="text-[11px] text-domus-texto-suave">' + sub + '</div>' : '')
+          + '</button>';
+      }).join('');
+      box.innerHTML = rows + '<button type="button" onclick="abrirNovoCliente()" class="w-full text-left px-3 py-2 border-t-2 border-domus-azul/30 text-sm text-domus-azul font-medium hover:bg-domus-azul/5">+ Cadastrar "' + termo + '" como novo cliente</button>';
+      box.classList.remove('hidden');
+    }
+
+    function selecionarHospede(btn) {
+      const nome = btn.getAttribute('data-nome') || '';
+      const tel = btn.getAttribute('data-tel') || '';
+      const email = btn.getAttribute('data-email') || '';
+      const id = btn.getAttribute('data-id') || '';
+      document.getElementById('nrNome').value = nome;
+      document.getElementById('nrContato').value = email || tel;
+      document.getElementById('nrHospedeId').value = id;
+      document.getElementById('nrNomeResults').classList.add('hidden');
+      const st = document.getElementById('nrNomeStatus');
+      if (st) { st.textContent = '✓ Hóspede selecionado do CRM'; st.classList.remove('hidden'); st.classList.add('text-domus-azul'); }
+    }
+
+    function abrirNovoCliente() {
+      // Limpa selecao do CRM (vai criar novo na hora de salvar a reserva)
+      document.getElementById('nrHospedeId').value = '';
+      document.getElementById('nrNomeResults').classList.add('hidden');
+      const st = document.getElementById('nrNomeStatus');
+      if (st) { st.textContent = '✓ Vai criar como novo cliente'; st.classList.remove('hidden'); st.classList.remove('text-domus-azul'); st.classList.add('text-green-600'); }
+      // Foca no próximo campo
+      const contato = document.getElementById('nrContato');
+      if (contato) contato.focus();
+    }
+    // Fechar dropdown se clicar fora
+    document.addEventListener('click', function(e) {
+      const box = document.getElementById('nrNomeResults');
+      const inp = document.getElementById('nrNome');
+      if (!box || !inp) return;
+      if (!box.contains(e.target) && e.target !== inp) box.classList.add('hidden');
+    });
     function closeNovoCupomModal() {
       document.getElementById('novoCupomModal').classList.add('hidden');
       try { document.getElementById('novoCupomForm').reset(); } catch(e){}
@@ -4499,6 +5875,9 @@
     }
     function abrirBloqueioModal() {
       try { document.getElementById('blQuarto').value = ''; } catch(e){}
+      try { document.getElementById('blDe').value = ''; } catch(e){}
+      try { document.getElementById('blAte').value = ''; } catch(e){}
+      try { resetarDropdownQuartos('blQuarto','blQuartoStatus'); } catch(e){}
       document.getElementById('bloqueioModal').classList.remove('hidden');
     }
     async function abrirPagamentoModal() {
