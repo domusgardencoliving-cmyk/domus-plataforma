@@ -2678,12 +2678,13 @@
       const hoje = hojeISO();
 
       try {
-        // OCUPAÇÃO: tudo que está ativo hoje (não cancelada/rescindida)
+        // OCUPAÇÃO: quem dorme hoje na casa (checkin <= hoje E checkout > hoje).
+        // .gt em vez de .gte pra não contar quem fez check-out hoje (já saiu).
         const { data: reservas } = await db
           .from('reservas')
           .select('*')
           .lte('checkin', hoje)
-          .gte('checkout', hoje)
+          .gt('checkout', hoje)
           .not('status', 'in', '(cancelada,rescindida)')
           .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
 
