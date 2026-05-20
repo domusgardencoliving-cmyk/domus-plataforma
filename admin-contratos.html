@@ -92,6 +92,47 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #FFF8F0; }
   </div>
 </div>
 
+
+<!-- Modal Aprovação -->
+<div id="modalAprovar" class="hidden">
+  <div class="modal-overlay" onclick="fecharAprovar()"></div>
+  <div class="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full pointer-events-auto p-6">
+      <h3 class="font-serif text-xl text-domus-azul-escuro mb-3">Aprovar contrato</h3>
+      <p class="text-xs text-domus-texto-suave mb-4">Confirme os detalhes finais antes de gerar o contrato no ZapSign.</p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-domus-texto-suave mb-1">Quarto / Cama</label>
+          <input id="aprQuarto" type="text" placeholder="ex: Individual 3" class="w-full px-3 py-2 border border-domus-borda rounded-lg text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs text-domus-texto-suave mb-1">Valor final do aluguel (R$)</label>
+          <input id="aprValorFinal" type="number" step="0.01" min="0" class="w-full px-3 py-2 border border-domus-borda rounded-lg text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs text-domus-texto-suave mb-1">Parcelas da caução (1 ou 2)</label>
+          <select id="aprParcelasCaucao" class="w-full px-3 py-2 border border-domus-borda rounded-lg text-sm">
+            <option value="1">À vista (1 parcela)</option>
+            <option value="2">Em 2 parcelas</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-domus-texto-suave mb-1">Cortesia comercial (dias extras, além dos dias do mês de entrada)</label>
+          <input id="aprCortesiaDias" type="number" min="0" placeholder="0" class="w-full px-3 py-2 border border-domus-borda rounded-lg text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs text-domus-texto-suave mb-1">Observação da cortesia (opcional, vai no contrato)</label>
+          <textarea id="aprCortesiaObs" rows="2" placeholder="ex: Negociado durante o atendimento" class="w-full px-3 py-2 border border-domus-borda rounded-lg text-sm"></textarea>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-5">
+        <button onclick="fecharAprovar()" class="flex-1 px-4 py-3 border border-domus-borda rounded-lg text-sm">Cancelar</button>
+        <button id="btnConfirmarAprovacao" onclick="confirmarAprovacao()" class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">Aprovar e gerar contrato</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
@@ -300,16 +341,57 @@ function fecharModal() {
   document.getElementById('modalDetalhes').classList.add('hidden');
 }
 
-async function aprovar(id) {
-  if (!confirm('Aprovar este contrato? Vai pra fila do ZapSign (quando estiver integrado).')) return;
-  const { data, error } = await db.rpc('aprovar_contrato_dominha', { p_admin_id: currentAdmin.admin_id, p_contrato_id: id });
-  if (error || !data?.success) {
-    alert('Erro: ' + (data?.erro || error?.message));
-    return;
-  }
-  fecharModal();
-  carregarContratos();
+let _contratoAprovandoId = null;
+function aprovar(id) {
+  _contratoAprovandoId = id;
+  const c = contratos.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('aprQuarto').value = c.quarto || '';
+  document.getElementById('aprValorFinal').value = c.valor_final || c.aluguel || (c.modalidade === '12' ? 1450 : 1250);
+  document.getElementById('aprParcelasCaucao').value = '1';
+  document.getElementById('aprCortesiaDias').value = c.cortesia_dias_extras || 0;
+  document.getElementById('aprCortesiaObs').value = '';
+  document.getElementById('modalAprovar').classList.remove('hidden');
 }
+
+function fecharAprovar() {
+  _contratoAprovandoId = null;
+  document.getElementById('modalAprovar').classList.add('hidden');
+}
+
+async function confirmarAprovacao() {
+  if (!_contratoAprovandoId) return;
+  const btn = document.getElementById('btnConfirmarAprovacao');
+  btn.disabled = true; btn.textContent = 'Processando...';
+  try {
+    const payload = {
+      contrato_id: _contratoAprovandoId,
+      quarto: document.getElementById('aprQuarto').value.trim() || null,
+      valor_final: parseFloat(document.getElementById('aprValorFinal').value) || null,
+      parcelas_caucao: parseInt(document.getElementById('aprParcelasCaucao').value) || 1,
+      cortesia_dias_extras: parseInt(document.getElementById('aprCortesiaDias').value) || 0,
+      cortesia_obs: document.getElementById('aprCortesiaObs').value.trim() || null
+    };
+    const r = await fetch('https://motwhfbpundrhvuwjntw.supabase.co/functions/v1/processar-aprovacao-contrato', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await r.json();
+    if (!r.ok || !result.success) {
+      alert('Erro ao processar: ' + (result.error || result.detalhe?.detail || JSON.stringify(result).slice(0,200)));
+      return;
+    }
+    alert('Contrato gerado no ZapSign!\nLink: ' + (result.sign_link || '(verificar email da moradora)') + (result.sandbox ? '\n\n⚠️ SANDBOX (sem validade jurídica)' : ''));
+    fecharAprovar();
+    fecharModal();
+    carregarContratos();
+  } catch (e) {
+    alert('Erro: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Aprovar e gerar contrato';
+  }
+}
+
 
 function rejeitar(id) {
   contratoSelecionadoParaRejeicao = id;
