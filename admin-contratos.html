@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contratos Pendentes — DG Gestão</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: { colors: {
+  'domus-azul': '#008B9C', 'domus-azul-escuro': '#0A3142', 'domus-dourado': '#C9A961',
+  'domus-texto': '#222222', 'domus-texto-suave': '#717171', 'domus-borda': '#EBEBEB',
+  'domus-creme': '#FFF8F0', 'domus-bege': '#F5E9D7'
+}}}}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body { font-family: 'Inter', system-ui, sans-serif; background: #FFF8F0; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(10,49,66,0.5); backdrop-filter: blur(4px); z-index: 40; }
+</style>
+</head>
+<body class="min-h-screen text-domus-texto">
+
+<!-- Login -->
+<div id="loginOverlay" class="fixed inset-0 bg-gradient-to-br from-domus-azul-escuro to-domus-azul flex items-center justify-center p-6 z-50">
+  <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full">
+    <h1 class="font-serif text-2xl text-domus-azul-escuro mb-1">DG Gestão</h1>
+    <p class="text-sm text-domus-texto-suave mb-6">Contratos Pendentes</p>
+    <form id="loginForm" class="space-y-4">
+      <input id="loginEmail" type="email" placeholder="E-mail" required class="w-full px-4 py-3 border border-domus-borda rounded-xl text-sm focus:border-domus-azul outline-none" />
+      <input id="loginPassword" type="password" placeholder="Senha" required class="w-full px-4 py-3 border border-domus-borda rounded-xl text-sm focus:border-domus-azul outline-none" />
+      <p id="loginError" class="hidden text-red-600 text-xs"></p>
+      <button type="submit" class="w-full py-3 bg-domus-azul text-white rounded-xl font-medium hover:bg-domus-azul-escuro">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" class="hidden max-w-6xl mx-auto px-6 py-8">
+  <header class="flex items-center justify-between mb-6 pb-4 border-b border-domus-borda">
+    <div>
+      <h1 class="font-serif text-3xl text-domus-azul-escuro">📋 Contratos Pendentes</h1>
+      <p class="text-sm text-domus-texto-suave" id="userInfo">—</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="carregarContratos()" class="px-4 py-2 bg-white border border-domus-borda rounded-lg text-sm hover:bg-gray-50">🔄 Atualizar</button>
+      <button onclick="sair()" class="px-4 py-2 bg-white border border-domus-borda rounded-lg text-sm hover:bg-gray-50">Sair</button>
+    </div>
+  </header>
+
+  <div id="kpis" class="grid grid-cols-3 gap-3 mb-6">
+    <div class="bg-white p-4 rounded-xl border border-domus-borda">
+      <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Aguardando revisão</p>
+      <p class="text-2xl font-semibold text-domus-azul-escuro mt-1" id="kpiAguardando">—</p>
+    </div>
+    <div class="bg-white p-4 rounded-xl border border-domus-borda">
+      <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Aprovados</p>
+      <p class="text-2xl font-semibold text-green-600 mt-1" id="kpiAprovados">—</p>
+    </div>
+    <div class="bg-white p-4 rounded-xl border border-domus-borda">
+      <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Total visível</p>
+      <p class="text-2xl font-semibold text-domus-texto-suave mt-1" id="kpiTotal">—</p>
+    </div>
+  </div>
+
+  <div id="lista" class="space-y-3">
+    <p class="text-center text-domus-texto-suave py-12">Carregando…</p>
+  </div>
+</div>
+
+<!-- Modal detalhes -->
+<div id="modalDetalhes" class="hidden">
+  <div class="modal-overlay" onclick="fecharModal()"></div>
+  <div class="fixed inset-0 flex items-start justify-center p-4 z-50 pointer-events-none overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full pointer-events-auto my-8" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Modal rejeitar -->
+<div id="modalRejeitar" class="hidden">
+  <div class="modal-overlay" onclick="fecharRejeitar()"></div>
+  <div class="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full pointer-events-auto p-6">
+      <h3 class="font-serif text-xl text-domus-azul-escuro mb-3">Rejeitar contrato</h3>
+      <p class="text-sm text-domus-texto-suave mb-4">Por quê? (vai pra observações no banco)</p>
+      <textarea id="rejMotivo" rows="3" class="w-full px-3 py-2 border border-domus-borda rounded-lg text-sm" placeholder="Ex: foto borrada, dados não conferem..."></textarea>
+      <div class="flex gap-2 mt-4">
+        <button onclick="fecharRejeitar()" class="flex-1 px-4 py-2 border border-domus-borda rounded-lg text-sm">Cancelar</button>
+        <button onclick="confirmarRejeicao()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Rejeitar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentAdmin = null;
+let contratos = [];
+let contratoSelecionadoParaRejeicao = null;
+
+// ============ LOGIN ============
+function restaurarSessao() {
+  try {
+    const s = JSON.parse(localStorage.getItem('dg_admin_session') || 'null');
+    if (s && s.admin_id) {
+      currentAdmin = s;
+      mostrarApp();
+      return true;
+    }
+  } catch(e){}
+  return false;
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const senha = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.classList.add('hidden');
+
+  const { data, error } = await db.rpc('verificar_admin_login', { p_email: email, p_senha: senha });
+  if (error || !data || !data.success) {
+    errEl.textContent = (data && data.erro) || 'E-mail ou senha incorretos.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  currentAdmin = {
+    admin_id: data.admin_id, email: data.email,
+    nome: data.nome || email.split('@')[0], perfil: data.perfil || 'admin'
+  };
+  try { localStorage.setItem('dg_admin_session', JSON.stringify(currentAdmin)); } catch(e){}
+  mostrarApp();
+});
+
+function sair() {
+  try { localStorage.removeItem('dg_admin_session'); } catch(e){}
+  currentAdmin = null;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('loginOverlay').classList.remove('hidden');
+}
+
+function mostrarApp() {
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('userInfo').textContent = currentAdmin.nome + ' · ' + currentAdmin.email;
+  carregarContratos();
+}
+
+// ============ LISTAR ============
+async function carregarContratos() {
+  document.getElementById('lista').innerHTML = '<p class="text-center text-domus-texto-suave py-12">Carregando…</p>';
+  const { data, error } = await db.rpc('listar_contratos_pendentes', { p_admin_id: currentAdmin.admin_id });
+  if (error || !data || !data.success) {
+    document.getElementById('lista').innerHTML = '<p class="text-center text-red-600 py-12">Erro: ' + ((data && data.erro) || error?.message) + '</p>';
+    return;
+  }
+  contratos = data.contratos || [];
+  const aguard = contratos.filter(c => c.status === 'aguardando_revisao').length;
+  const aprov = contratos.filter(c => c.status === 'aprovado_para_zapsign').length;
+  document.getElementById('kpiAguardando').textContent = aguard;
+  document.getElementById('kpiAprovados').textContent = aprov;
+  document.getElementById('kpiTotal').textContent = contratos.length;
+  renderizar();
+}
+
+function fmtBR(n) { return Number(n||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtData(s) { if(!s) return '—'; const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
+function statusBadge(s) {
+  const c = s === 'aguardando_revisao' ? 'bg-amber-100 text-amber-800' :
+            s === 'aprovado_para_zapsign' ? 'bg-blue-100 text-blue-800' :
+            s === 'assinado' ? 'bg-green-100 text-green-800' :
+            s === 'rejeitado' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800';
+  return `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium ${c}">${s}</span>`;
+}
+
+function renderizar() {
+  const cont = document.getElementById('lista');
+  if (!contratos.length) {
+    cont.innerHTML = '<div class="bg-white p-12 rounded-xl border border-domus-borda text-center"><p class="text-domus-texto-suave">Nenhum contrato pendente. 🌿</p></div>';
+    return;
+  }
+  cont.innerHTML = contratos.map(c => {
+    const modLabel = c.modalidade === '12' ? '12 meses tudo incluso' : '3 meses com caução';
+    return `
+      <div class="bg-white p-5 rounded-xl border border-domus-borda hover:shadow-md transition cursor-pointer" onclick="abrirDetalhes('${c.id}')">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-1">
+              <h3 class="font-semibold text-domus-azul-escuro">${c.nome}</h3>
+              ${statusBadge(c.status)}
+            </div>
+            <p class="text-xs text-domus-texto-suave">${modLabel} · entrada ${fmtData(c.data_entrada)} · R$ ${fmtBR(c.aluguel)}/mês</p>
+            <p class="text-xs text-domus-texto-suave mt-1">${c.cpf || '—'} · 📱 ${c.telefone || '—'} · ✉ ${c.email || '—'}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[10px] text-domus-texto-suave uppercase">Submetido</p>
+            <p class="text-xs">${new Date(c.criado_em).toLocaleString('pt-BR')}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============ DETALHES + AÇÕES ============
+async function abrirDetalhes(id) {
+  const c = contratos.find(x => x.id === id);
+  if (!c) return;
+  const modLabel = c.modalidade === '12' ? '12 meses tudo incluso' : '3 meses com caução';
+
+  // Gerar signed URLs das fotos
+  const fotos = [
+    {nome: 'RG/CNH frente', path: c.doc_frente_path},
+    {nome: 'RG/CNH verso', path: c.doc_verso_path},
+    {nome: 'CPF', path: c.doc_cpf_path},
+    {nome: 'Selfie', path: c.selfie_path}
+  ];
+  const urls = await Promise.all(fotos.map(async f => {
+    if (!f.path) return {...f, url: null};
+    const { data } = await db.storage.from('contratos-dominhas').createSignedUrl(f.path, 60 * 60);
+    return {...f, url: data?.signedUrl};
+  }));
+
+  const crono = Array.isArray(c.cronograma) ? c.cronograma : [];
+
+  const html = `
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-serif text-2xl text-domus-azul-escuro">${c.nome}</h2>
+        <button onclick="fecharModal()" class="text-domus-texto-suave hover:text-domus-texto text-2xl leading-none">×</button>
+      </div>
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div><strong>Idade:</strong> ${c.idade || '—'}</div>
+          <div><strong>Profissão:</strong> ${c.profissao || '—'}</div>
+          <div><strong>CPF:</strong> ${c.cpf || '—'}</div>
+          <div><strong>RG:</strong> ${c.rg || '—'}</div>
+          <div><strong>Telefone:</strong> ${c.telefone || '—'}</div>
+          <div><strong>E-mail:</strong> ${c.email || '—'}</div>
+          ${c.endereco ? `<div class="col-span-2"><strong>Endereço:</strong> ${c.endereco}</div>` : ''}
+        </div>
+
+        <div class="bg-domus-creme/40 p-4 rounded-xl border border-domus-borda">
+          <p class="font-semibold text-domus-azul-escuro">${modLabel}</p>
+          <p class="text-sm text-domus-texto-suave">Aluguel R$ ${fmtBR(c.aluguel)} · Caução R$ ${fmtBR(c.caucao || 0)} · Multa R$ ${fmtBR(c.multa_rescisao || 0)}</p>
+          <p class="text-sm mt-1">Entrada: <strong>${fmtData(c.data_entrada)}</strong></p>
+        </div>
+
+        ${crono.length ? `
+          <div>
+            <p class="text-xs font-semibold text-domus-texto-suave uppercase mb-2">Cronograma</p>
+            <div class="space-y-1 text-sm">
+              ${crono.map(p => `<div class="flex justify-between border-b border-domus-borda/50 py-1"><span><strong>${p.data}</strong> — R$ ${fmtBR(p.valor)}</span><span class="text-xs text-domus-texto-suave">${p.composicao || ''}</span></div>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <div>
+          <p class="text-xs font-semibold text-domus-texto-suave uppercase mb-2">Contatos de emergência</p>
+          <div class="text-sm space-y-1">
+            <div>1. <strong>${c.emerg1_nome || '—'}</strong> · ${c.emerg1_tel || '—'} ${c.emerg1_rel ? `(${c.emerg1_rel})` : ''}</div>
+            <div>2. <strong>${c.emerg2_nome || '—'}</strong> · ${c.emerg2_tel || '—'} ${c.emerg2_rel ? `(${c.emerg2_rel})` : ''}</div>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold text-domus-texto-suave uppercase mb-2">Documentos enviados</p>
+          <div class="grid grid-cols-2 gap-2">
+            ${urls.map(f => f.url ?
+              `<a href="${f.url}" target="_blank" class="block p-3 border border-domus-borda rounded-lg text-sm hover:bg-gray-50">📄 <strong>${f.nome}</strong> <span class="text-domus-azul">→ ver</span></a>` :
+              `<div class="p-3 border border-domus-borda rounded-lg text-sm text-domus-texto-suave">📄 ${f.nome} <span class="text-red-500">(sem arquivo)</span></div>`
+            ).join('')}
+          </div>
+        </div>
+
+        ${c.observacoes ? `<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs"><strong>Observações:</strong><br>${c.observacoes.replace(/\n/g,'<br>')}</div>` : ''}
+
+        <div class="flex gap-2 pt-4 border-t border-domus-borda">
+          ${c.status === 'aguardando_revisao' ? `
+            <button onclick="rejeitar('${c.id}')" class="flex-1 px-4 py-3 border-2 border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-50">✖ Rejeitar</button>
+            <button onclick="aprovar('${c.id}')" class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">✓ Aprovar para ZapSign</button>
+          ` : c.status === 'aprovado_para_zapsign' ? `
+            <button onclick="rejeitar('${c.id}')" class="flex-1 px-4 py-3 border-2 border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-50">✖ Reverter / Rejeitar</button>
+            <div class="flex-1 px-4 py-3 bg-blue-50 text-blue-800 rounded-lg text-center text-sm">Aguardando integração ZapSign</div>
+          ` : ''}
+        </div>
+
+        <p class="text-[10px] text-domus-texto-suave font-mono">${c.id}</p>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalDetalhes').classList.remove('hidden');
+}
+
+function fecharModal() {
+  document.getElementById('modalDetalhes').classList.add('hidden');
+}
+
+async function aprovar(id) {
+  if (!confirm('Aprovar este contrato? Vai pra fila do ZapSign (quando estiver integrado).')) return;
+  const { data, error } = await db.rpc('aprovar_contrato_dominha', { p_admin_id: currentAdmin.admin_id, p_contrato_id: id });
+  if (error || !data?.success) {
+    alert('Erro: ' + (data?.erro || error?.message));
+    return;
+  }
+  fecharModal();
+  carregarContratos();
+}
+
+function rejeitar(id) {
+  contratoSelecionadoParaRejeicao = id;
+  document.getElementById('rejMotivo').value = '';
+  document.getElementById('modalRejeitar').classList.remove('hidden');
+}
+
+function fecharRejeitar() {
+  contratoSelecionadoParaRejeicao = null;
+  document.getElementById('modalRejeitar').classList.add('hidden');
+}
+
+async function confirmarRejeicao() {
+  if (!contratoSelecionadoParaRejeicao) return;
+  const motivo = document.getElementById('rejMotivo').value.trim();
+  const { data, error } = await db.rpc('rejeitar_contrato_dominha', {
+    p_admin_id: currentAdmin.admin_id,
+    p_contrato_id: contratoSelecionadoParaRejeicao,
+    p_motivo: motivo
+  });
+  if (error || !data?.success) {
+    alert('Erro: ' + (data?.erro || error?.message));
+    return;
+  }
+  fecharRejeitar();
+  fecharModal();
+  carregarContratos();
+}
+
+// Init
+restaurarSessao();
+</script>
+</body>
+</html>
