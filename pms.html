@@ -1912,7 +1912,27 @@
           <span id="acaoStatusBadge" class="font-semibold">—</span>
         </div>
 
-        <div class="space-y-2">
+        <!-- Bloco específico quando a reserva é um BLOQUEIO -->
+        <div id="acaoBlocoBloqueio" class="hidden space-y-2">
+          <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+            🔒 Esta entrada é um <strong>bloqueio de período</strong> — não há hóspede associado.
+            <span id="acaoBloqueioMotivo" class="block mt-1 text-xs"></span>
+          </div>
+          <button onclick="removerBloqueio()" id="btnRemoverBloqueio"
+            class="w-full px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 flex items-center justify-center gap-2 font-medium">
+            🔓 Remover Bloqueio (liberar quarto)
+          </button>
+          <button onclick="abrirEditarReserva()"
+            class="w-full px-4 py-2 bg-domus-azul text-white rounded text-sm hover:bg-domus-azul-escuro flex items-center justify-center gap-2">
+            ✏️ Editar período / quarto
+          </button>
+          <button onclick="closeAcaoModal()"
+            class="w-full px-4 py-2 bg-gray-200 text-domus-texto rounded text-sm hover:bg-gray-300 mt-3">
+            Fechar
+          </button>
+        </div>
+
+        <div id="acaoBlocoReserva" class="space-y-2">
           <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1">Status</p>
           <button onclick="fazerCheckinComMensagem()" id="btnCheckin"
             class="w-full px-4 py-2 bg-domus-verde text-white rounded text-sm hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
@@ -5277,14 +5297,87 @@
         if (!r) { mostrarToast('Reserva não encontrada', 'error'); return; }
         const badge = document.getElementById('acaoStatusBadge');
         if (badge) badge.textContent = (r.status || '—').toUpperCase();
-        // Habilita/desabilita botões conforme status
-        const status = (r.status || '').toLowerCase().replace('_','-');
-        const setDisabled = (id, disabled) => { const el = document.getElementById(id); if (el) el.disabled = !!disabled; };
-        setDisabled('btnCheckin', status === 'check-in' || status === 'check-out' || status === 'cancelada');
-        setDisabled('btnCheckout', status !== 'check-in');
-        setDisabled('btnCancelar', status === 'cancelada' || status === 'check-out');
+        // Detecta se é bloqueio (entrada criada pelo bloqueioForm, sem hóspede real)
+        const isBloqueio = (r.canal_codigo === 'bloqueio') || (r.plataforma === 'Bloqueio');
+        const blocoBloq = document.getElementById('acaoBlocoBloqueio');
+        const blocoRes  = document.getElementById('acaoBlocoReserva');
+        const tituloEl  = document.querySelector('#acaoModal h3');
+        if (isBloqueio) {
+          // Mostra UI específica do bloqueio, esconde botões de hospedagem
+          if (blocoBloq) blocoBloq.classList.remove('hidden');
+          if (blocoRes)  blocoRes.classList.add('hidden');
+          if (tituloEl)  tituloEl.textContent = 'Bloqueio de Período';
+          const motivoEl = document.getElementById('acaoBloqueioMotivo');
+          if (motivoEl) {
+            const motivo = (r.observacoes || (r.hospede_nome || '').replace(/^\[BLOQUEIO\]\s*/i, '') || '').trim();
+            motivoEl.textContent = motivo ? ('Motivo: ' + motivo) : '';
+          }
+        } else {
+          // UI padrão de reserva normal
+          if (blocoBloq) blocoBloq.classList.add('hidden');
+          if (blocoRes)  blocoRes.classList.remove('hidden');
+          if (tituloEl)  tituloEl.textContent = 'Ações da Reserva';
+          // Habilita/desabilita botões conforme status
+          const status = (r.status || '').toLowerCase().replace('_','-');
+          const setDisabled = (id, disabled) => { const el = document.getElementById(id); if (el) el.disabled = !!disabled; };
+          setDisabled('btnCheckin', status === 'check-in' || status === 'check-out' || status === 'cancelada');
+          setDisabled('btnCheckout', status !== 'check-in');
+          setDisabled('btnCancelar', status === 'cancelada' || status === 'check-out');
+        }
         document.getElementById('acaoModal').classList.remove('hidden');
       } catch (e) { console.error(e); mostrarToast('Erro ao abrir reserva', 'error'); }
+    }
+
+    // ============================================================
+    // REMOVER BLOQUEIO — devolve disponibilidade do quarto na data
+    // Bloqueios DG não têm hospedin_id, então DELETE é seguro.
+    // Filtro extra .eq('canal_codigo','bloqueio') garante que NUNCA
+    // apaga uma reserva de hóspede de verdade, mesmo se chamada por engano.
+    // ============================================================
+    async function removerBloqueio() {
+      if (!_currentReservaId) return;
+      if (!confirm('Remover este bloqueio? O quarto volta a ficar disponível nessas datas.')) return;
+      const reservaIdLocal = _currentReservaId;
+      const btn = document.getElementById('btnRemoverBloqueio');
+      if (btn) { btn.disabled = true; btn.textContent = 'Removendo...'; }
+      try {
+        // Tenta DELETE primeiro (limpo, libera o slot na EXCLUSION CONSTRAINT)
+        const { error: errDel } = await db
+          .from('reservas')
+          .delete()
+          .eq('id', reservaIdLocal)
+          .eq('canal_codigo', 'bloqueio');
+        if (errDel) {
+          console.warn('[removerBloqueio] DELETE falhou, tentando UPDATE:', errDel);
+          // Fallback: marcar como cancelada (também sai dos filtros do mapa)
+          const { error: errUpd } = await db
+            .from('reservas')
+            .update({ status: 'cancelada', nao_contabilizar: true, cancelado_em: new Date().toISOString() })
+            .eq('id', reservaIdLocal)
+            .eq('canal_codigo', 'bloqueio');
+          if (errUpd) {
+            console.error('[removerBloqueio] UPDATE também falhou:', errUpd);
+            mostrarToast('Erro ao remover bloqueio: ' + (errUpd.message || 'desconhecido'), 'error');
+            return;
+          }
+          mostrarToast('Bloqueio removido (cancelado) ✅', 'success');
+        } else {
+          mostrarToast('Bloqueio removido — quarto liberado ✅', 'success');
+        }
+        closeAcaoModal();
+        // Recarrega vista atual
+        if (typeof currentView !== 'undefined') {
+          if (currentView === 'home') loadHome();
+          else if (currentView === 'mapa') { try { renderMapa(); } catch(e){} try { loadMapa(); } catch(e){} }
+          else if (currentView === 'reservas') loadReservas();
+          else if (currentView === 'hospedes') loadHospedes();
+        }
+      } catch (e) {
+        console.error('[removerBloqueio] exceção:', e);
+        mostrarToast('Erro inesperado ao remover bloqueio', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🔓 Remover Bloqueio (liberar quarto)'; }
+      }
     }
 
     function closeAcaoModal() {
