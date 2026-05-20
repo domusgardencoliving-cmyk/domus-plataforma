@@ -184,15 +184,15 @@
               </div>
             </div>
 
-            <!-- Card 6 meses -->
-            <div id="card-6" onclick="selecionarModalidade('6')" class="card-modalidade cursor-pointer border-2 border-domus-borda rounded-2xl p-5 relative">
+            <!-- Card 12 meses -->
+            <div id="card-12" onclick="selecionarModalidade('12')" class="card-modalidade cursor-pointer border-2 border-domus-borda rounded-2xl p-5 relative">
               <span class="absolute -top-3 right-5 bg-domus-dourado text-white text-[10px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Mais escolhida</span>
               <div class="flex items-start justify-between mb-2">
                 <div>
-                  <p class="font-serif text-xl text-domus-azul-escuro">6 meses tudo incluso</p>
+                  <p class="font-serif text-xl text-domus-azul-escuro">12 meses tudo incluso</p>
                   <p class="text-xs text-domus-texto-suave">Sem caução, sem energia separada, sem surpresa</p>
                 </div>
-                <div id="check-6" class="w-6 h-6 rounded-full border-2 border-domus-borda flex items-center justify-center text-white text-sm">✓</div>
+                <div id="check-12" class="w-6 h-6 rounded-full border-2 border-domus-borda flex items-center justify-center text-white text-sm">✓</div>
               </div>
               <div class="bg-domus-creme/60 rounded-xl p-3 mt-3 space-y-1.5">
                 <div class="flex justify-between text-sm"><span class="text-domus-texto-suave">Mensalidade fixa</span><span class="font-semibold text-domus-azul-escuro">R$ 1.450,00</span></div>
@@ -201,7 +201,7 @@
               </div>
               <div class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
                 <span class="text-amber-600 text-xs mt-0.5">⚠</span>
-                <p class="text-[11px] text-amber-800 leading-relaxed">Saindo antes dos 6 meses: multa de 1 aluguel e meio (<strong>R$ 2.175</strong>).</p>
+                <p class="text-[11px] text-amber-800 leading-relaxed">Saindo antes dos 12 meses: multa de 1 aluguel e meio (<strong>R$ 2.175</strong>).</p>
               </div>
             </div>
           </div>
@@ -224,15 +224,7 @@
               <label class="text-xs text-domus-texto-suave">Data prevista de entrada *</label>
               <input id="f-data-entrada" type="date" onchange="atualizarCronograma()" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
               <p class="text-[11px] text-domus-texto-suave mt-1">As mensalidades vencem todo dia 15.</p>
-            </div>
-
-            <div id="bloco-data-caucao" class="hidden">
-              <label class="text-xs text-domus-texto-suave">Quando você vai pagar a caução? *</label>
-              <input id="f-data-caucao" type="date" onchange="atualizarCronograma()" class="w-full mt-1 px-4 py-3 rounded-xl border border-domus-borda focus:border-domus-azul outline-none text-sm" />
-              <p class="text-[11px] text-domus-texto-suave mt-1">A caução pode ser antecipada pra garantir sua vaga.</p>
-            </div>
-
-            <!-- Cronograma dinâmico -->
+            </div>            <!-- Cronograma dinâmico -->
             <div id="cronograma-box" class="hidden">
               <div id="cronograma-lista" class="space-y-2"></div>
               <div class="mt-3 p-3 rounded-lg bg-domus-azul/5 border border-domus-azul/20">
@@ -335,7 +327,7 @@
               <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl bg-domus-azul/10 flex items-center justify-center text-2xl">🤳</div>
                 <div class="flex-1">
-                  <p class="text-sm font-medium text-domus-azul-escuro">Selfie segurando o documento</p>
+                  <p class="text-sm font-medium text-domus-azul-escuro">Selfie</p>
                   <p id="label-selfie" class="text-xs text-domus-texto-suave">Toque para tirar a foto agora</p>
                 </div>
               </div>
@@ -398,7 +390,7 @@
         <div id="step-7" class="step hidden text-center py-8">
           <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5 text-4xl">✓</div>
           <h2 class="font-serif text-2xl text-domus-azul-escuro mb-3">Tudo registrado!</h2>
-          <p class="text-sm text-domus-texto-suave mb-6 max-w-md mx-auto">Em poucos minutos você receberá o contrato no seu WhatsApp pelo ZapSign. Só assinar e pronto — a Gabi assina logo em seguida.</p>
+          <p class="text-sm text-domus-texto-suave mb-6 max-w-md mx-auto">Agora a Gabi vai conferir seus dados e os documentos enviados. Em breve você vai receber no seu WhatsApp <strong>o link do contrato pra assinar</strong> e, junto, <strong>o boleto da caução</strong> — que vence um dia antes da sua data de mudança.</p>
           <div class="bg-domus-creme/50 rounded-2xl p-5 max-w-sm mx-auto border border-domus-borda">
             <p class="text-xs text-domus-texto-suave">Qualquer dúvida me chama no WhatsApp:</p>
             <a href="https://wa.me/5511943330911" target="_blank" class="text-domus-azul font-semibold text-sm hover:underline">(11) 94333-0911</a>
@@ -418,7 +410,7 @@
 
     // Supabase
     const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.ovFAr_kSeKLs9CFBNAlxK2NyvA5HoqVfM7CFCmoUjJM';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
     // Estado
@@ -547,16 +539,12 @@
     function selecionarModalidade(m) {
       estado.modalidade = m;
       document.getElementById('card-3').classList.toggle('selecionado', m === '3');
-      document.getElementById('card-6').classList.toggle('selecionado', m === '6');
+      document.getElementById('card-12').classList.toggle('selecionado', m === '12');
       document.getElementById('check-3').classList.toggle('bg-domus-azul', m === '3');
       document.getElementById('check-3').classList.toggle('border-domus-azul', m === '3');
-      document.getElementById('check-6').classList.toggle('bg-domus-azul', m === '6');
-      document.getElementById('check-6').classList.toggle('border-domus-azul', m === '6');
+      document.getElementById('check-12').classList.toggle('bg-domus-azul', m === '12');
+      document.getElementById('check-12').classList.toggle('border-domus-azul', m === '12');
       document.getElementById('btn-step-2').disabled = false;
-      // Mostra/esconde campo de data caução conforme modalidade
-      const blocoCaucao = document.getElementById('bloco-data-caucao');
-      if (m === '3') blocoCaucao.classList.remove('hidden');
-      else blocoCaucao.classList.add('hidden');
       // Recalcula se ja tem data
       if (document.getElementById('f-data-entrada').value) atualizarCronograma();
     }
@@ -566,75 +554,63 @@
     // ==========================================
     function atualizarCronograma() {
       const dataStr = document.getElementById('f-data-entrada').value;
-      const dataCaucaoStr = document.getElementById('f-data-caucao').value;
       if (!dataStr || !estado.modalidade) return;
-      if (estado.modalidade === '3' && !dataCaucaoStr) {
-        // Aguarda usuario informar a data da caução tambem
-        document.getElementById('btn-step-3').disabled = true;
-        return;
-      }
       const dt = new Date(dataStr + 'T12:00:00');
-      const dtCaucao = dataCaucaoStr ? new Date(dataCaucaoStr + 'T12:00:00') : null;
-      const lista = montarCronograma(estado.modalidade, dt, dtCaucao);
+      const lista = montarCronograma(estado.modalidade, dt);
       estado.cronograma = lista;
       estado.dataEntrada = dataStr;
-      estado.dataCaucao = dataCaucaoStr || null;
+      // Caução vence 1 dia antes da entrada (auto, so na modalidade 3)
+      if (estado.modalidade === '3') {
+        const dtCaucao = new Date(dt); dtCaucao.setDate(dtCaucao.getDate() - 1);
+        estado.dataCaucao = dtCaucao.toISOString().slice(0, 10);
+      } else {
+        estado.dataCaucao = null;
+      }
       renderizarCronograma(lista);
       document.getElementById('btn-step-3').disabled = false;
     }
 
-    function montarCronograma(modalidade, dataEntrada, dataCaucao) {
+    function montarCronograma(modalidade, dataEntrada) {
       const lista = [];
-      const meses = modalidade === '6' ? 6 : 3;
-      const aluguel = modalidade === '6' ? 1450 : 1250;
-      const caucao = modalidade === '6' ? 0 : 625;
+      const meses = modalidade === '12' ? 12 : 3;
+      const aluguel = modalidade === '12' ? 1450 : 1250;
+      const caucao = modalidade === '12' ? 0 : 625;
       const incluiEnergia = modalidade === '3';
 
       const ano = dataEntrada.getFullYear();
       const mes = dataEntrada.getMonth();
       const dia = dataEntrada.getDate();
 
-      // Proximo dia 15 a partir da entrada
-      let primeiroDia15;
-      if (dia <= 14) {
-        primeiroDia15 = new Date(ano, mes, 15);
-      } else {
-        primeiroDia15 = new Date(ano, mes + 1, 15);
-      }
-
-      // 1) Caução: parcela separada (so na modalidade 3 meses)
-      if (caucao > 0 && dataCaucao) {
+      // 1) Caução: vence 1 dia antes da entrada (so na modalidade 3 meses)
+      if (caucao > 0) {
+        const dtCaucao = new Date(ano, mes, dia - 1);
         lista.push({
-          data: formatarData(dataCaucao),
+          data: formatarData(dtCaucao),
           valor: caucao,
           composicao: 'Caução (50% do aluguel)',
-          obs: 'Garante sua vaga'
+          obs: 'Vence 1 dia antes da sua entrada — garante sua vaga'
         });
       }
 
-      // 2) Dias proporcionais: vencimento no dia da entrada
-      const msDia = 24 * 60 * 60 * 1000;
-      const diasProporcionais = Math.max(1, Math.round((primeiroDia15 - dataEntrada) / msDia));
+      // 2) Aluguel proporcional: sempre 14 dias (dia 1 ao 14 do mes seguinte). Vence dia 15.
+      const dia15ProxMes = new Date(ano, mes + 1, 15);
+      const dtFimProporcional = new Date(ano, mes + 1, 14);
+      const diasProporcionais = 14;
       const valorProporcional = +((aluguel / 30) * diasProporcionais).toFixed(2);
-      if (diasProporcionais > 0 && diasProporcionais < 30) {
-        lista.push({
-          data: formatarData(dataEntrada),
-          valor: valorProporcional,
-          composicao: diasProporcionais + ' dias proporcionais (dia ' + dia + ' ao dia 14)',
-          obs: 'Cobre os dias até o primeiro vencimento mensal'
-        });
-      }
+      lista.push({
+        data: formatarData(dia15ProxMes),
+        valor: valorProporcional,
+        composicao: '14 dias proporcionais (dia 01 a ' + formatarData(dtFimProporcional) + ')',
+        obs: 'Cobre do início do mês seguinte até o ciclo começar dia 15'
+      });
 
-      // 3) Mensalidades — sempre dia 15
+      // 3) Mensalidades cheias — ciclo 15 ao 14, vence dia 15
       for (let i = 0; i < meses; i++) {
-        const dtParcela = new Date(primeiroDia15);
-        dtParcela.setMonth(dtParcela.getMonth() + i);
-        const dtFim = new Date(dtParcela);
-        dtFim.setMonth(dtFim.getMonth() + 1);
-        dtFim.setDate(14);
+        const dtParcela = new Date(ano, mes + 2 + i, 15);
+        const dtFim = new Date(ano, mes + 3 + i, 14);
 
-        let composicao = 'Aluguel mês cheio (' + formatarData(dtParcela) + ' a ' + formatarData(dtFim) + ')';
-        if (incluiEnergia && i >= 1) composicao += ' + rateio da energia';
+        let composicao = 'Aluguel cheio (' + formatarData(dtParcela) + ' a ' + formatarData(dtFim) + ')';
+        if (incluiEnergia) composicao += ' + rateio da energia';
 
         const obs = (i === meses - 1)
           ? 'Última mensalidade do contrato — depois, renova mensalmente'
@@ -709,10 +685,10 @@
     // ==========================================
     function montarRevisao() {
       const dados = coletarDados();
-      const aluguel = estado.modalidade === '6' ? 1450 : 1250;
-      const multa = estado.modalidade === '6' ? 2175 : 1875;
-      const modLabel = estado.modalidade === '6' ? '6 meses tudo incluso' : '3 meses com caução';
-      const modDetalhe = estado.modalidade === '6'
+      const aluguel = estado.modalidade === '12' ? 1450 : 1250;
+      const multa = estado.modalidade === '12' ? 2175 : 1875;
+      const modLabel = estado.modalidade === '12' ? '12 meses tudo incluso' : '3 meses com caução';
+      const modDetalhe = estado.modalidade === '12'
         ? 'R$ 1.450/mês (caução e energia inclusas)'
         : 'R$ 1.250/mês + caução R$ 625 + energia (rateio à parte)';
       const html = `
@@ -742,8 +718,8 @@
       document.getElementById('revisao-box').innerHTML = html;
 
       // Aviso de multa específico da modalidade
-      const avisoMulta = estado.modalidade === '6'
-        ? `Se você sair antes de cumprir os <strong>6 meses</strong> de contrato, será cobrada multa de <strong>1 aluguel e meio (R$ ${fmt(multa)})</strong>.`
+      const avisoMulta = estado.modalidade === '12'
+        ? `Se você sair antes de cumprir os <strong>12 meses</strong> de contrato, será cobrada multa de <strong>1 aluguel e meio (R$ ${fmt(multa)})</strong>.`
         : `Se você sair antes de cumprir os <strong>3 meses</strong> de contrato, a caução de R$ 625 será retida e ainda será cobrada multa de 1 aluguel adicional. Total: <strong>R$ ${fmt(multa)}</strong>.`;
       document.getElementById('aviso-multa').innerHTML = avisoMulta;
     }
@@ -783,10 +759,10 @@
       btn.textContent = 'Enviando...';
       try {
         const dados = coletarDados();
-        const aluguel = estado.modalidade === '6' ? 1450 : 1250;
-        const caucao = estado.modalidade === '6' ? 0 : 625;
-        const meses = estado.modalidade === '6' ? 6 : 3;
-        const multa = estado.modalidade === '6' ? 2175 : 1875;
+        const aluguel = estado.modalidade === '12' ? 1450 : 1250;
+        const caucao = estado.modalidade === '12' ? 0 : 625;
+        const meses = estado.modalidade === '12' ? 6 : 3;
+        const multa = estado.modalidade === '12' ? 2175 : 1875;
 
         const payload = {
           p_nome: dados.nome,
