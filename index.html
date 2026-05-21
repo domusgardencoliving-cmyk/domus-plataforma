@@ -4069,6 +4069,14 @@
               <button onclick="mostrarSubColiving('col-rib', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Ribeirão Claro</button>
               <button onclick="mostrarSubColiving('col-fila', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Lista de Espera</button>
               <button onclick="mostrarSubColiving('col-futuros', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Futuros Moradores</button>
+              <button onclick="mostrarSubColiving('col-contratos', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">📋 Contratos Pendentes</button>
+            </div>
+
+            <!-- ======= CONTRATOS PENDENTES (iframe pra admin-contratos.html) ======= -->
+            <div id="col-contratos" class="col-sub-section hidden fade-in">
+              <div class="bg-white rounded-2xl border border-domus-borda overflow-hidden">
+                <iframe src="/admin-contratos.html" style="width:100%; height: calc(100vh - 240px); border:0; min-height: 600px;" title="Contratos Pendentes"></iframe>
+              </div>
             </div>
 
             <!-- ======= BOLETOS REAIS (DG REAL — substitui o protótipo abaixo) ======= -->
