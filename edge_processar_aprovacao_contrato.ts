@@ -130,7 +130,12 @@ serve(async (req: Request): Promise<Response> => {
     // Valores efetivos (sobrescreve com input da Gabi se fornecido)
     const aluguel = Number(valor_final ?? c.aluguel);
     const caucao = +(aluguel * 0.5).toFixed(2);
-    const multa_total = +(aluguel * 1.5).toFixed(2); // caucao retida + 1 aluguel
+    // Multa de rescisao antecipada:
+    //   3m: caucao retida + 1 aluguel (=1.5 alugueis)
+    //   12m: 30% sobre o saldo restante (contrato Lei do Inquilinato-like)
+    const meses_total = c.modalidade === "12" ? 12 : 3;
+    const multa_total_num = +(aluguel * 1.5).toFixed(2); // pra 3m
+    // Pra 12m, o template ja deve ter texto descritivo. Aqui passamos string.
     const parcelas = Math.max(1, Math.min(2, parcelas_caucao ?? 1));
     const cortesia_extras = Math.max(0, cortesia_dias_extras ?? 0);
 
@@ -179,7 +184,9 @@ serve(async (req: Request): Promise<Response> => {
       caucao_extenso: reaisExtenso(caucao),
       aluguel_regular: fmtBR(aluguel),
       aluguel_regular_extenso: reaisExtenso(aluguel),
-      multa_total: fmtBR(multa_total),
+      multa_total: c.modalidade === "12"
+        ? "valor equivalente a 30% (trinta por cento) sobre o saldo restante do contrato (R$ " + fmtBR(aluguel) + " × meses remanescentes × 0,30), conforme art. 4º da Lei nº 8.245/91 aplicado por analogia"
+        : fmtBR(multa_total_num),
       data_assinatura: new Date().toLocaleDateString("pt-BR"),
     };
     // Linhas do cronograma
@@ -242,4 +249,3 @@ serve(async (req: Request): Promise<Response> => {
     return json({ error: e.message }, 500);
   }
 });
-                                         

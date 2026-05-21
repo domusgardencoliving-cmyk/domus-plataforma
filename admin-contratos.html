@@ -437,6 +437,20 @@ async function marcarAssinado(id) {
 }
 
 let _xxx_unused = null;
+function formatarQuartoDescritivo(quartoRaw) {
+  if (!quartoRaw) return '';
+  const q = String(quartoRaw).trim();
+  let m = q.match(/^Q(\d+)[.\-_]?(\d+)$/i);
+  if (m) return 'Quarto ' + m[1] + ' — Cama ' + m[2];
+  m = q.match(/^Individual\s+(\d+)$/i);
+  if (m) return 'Quarto ' + m[1] + ' (individual)';
+  m = q.match(/^Hostel\s+(\d+)\s*[-—]\s*Cama\s+(\d+)$/i);
+  if (m) return 'Quarto ' + m[1] + ' — Cama ' + m[2];
+  m = q.match(/^Studio\s+(\d+)$/i);
+  if (m) return 'Studio ' + m[1];
+  return q;
+}
+
 function _legacy_aprovar(id) {
   const c = contratos.find(x => x.id === id);
   if (!c) return;
@@ -460,7 +474,7 @@ async function confirmarAprovacao() {
   try {
     const payload = {
       contrato_id: _contratoAprovandoId,
-      quarto: document.getElementById('aprQuarto').value.trim() || null,
+      quarto: formatarQuartoDescritivo(document.getElementById('aprQuarto').value.trim()) || null,
       valor_final: parseFloat(document.getElementById('aprValorFinal').value) || null,
       parcelas_caucao: parseInt(document.getElementById('aprParcelasCaucao').value) || 1,
       cortesia_dias_extras: parseInt(document.getElementById('aprCortesiaDias').value) || 0,
