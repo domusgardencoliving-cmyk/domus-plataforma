@@ -5232,6 +5232,8 @@
     document.getElementById('novaReservaForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const nome = document.getElementById('nrNome').value.trim();
+      const contatoRaw = (document.getElementById('nrContato')?.value || '').trim();
+      const hospedeIdSelecionado = (document.getElementById('nrHospedeId')?.value || '').trim();
       const quarto = document.getElementById('nrQuarto').value;
       const checkin = document.getElementById('nrCheckin').value;
       const checkout = document.getElementById('nrCheckout').value;
@@ -5255,10 +5257,28 @@
           return;
         }
 
-        const { error } = await db.from('reservas').insert({
-          hospede_nome: nome, cama: quarto, checkin, checkout, plataforma,
+        // Se o usuario digitou o nome direto mas nao selecionou do dropdown,
+        // tenta achar hospede no CRM pelo nome exato (case-insensitive) pra puxar telefone
+        let hospedeIdFinal = hospedeIdSelecionado || null;
+        let contatoFinal = contatoRaw;
+        if (!hospedeIdFinal && nome) {
+          try {
+            const { data: h } = await db.from('hospedes').select('id, telefone, email').ilike('nome', nome).limit(1).maybeSingle();
+            if (h) {
+              hospedeIdFinal = h.id;
+              if (!contatoFinal) contatoFinal = h.telefone || h.email || '';
+            }
+          } catch(e) {}
+        }
+
+        const payload = {
+          hospede_nome: nome,
+          hospede_contato: contatoFinal || null,
+          hospede_id: hospedeIdFinal || null,
+          cama: quarto, checkin, checkout, plataforma,
           valor_total: parseFloat(valor), status: 'confirmada'
-        });
+        };
+        const { error } = await db.from('reservas').insert(payload);
         if (error) {
           // Banco rejeitou (provavel: EXCLUSION CONSTRAINT pegou conflito que escapou da pre-checagem)
           if ((error.message||'').includes('reservas_no_overbooking') || error.code === '23P01') {
@@ -6080,11 +6100,12 @@
       const email = btn.getAttribute('data-email') || '';
       const id = btn.getAttribute('data-id') || '';
       document.getElementById('nrNome').value = nome;
-      document.getElementById('nrContato').value = email || tel;
+      // PRIORIZA TELEFONE — eh primordial pro check-in via WhatsApp
+      document.getElementById('nrContato').value = tel || email;
       document.getElementById('nrHospedeId').value = id;
       document.getElementById('nrNomeResults').classList.add('hidden');
       const st = document.getElementById('nrNomeStatus');
-      if (st) { st.textContent = '✓ Hóspede selecionado do CRM'; st.classList.remove('hidden'); st.classList.add('text-domus-azul'); }
+      if (st) { st.textContent = '✓ Hospede do CRM — telefone preenchido automaticamente'; st.classList.remove('hidden'); st.classList.add('text-domus-azul'); }
     }
 
     function abrirNovoCliente() {
