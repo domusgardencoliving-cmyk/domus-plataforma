@@ -4040,11 +4040,11 @@
                 <div class="flex gap-2 flex-wrap">
                   <input id="mor-busca" oninput="renderMoradoras()" placeholder="🔍 Buscar por nome, email, quarto…" class="flex-1 min-w-40 px-3 py-2 rounded-lg border border-domus-borda text-sm" />
                   <select id="mor-status" onchange="renderMoradoras()" class="px-3 py-2 rounded-lg border border-domus-borda text-sm">
-                    <option value="ativa">Apenas ativas</option>
+                    <option value="ativo">Apenas ativas</option>
                     <option value="">Todos os status</option>
                     <option value="aviso">Em aviso</option>
                     <option value="rescisao">Em rescisao</option>
-                    <option value="ex">Ex-moradoras</option>
+                    <option value="encerrado">Ex-moradoras</option>
                   </select>
                 </div>
               </div>
@@ -11175,9 +11175,11 @@
 
     function _morStatusBadge(s) {
       const map = {
+        'ativo': '<span class="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full">● Ativa</span>',
         'ativa': '<span class="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full">● Ativa</span>',
         'aviso': '<span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">● Aviso</span>',
         'rescisao': '<span class="text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-full">● Rescisao</span>',
+        'encerrado': '<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">○ Encerrado</span>',
         'ex': '<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">○ Ex</span>',
         'pendente': '<span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">● Pendente</span>'
       };
@@ -11219,9 +11221,9 @@
       const busca = (document.getElementById('mor-busca')?.value || '').toLowerCase().trim();
       const unid = window._morUnid || 'AP';
       const stat = document.getElementById('mor-status')?.value;
-      // status: '' = todos; default = 'ativa'
+      // status: '' = todos; default = 'ativo'
       let arr = todas;
-      if (stat !== '') arr = arr.filter(m => (m.status || 'ativa') === stat);
+      if (stat !== '') arr = arr.filter(m => (m.status || 'ativo') === stat);
       arr = arr.filter(m => m.unidade === unid);
       if (busca) arr = arr.filter(m => {
         const blob = ((m.nome || '') + ' ' + (m.email || '') + ' ' + (m.quarto || '')).toLowerCase();
@@ -11230,7 +11232,7 @@
 
       // KPIs calculados sobre a unidade selecionada
       const todasUnid = todas.filter(m => m.unidade === unid);
-      const ativas = todasUnid.filter(m => (m.status || 'ativa') === 'ativa').length;
+      const ativas = todasUnid.filter(m => (m.status || 'ativo') === 'ativo').length;
       const aviso = todasUnid.filter(m => m.status === 'aviso').length;
       const rescisao = todasUnid.filter(m => m.status === 'rescisao').length;
       document.getElementById('mor-kpi-total').textContent = todasUnid.length;
@@ -11255,7 +11257,7 @@
           <td class="p-2 sm:p-3">${m.quarto || '—'}</td>
           <td class="p-2 sm:p-3">${_morFmtData(m.inicio_contrato)}</td>
           <td class="p-2 sm:p-3">${_morFmtMoeda(m.valor)}</td>
-          <td class="p-2 sm:p-3">${_morStatusBadge(m.status || 'ativa')}</td>
+          <td class="p-2 sm:p-3">${_morStatusBadge(m.status || 'ativo')}</td>
           <td class="p-2 sm:p-3 text-right">
             <button onclick="abrirMoradoraDetalhe('${m.id}')" class="text-domus-azul hover:underline text-[11px]">Detalhes</button>
           </td>
@@ -11275,7 +11277,7 @@
         `Inicio: ${_morFmtData(m.inicio_contrato)}\n` +
         `Fim previsto: ${_morFmtData(m.fim_contrato)}\n` +
         `Aluguel: ${_morFmtMoeda(m.valor)}\n` +
-        `Status: ${m.status || 'ativa'}\n\n` +
+        `Status: ${m.status || 'ativo'}\n\n` +
         `(Edicao detalhada vem na proxima iteracao)`);
     }
 
