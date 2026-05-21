@@ -693,64 +693,81 @@
       const conteudo = document.getElementById('boleto-conteudo');
 
       try {
-        // Pegar mês/ano atual
-        const hoje = new Date();
-        const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
-        const anoAtual = hoje.getFullYear();
-        const dataInicio = anoAtual + '-' + mesAtual + '-01';
-        const dataFim = anoAtual + '-' + mesAtual + '-31';
-
-        // Buscar lançamento de receita/aluguel do mês atual
-        // (usa o ID da tabela `moradores`, não o da `dominhas`)
         const moradorIdReal = _morador.morador_id || _morador.id;
-        const { data, error } = await db
-          .from('lancamentos')
+        const hojeMes = new Date();
+        const limiteISO = hojeMes.getFullYear() + '-' + String(hojeMes.getMonth() + 1).padStart(2, '0') + '-01';
+
+        // Busca o ULTIMO boleto cujo mes_referencia <= mes atual (mais recente real)
+        const { data: boletos } = await db
+          .from('v_boletos_moradora')
           .select('*')
-          .eq('morador_id', moradorIdReal)
-          .eq('tipo', 'receita')
-          .eq('categoria', 'Aluguel')
-          .gte('data', dataInicio)
-          .lte('data', dataFim)
-          .limit(1)
-          .maybeSingle();
+          .eq('moradora_id', moradorIdReal)
+          .lte('mes_referencia', limiteISO)
+          .order('mes_referencia', { ascending: false })
+          .limit(1);
 
         if (loading) loading.classList.add('hidden');
         if (conteudo) conteudo.classList.remove('hidden');
 
-        if (data) {
-          // Aluguel já pago
-          const statusBadge = document.getElementById('boleto-status-badge');
+        const statusBadge = document.getElementById('boleto-status-badge');
+
+        if (boletos && boletos.length > 0) {
+          const b = boletos[0];
+          // Status badge baseado no situacao_label
+          const pago = (b.status === 'pago' || b.situacao_label === 'Pago');
+          const vencido = b.situacao_label === 'Vencido';
           if (statusBadge) {
-            statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700';
-            statusBadge.textContent = '✓ Pago';
+            if (pago) {
+              statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700';
+              statusBadge.textContent = '✓ Pago';
+            } else if (vencido) {
+              statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700';
+              statusBadge.textContent = '⚠ Vencido';
+            } else {
+              statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800';
+              statusBadge.textContent = '⚠ Pendente';
+            }
+          }
+          // Mes (ex: Maio/2026)
+          const meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+          const [y, m] = b.mes_referencia.split('-');
+          document.getElementById('boleto-mes').textContent = meses[parseInt(m, 10) - 1] + ' de ' + y;
+          // Valor total real (com energia + extras)
+          const valor = parseFloat(b.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          document.getElementById('boleto-valor').textContent = valor;
+          // Vencimento real do boleto
+          const elV = document.getElementById('boleto-vencimento');
+          if (elV) {
+            if (b.data_vencimento) {
+              const dtVenc = new Date(b.data_vencimento + 'T12:00:00');
+              elV.textContent = dtVenc.toLocaleDateString('pt-BR');
+            } else {
+              elV.textContent = '—';
+            }
           }
         } else {
-          // Aluguel pendente
-          const statusBadge = document.getElementById('boleto-status-badge');
+          // Sem boleto ainda no banco — fallback pro valor mensal do contrato (estimativa)
           if (statusBadge) {
-            statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700';
-            statusBadge.textContent = '⚠ Pendente';
+            statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700';
+            statusBadge.textContent = 'Aguardando emissao';
+          }
+          const meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+          document.getElementById('boleto-mes').textContent = meses[hojeMes.getMonth()] + ' de ' + hojeMes.getFullYear();
+          if (_morador.valor) {
+            document.getElementById('boleto-valor').textContent = parseFloat(_morador.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          } else {
+            document.getElementById('boleto-valor').textContent = 'R$ —';
+          }
+          const elV = document.getElementById('boleto-vencimento');
+          if (elV) {
+            if (_morador.dia_vencimento) {
+              const dt = new Date(hojeMes.getFullYear(), hojeMes.getMonth(), _morador.dia_vencimento);
+              elV.textContent = dt.toLocaleDateString('pt-BR');
+            } else {
+              elV.textContent = '—';
+            }
           }
         }
-
-        // Preencher valores
-        const mesNome = new Date(anoAtual, parseInt(mesAtual) - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-        document.getElementById('boleto-mes').textContent = mesNome.charAt(0).toUpperCase() + mesNome.slice(1);
-
-        if (_morador.valor) {
-          const valor = parseFloat(_morador.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-          document.getElementById('boleto-valor').textContent = valor;
-        }
-
-        if (!_morador.dia_vencimento) {
-          // Sem dia_vencimento — nao da pra calcular proximo boleto
-          const elV = document.getElementById('boleto-vencimento');
-          if (elV) elV.textContent = '—';
-          return;
-        }
-        const dataVencimento = anoAtual + '-' + mesAtual + '-' + String(_morador.dia_vencimento).padStart(2, '0');
-        const dtVenc = new Date(dataVencimento + 'T12:00:00');
-        document.getElementById('boleto-vencimento').textContent = dtVenc.toLocaleDateString('pt-BR');
       } catch (err) {
         console.error('Erro ao carregar boleto:', err);
         if (loading) loading.classList.add('hidden');
