@@ -3995,7 +3995,7 @@
               <button onclick="mostrarSubColiving('col-futuros', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Futuros Moradores</button>
               <button onclick="mostrarSubColiving('col-contratos', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">📋 Contratos Pendentes</button>
               <button onclick="mostrarSubColiving('col-moradoras', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">👥 Moradoras</button>
-              <button onclick="window.open('/pms.html?view=boletos','_blank')" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">💰 Boletos Dominhas</button>
+              <button onclick="mostrarSubColiving('col-boletos-dominhas', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">💰 Boletos Dominhas</button>
             </div>
 
 
@@ -4073,6 +4073,13 @@
             <div id="col-contratos" class="col-sub-section hidden fade-in">
               <div class="bg-white rounded-2xl border border-domus-borda overflow-hidden">
                 <iframe src="/admin-contratos.html" style="width:100%; height: calc(100vh - 240px); border:0; min-height: 600px;" title="Contratos Pendentes"></iframe>
+              </div>
+            </div>
+
+            <!-- ======= BOLETOS DOMINHAS (iframe pro PMS embedded) ======= -->
+            <div id="col-boletos-dominhas" class="col-sub-section hidden fade-in">
+              <div class="bg-white rounded-2xl border border-domus-borda overflow-hidden">
+                <iframe id="iframeBoletosDominhas" src="about:blank" style="width:100%; height: calc(100vh - 240px); border:0; min-height: 600px;" title="Boletos Dominhas"></iframe>
               </div>
             </div>
 
@@ -11264,6 +11271,12 @@
       // Carregar dados quando abrir aba
       if (id === 'col-fila') carregarFilaEspera();
       if (id === 'col-moradoras') loadMoradoras();
+      if (id === 'col-boletos-dominhas') {
+        const ifr = document.getElementById('iframeBoletosDominhas');
+        if (ifr && (!ifr.src || ifr.src === 'about:blank')) {
+          ifr.src = '/pms.html?view=boletos&embedded=1';
+        }
+      }
       if (id === 'col-futuros') carregarFuturos();
       // Boletos reais (substituindo o protótipo) — mostrar/esconder bloco real
       const blocoReal = document.getElementById('col-boletos-real');

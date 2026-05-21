@@ -916,10 +916,6 @@
           <span>⚠️</span>
           <span>Problemas <span id="badgeProblemas" style="background:#ef4444;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;margin-left:4px;display:none;">0</span></span>
         </a>
-        <a href="#" data-view="boletos" class="sidebar-link">
-          <span>💰</span>
-          <span>Boletos Dominhas</span>
-        </a>
       </div>
 
       <div class="sidebar-footer">
@@ -1669,8 +1665,11 @@
             </div>
             <div class="flex items-center gap-2">
               <input type="month" id="boletosMes" class="border border-domus-azul/30 rounded px-3 py-2 text-sm" />
+              <button id="btnReplicarMes" onclick="replicarMesAnterior()" class="border-2 border-amber-300 text-amber-800 bg-amber-50 px-4 py-2 rounded text-sm hover:bg-amber-100">
+                📋 Replicar mes anterior
+              </button>
               <button id="btnCriarLote" onclick="criarLoteBoletos()" class="bg-domus-azul text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">
-                + Criar lote do mês
+                + Criar lote do mes
               </button>
             </div>
           </div>
@@ -5003,6 +5002,108 @@
           '</tr>';
       }).join('');
     }
+
+
+    // ==========================================
+    // BOLETOS DOMINHAS — Replicar mes anterior
+    // ==========================================
+    async function replicarMesAnterior() {
+      const inputMes = document.getElementById('boletosMes');
+      if (!inputMes.value) { mostrarToast('Selecione um mes primeiro', 'erro'); return; }
+      const [y, m] = inputMes.value.split('-').map(Number);
+      // Mes anterior
+      const dt = new Date(y, m - 2, 1); // m-2 pq mes em JS eh 0-indexed
+      const mesAnteriorISO = dt.toISOString().slice(0, 7) + '-01';
+      const mesAtualISO = inputMes.value + '-01';
+
+      const btn = document.getElementById('btnReplicarMes');
+      btn.disabled = true; const txtOriginal = btn.textContent; btn.textContent = 'Replicando...';
+      try {
+        // 1. Garante que o lote do mes atual existe (cria se nao tiver)
+        if (!boletosLoteAtual) {
+          const { data: novoLote, error: errCria } = await db.rpc('criar_lote_boletos_mes', { p_mes_referencia: mesAtualISO });
+          if (errCria) throw errCria;
+          // recarrega pra pegar lote
+          await loadBoletos();
+          if (!boletosLoteAtual) throw new Error('Nao foi possivel criar/encontrar lote do mes');
+        }
+
+        // 2. Busca lote do mes anterior
+        const { data: loteAnt, error: errLote } = await db
+          .from('dominhas_lotes')
+          .select('id')
+          .eq('mes_referencia', mesAnteriorISO)
+          .maybeSingle();
+        if (errLote) throw errLote;
+        if (!loteAnt) {
+          mostrarToast('Nao tem lote no mes anterior pra replicar', 'erro');
+          return;
+        }
+
+        // 3. Busca boletos do mes anterior (por morador)
+        const { data: boletosAnt, error: errBA } = await db
+          .from('dominhas_boletos')
+          .select('morador_id, valor_coliving, valor_energia, valor_extras, valor_multas, valor_descontos, valor_total')
+          .eq('lote_id', loteAnt.id);
+        if (errBA) throw errBA;
+
+        if (!boletosAnt || boletosAnt.length === 0) {
+          mostrarToast('Lote anterior esta vazio', 'erro');
+          return;
+        }
+
+        // 4. Para cada boleto do mes atual, replica os valores (apenas se ainda estiver no status inicial)
+        const mapAnt = new Map((boletosAnt || []).map(b => [b.morador_id, b]));
+        let atualizados = 0;
+        for (const b of boletosLista) {
+          // Soh replica em boletos que ainda nao foram emitidos/pagos
+          if (!['rascunho', 'gerado', 'criado'].includes(b.status)) continue;
+          const ant = mapAnt.get(b.morador_id);
+          if (!ant) continue;
+          // Mantem o valor_coliving do mes atual (pode ter aumentado), copia o restante
+          const novoTotal = Number(b.valor_coliving || 0)
+            + Number(ant.valor_energia || 0)
+            + Number(ant.valor_extras || 0)
+            + Number(ant.valor_multas || 0)
+            - Number(ant.valor_descontos || 0);
+          const { error: errUp } = await db.from('dominhas_boletos').update({
+            valor_energia: ant.valor_energia || 0,
+            valor_extras: ant.valor_extras || 0,
+            valor_multas: ant.valor_multas || 0,
+            valor_descontos: ant.valor_descontos || 0,
+            valor_total: novoTotal
+          }).eq('id', b.id);
+          if (!errUp) atualizados++;
+        }
+
+        mostrarToast('Replicados ' + atualizados + ' boletos do mes anterior', 'sucesso');
+        await loadBoletos();
+      } catch (e) {
+        console.error('replicarMesAnterior:', e);
+        mostrarToast('Erro: ' + (e.message || e), 'erro');
+      } finally {
+        btn.disabled = false; btn.textContent = txtOriginal;
+      }
+    }
+
+    // ==========================================
+    // EMBEDDED MODE (pra iframe dentro de Coliving)
+    // ==========================================
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('embedded') === '1') {
+        document.documentElement.classList.add('pms-embedded');
+        const view = urlParams.get('view');
+        if (view) {
+          // hide sidebar
+          const sb = document.querySelector('.sidebar');
+          if (sb) sb.style.display = 'none';
+          // expand main
+          const mc = document.querySelector('.main-content');
+          if (mc) { mc.style.marginLeft = '0'; mc.style.width = '100%'; mc.style.padding = '16px'; }
+        }
+      }
+    })();
 
     async function criarLoteBoletos() {
       const mesISO = document.getElementById('boletosMes').value + '-01';
