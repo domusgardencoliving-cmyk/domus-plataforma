@@ -1757,11 +1757,21 @@
             <p id="nrNomeStatus" class="text-[11px] text-domus-texto-suave mt-1 hidden"></p>
           </div>
 
-          <div>
-            <label class="block text-sm font-medium text-domus-texto mb-1">E-mail ou Telefone</label>
-            <input id="nrContato" type="text" placeholder="E-mail ou telefone"
-              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">📱 Telefone</label>
+              <input id="nrTelefone" type="text" placeholder="+55 11 99999-9999"
+                oninput="atualizarAvisoContato()"
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">✉️ E-mail</label>
+              <input id="nrEmail" type="email" placeholder="hospede@email.com"
+                oninput="atualizarAvisoContato()"
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            </div>
           </div>
+          <p id="nrContatoAviso" class="text-[11px] text-amber-700 -mt-2 hidden">⚠️ Cadastro incompleto — preencha pelo menos o telefone pra mandar check-in</p>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -5232,7 +5242,9 @@
     document.getElementById('novaReservaForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const nome = document.getElementById('nrNome').value.trim();
-      const contatoRaw = (document.getElementById('nrContato')?.value || '').trim();
+      const telefoneRaw = (document.getElementById('nrTelefone')?.value || '').trim();
+      const emailRaw = (document.getElementById('nrEmail')?.value || '').trim();
+      const contatoRaw = telefoneRaw; // 'hospede_contato' segue sendo o telefone (primordial pro check-in)
       const hospedeIdSelecionado = (document.getElementById('nrHospedeId')?.value || '').trim();
       const quarto = document.getElementById('nrQuarto').value;
       const checkin = document.getElementById('nrCheckin').value;
@@ -5258,17 +5270,34 @@
         }
 
         // Se o usuario digitou o nome direto mas nao selecionou do dropdown,
-        // tenta achar hospede no CRM pelo nome exato (case-insensitive) pra puxar telefone
+        // tenta achar hospede no CRM pelo nome exato (case-insensitive) pra puxar dados
         let hospedeIdFinal = hospedeIdSelecionado || null;
         let contatoFinal = contatoRaw;
+        let emailFinal = emailRaw;
         if (!hospedeIdFinal && nome) {
           try {
             const { data: h } = await db.from('hospedes').select('id, telefone, email').ilike('nome', nome).limit(1).maybeSingle();
             if (h) {
               hospedeIdFinal = h.id;
-              if (!contatoFinal) contatoFinal = h.telefone || h.email || '';
+              if (!contatoFinal) contatoFinal = h.telefone || '';
+              if (!emailFinal) emailFinal = h.email || '';
             }
           } catch(e) {}
+        }
+        // Se preencheu email/telefone novo e tem hospede_id, atualiza no CRM
+        if (hospedeIdFinal && (telefoneRaw || emailRaw)) {
+          try {
+            const upd = {};
+            if (telefoneRaw) upd.telefone = telefoneRaw;
+            if (emailRaw) upd.email = emailRaw;
+            await db.from('hospedes').update(upd).eq('id', hospedeIdFinal);
+          } catch(e) { console.warn('CRM update falhou:', e); }
+        }
+        // Aviso de cadastro incompleto (nao bloqueia)
+        if (!contatoFinal) {
+          mostrarToast('⚠️ Reserva criada SEM telefone — vai precisar atualizar antes do check-in', 'warning');
+        } else if (!emailFinal) {
+          mostrarToast('ℹ️ Reserva criada sem email no cadastro (telefone OK)', 'info');
         }
 
         const payload = {
@@ -6094,18 +6123,47 @@
       box.classList.remove('hidden');
     }
 
+    function atualizarAvisoContato() {
+      const tel = (document.getElementById('nrTelefone')?.value || '').trim();
+      const em = (document.getElementById('nrEmail')?.value || '').trim();
+      const aviso = document.getElementById('nrContatoAviso');
+      if (!aviso) return;
+      if (!tel && !em) {
+        aviso.textContent = '⚠️ Sem telefone E sem email — pelo menos o telefone eh essencial pra mandar instrucao de check-in';
+        aviso.classList.remove('hidden');
+      } else if (!tel) {
+        aviso.textContent = '⚠️ Falta o telefone — sem ele nao consegue mandar instrucao de check-in';
+        aviso.classList.remove('hidden');
+      } else if (!em) {
+        aviso.textContent = 'ℹ️ Telefone OK. Email tambem ajuda pra confirmacao (opcional)';
+        aviso.classList.remove('hidden');
+        aviso.classList.remove('text-amber-700');
+        aviso.classList.add('text-domus-azul');
+      } else {
+        aviso.classList.add('hidden');
+      }
+    }
+
     function selecionarHospede(btn) {
       const nome = btn.getAttribute('data-nome') || '';
       const tel = btn.getAttribute('data-tel') || '';
       const email = btn.getAttribute('data-email') || '';
       const id = btn.getAttribute('data-id') || '';
       document.getElementById('nrNome').value = nome;
-      // PRIORIZA TELEFONE — eh primordial pro check-in via WhatsApp
-      document.getElementById('nrContato').value = tel || email;
+      const telEl = document.getElementById('nrTelefone'); if (telEl) telEl.value = tel || '';
+      const emEl = document.getElementById('nrEmail'); if (emEl) emEl.value = email || '';
       document.getElementById('nrHospedeId').value = id;
       document.getElementById('nrNomeResults').classList.add('hidden');
       const st = document.getElementById('nrNomeStatus');
-      if (st) { st.textContent = '✓ Hospede do CRM — telefone preenchido automaticamente'; st.classList.remove('hidden'); st.classList.add('text-domus-azul'); }
+      const partes = [];
+      if (tel) partes.push('telefone'); else partes.push('SEM telefone');
+      if (email) partes.push('email'); else partes.push('SEM email');
+      if (st) {
+        st.textContent = '✓ Hospede do CRM (' + partes.join(' · ') + ')';
+        st.classList.remove('hidden');
+        st.classList.toggle('text-amber-700', !tel || !email);
+        st.classList.toggle('text-domus-azul', !!(tel && email));
+      }
     }
 
     function abrirNovoCliente() {
