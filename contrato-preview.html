@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Contrato Preenchido — Domus Garden</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 60px; color: #222; font-size: 11pt; background: #f5f5f5; }
+  #contrato { background: white; padding: 60px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  h1 { font-size: 13pt; text-align: center; margin: 0 0 8px; }
+  h2 { font-size: 11pt; text-align: center; margin: 0 0 24px; font-weight: normal; }
+  h3 { font-size: 11pt; margin: 24px 0 8px; font-weight: bold; }
+  h4 { font-size: 10pt; margin: 16px 0 8px; font-weight: bold; }
+  p { text-align: justify; margin: 0 0 8px; line-height: 1.4; }
+  ul { padding-left: 24px; margin: 8px 0; }
+  li { line-height: 1.4; margin-bottom: 4px; }
+  .pagebreak { page-break-before: always; }
+  .assinatura { margin-top: 24px; }
+  .bar { background: #008B9C; color: white; padding: 16px; border-radius: 8px; margin-bottom: 24px; text-align: center; }
+  .bar h2 { color: white; margin: 0; }
+  .toolbar { position: sticky; top: 0; background: white; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: -40px -60px 24px; z-index: 10; display: flex; gap: 12px; align-items: center; }
+  .toolbar button { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 13px; }
+  .btn-pdf { background: #008B9C; color: white; }
+  .btn-pdf:hover { background: #0A3142; }
+  .btn-imprimir { background: white; border: 1px solid #ccc; }
+  .login-overlay { position: fixed; inset: 0; background: rgba(10,49,66,0.95); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .login-overlay form { background: white; padding: 32px; border-radius: 12px; max-width: 360px; width: 100%; }
+  .login-overlay input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 12px; box-sizing: border-box; }
+  .login-overlay button { width: 100%; padding: 12px; background: #008B9C; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+  .erro { color: #d33; font-size: 12px; margin-bottom: 8px; }
+  @media print {
+    body { background: white; padding: 0; }
+    #contrato { box-shadow: none; padding: 0; }
+    .toolbar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loginOverlay" class="login-overlay">
+  <form id="loginForm">
+    <h3 style="margin:0 0 16px;">Login admin</h3>
+    <input id="lEmail" type="email" placeholder="e-mail" required>
+    <input id="lSenha" type="password" placeholder="senha" required>
+    <p id="lErro" class="erro" style="display:none;"></p>
+    <button type="submit">Entrar</button>
+  </form>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="toolbar">
+    <button class="btn-pdf" onclick="baixarPdf()">📄 Baixar PDF</button>
+    <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir</button>
+    <span id="status" style="margin-left:auto;color:#666;font-size:12px;"></span>
+  </div>
+  <div id="contrato"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let currentAdmin = null;
+let contrato = null;
+
+// ===== Helpers =====
+const meses = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const dataExtenso = s => { const [y,m,d] = s.split("-"); return `${parseInt(d)} de ${meses[parseInt(m)-1]} de ${y}`; };
+const fmtBR = n => Number(n||0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+const u = ["","um","dois","três","quatro","cinco","seis","sete","oito","nove"];
+const e10 = ["dez","onze","doze","treze","quatorze","quinze","dezesseis","dezessete","dezoito","dezenove"];
+const d10 = ["","","vinte","trinta","quarenta","cinquenta","sessenta","setenta","oitenta","noventa"];
+const c100 = ["","cento","duzentos","trezentos","quatrocentos","quinhentos","seiscentos","setecentos","oitocentos","novecentos"];
+function porExtenso(n) {
+  if (n===0) return "zero";
+  if (n<10) return u[n];
+  if (n<20) return e10[n-10];
+  if (n<100) { const d=Math.floor(n/10), r=n%10; return d10[d]+(r?" e "+u[r]:""); }
+  if (n===100) return "cem";
+  if (n<1000) { const c=Math.floor(n/100), r=n%100; return c100[c]+(r?" e "+porExtenso(r):""); }
+  const m=Math.floor(n/1000), r=n%1000;
+  const mil = m===1?"mil":porExtenso(m)+" mil";
+  return mil+(r?(r<100?" e ":" ")+porExtenso(r):"");
+}
+function reaisExt(v) {
+  const inteiro = Math.floor(v), cent = Math.round((v-inteiro)*100);
+  let s = porExtenso(inteiro)+" reais";
+  if (cent>0) s+=" e "+porExtenso(cent)+" centavos";
+  return s;
+}
+function diasNoMes(ano, mes) { return new Date(ano, mes, 0).getDate(); }
+
+// ===== Login =====
+document.getElementById('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = document.getElementById('lEmail').value.trim().toLowerCase();
+  const senha = document.getElementById('lSenha').value;
+  const erroEl = document.getElementById('lErro');
+  erroEl.style.display = 'none';
+  const { data, error } = await db.rpc('verificar_admin_login', { p_email: email, p_senha: senha });
+  if (error || !data?.success) {
+    erroEl.textContent = data?.erro || error?.message || 'Erro no login';
+    erroEl.style.display = 'block';
+    return;
+  }
+  currentAdmin = { admin_id: data.admin_id, nome: data.nome || email.split('@')[0] };
+  try { localStorage.setItem('dg_admin_session', JSON.stringify(currentAdmin)); } catch(e){}
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  carregarContrato();
+});
+
+function tentarSessao() {
+  try {
+    const s = JSON.parse(localStorage.getItem('dg_admin_session') || 'null');
+    if (s?.admin_id) {
+      currentAdmin = s;
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('app').style.display = '';
+      carregarContrato();
+    }
+  } catch(e){}
+}
+
+// ===== Carregar contrato + renderizar =====
+async function carregarContrato() {
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if (!id) {
+    document.getElementById('contrato').innerHTML = '<p style="color:red;">ID do contrato não informado. Use ?id=xxx</p>';
+    return;
+  }
+  document.getElementById('status').textContent = 'Carregando…';
+  const { data, error } = await db.rpc('obter_contrato_para_pdf', { p_admin_id: currentAdmin.admin_id, p_contrato_id: id });
+  if (error || !data?.success || !data.contrato) {
+    document.getElementById('contrato').innerHTML = '<p style="color:red;">Erro: ' + (data?.erro || error?.message || 'contrato não encontrado') + '</p>';
+    return;
+  }
+  contrato = data.contrato;
+  renderizarContrato();
+  document.getElementById('status').textContent = '';
+}
+
+function calcularCronograma(unidade, data_entrada, aluguel, caucao, parcelas_caucao, cortesia_dias_extras) {
+  const [y,m,d] = data_entrada.split("-").map(Number);
+  const ultimoDia = diasNoMes(y,m);
+  const dias_cortesia = (ultimoDia - d + 1) + (cortesia_dias_extras || 0);
+  const lista = [];
+  const cau1 = +(caucao / parcelas_caucao).toFixed(2);
+  lista.push({ data: new Date(y, m-1, d-1).toLocaleDateString("pt-BR"), valor: cau1, comp: parcelas_caucao>1 ? `Caução (1ª de ${parcelas_caucao} parcelas)` : 'Caução (parcela única)', obs: 'Vence 1 dia antes da entrada' });
+  const dia01Prox = new Date(y, m, 1);
+  const proRata = +((aluguel/30)*14).toFixed(2);
+  lista.push({ data: dia01Prox.toLocaleDateString("pt-BR"), valor: proRata, comp: `Proporcional 14 dias (01/${String(m+1).padStart(2,'0')} a 14/${String(m+1).padStart(2,'0')})`, obs: '' });
+  if (parcelas_caucao > 1) {
+    const cau2dt = new Date(y, m, 15);
+    lista.push({ data: cau2dt.toLocaleDateString("pt-BR"), valor: cau1, comp: 'Caução (2ª e última parcela)', obs: '' });
+  }
+  for (let i=0; lista.length<6; i++) {
+    const dtP = new Date(y, m+1+i, 15);
+    lista.push({ data: dtP.toLocaleDateString("pt-BR"), valor: aluguel, comp: `Aluguel cheio + energia (15/${String(dtP.getMonth()+1).padStart(2,'0')} a 14/${String((dtP.getMonth()+2)%12||12).padStart(2,'0')})`, obs: '' });
+  }
+  return { cronograma: lista, dias_cortesia };
+}
+
+function renderizarContrato() {
+  const c = contrato;
+  const isAP = c.unidade === 'AP';
+  const cnpj = isAP ? '53.844.760/0001-41' : '38.014.581/0001-93';
+  const razao = isAP ? 'GLED Coliving LTDA' : 'G.L.E. Dias M.E.';
+  const sede = isAP
+    ? 'Rua Andrade Pertence, nº 73 – Vila Olímpia – São Paulo/SP – CEP 04549-020'
+    : 'Rua Ribeirão Claro, nº 547 – Vila Olímpia – São Paulo/SP – CEP 04549-060';
+  const enderecoUnidade = isAP
+    ? 'Rua Andrade Pertence, nº 73 – Vila Olímpia – São Paulo/SP'
+    : 'Rua Ribeirão Claro, nº 547 – Vila Olímpia – São Paulo/SP';
+  const nomeUnidade = isAP ? 'Andrade Pertence' : 'Ribeirão Claro';
+  const quarto = c.quarto || 'a definir conforme disponibilidade';
+  const aluguel = Number(c.valor_final || c.aluguel || 0);
+  const caucao = +(aluguel * 0.5).toFixed(2);
+  const multa = +(aluguel * 1.5).toFixed(2);
+  const parcCaucao = c.parcelas_caucao || 1;
+  const { cronograma, dias_cortesia } = calcularCronograma(c.unidade, c.data_entrada, aluguel, caucao, parcCaucao, c.cortesia_dias_extras||0);
+  const [y,m,d] = c.data_entrada.split('-').map(Number);
+  const ultimoDia = diasNoMes(y,m);
+  const modTxt = c.modalidade === '12' ? '12 (doze) meses' : '3 (três) meses';
+  const fimPrazoDt = new Date(y, m-1+(c.modalidade==='12'?12:3), d);
+  const fimPrazo = fimPrazoDt.toLocaleDateString('pt-BR');
+
+  const html = `
+    <div class="bar"><h2 style="color:white;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS — DOMUS GARDEN COLIVING<br><span style="font-size:11pt;font-weight:normal;">Unidade ${nomeUnidade} — Quarto ${quarto}</span></h2></div>
+
+    <p><strong>CONTRATADA:</strong> ${razao}, inscrita no CNPJ/ME sob o nº ${cnpj}, com sede à ${sede}, neste ato representada por Gabriela Laís Egéa Dias, brasileira, solteira, empresária, RG nº 48.594.271-9 (SSP/SP) e CPF nº 398.286.638-30.</p>
+    <p><strong>CONTRATANTE:</strong> ${c.nome}, ${c.idade||'—'} anos, brasileira, RG nº ${c.rg||'—'} e CPF nº ${c.cpf||'—'}, residente e domiciliada à ${c.endereco||'—'}, telefone ${c.telefone||'—'}, e-mail ${c.email||'—'}.</p>
+    <p><strong>CONTATOS DE EMERGÊNCIA:</strong> ${c.emerg1_nome||''} ${c.emerg1_tel||'—'} · ${c.emerg2_nome||''} ${c.emerg2_tel||'—'}</p>
+    <p><strong>OBJETO:</strong> O presente contrato tem por objeto a prestação de serviços de coliving, compreendendo a utilização do módulo Quarto ${quarto} e das áreas comuns do imóvel localizado à ${enderecoUnidade}, conforme as condições deste instrumento e do Regulamento Interno.</p>
+
+    <h3>CLÁUSULA PRIMEIRA — PRAZO E RENOVAÇÃO</h3>
+    <p>A CONTRATANTE contrata prestação de serviços para uso residencial pelo prazo inicial de ${modTxt}, iniciando-se em ${dataExtenso(c.data_entrada)} e, a partir de ${fimPrazo}, passando a vigorar por prazo indeterminado.</p>
+    <p>A renovação é mensal e automática. Caso qualquer das partes deseje encerrar o contrato, deverá comunicar a outra parte por escrito com antecedência mínima de 30 (trinta) dias em relação ao vencimento do próximo boleto.</p>
+
+    <h3>CLÁUSULA SEGUNDA — PREÇO MENSAL</h3>
+    <p>O valor mensal regular pela prestação dos serviços é de R$ ${fmtBR(aluguel)} (${reaisExt(aluguel)}), acrescido do rateio de energia elétrica conforme Cláusula Quarta.</p>
+
+    <h3>CLÁUSULA TERCEIRA — GARANTIA (CAUÇÃO) E CRONOGRAMA</h3>
+    <p>A CONTRATANTE pagará caução equivalente a 50% (cinquenta por cento) do valor do aluguel regular, total de R$ ${fmtBR(caucao)} (${reaisExt(caucao)}). A caução poderá ser paga em parcela única à vista ou em até 2 (duas) parcelas, conforme acordado no momento da contratação e detalhado no cronograma abaixo.</p>
+    <p><strong>Cronograma de Pagamentos:</strong></p>
+    <ul>
+      ${cronograma.map(p => `<li><strong>${p.data}</strong> — R$ ${fmtBR(p.valor)} — ${p.comp}${p.obs ? ' <em>(' + p.obs + ')</em>' : ''}</li>`).join('')}
+    </ul>
+    ${(c.cortesia_obs || c.cortesia_dias_extras) ? `<p><strong>§ Cortesia comercial:</strong> ${c.cortesia_obs || ''} ${dias_cortesia ? `Total de ${dias_cortesia} dia(s) de cortesia.` : ''}</p>` : ''}
+    <p><strong>§ 1º (Regime de pagamento antecipado).</strong> As mensalidades vencem todo dia 15 e referem-se ao período futuro (de 15 do mês corrente a 14 do mês subsequente).</p>
+    <p><strong>§ 2º (Compensação da caução).</strong> A caução não é devolvida em dinheiro e será compensada como abatimento proporcional do último mês de prestação de serviços, desde que não haja pendências.</p>
+    <p><strong>§ 3º (Rescisão antecipada).</strong> Em caso de rescisão antecipada sem cumprimento do aviso prévio de 30 (trinta) dias ou em virtude de descumprimento contratual, a caução será retida integralmente e será aplicada multa adicional equivalente a 01 (um) aluguel regular, totalizando R$ ${fmtBR(multa)}.</p>
+
+    <h3>CLÁUSULA QUARTA — RATEIO DE ENERGIA ELÉTRICA</h3>
+    <p>O rateio da energia elétrica é cobrado por competência mensal, acrescido ao boleto de aluguel subsequente. Regra oficial Domus:</p>
+    <ul>
+      <li>80% do valor total da conta de energia é dividido entre as moradoras;</li>
+      <li>A divisão é feita pelo número total de vagas do imóvel, independentemente de a vaga estar ocupada ou não;</li>
+      <li>Os 20% restantes são de responsabilidade da CONTRATADA, como incentivo ao uso consciente.</li>
+    </ul>
+
+    <h3>CLÁUSULA QUINTA — REAJUSTE ANUAL</h3>
+    <p>O valor mensal será reajustado anualmente pelo IGP-M/FGV. Na ausência, por ordem: INPC/IBGE, IPC-FIPE ou IGP-DI/FGV.</p>
+
+    <h3>CLÁUSULA SEXTA — FORMA DE PAGAMENTO</h3>
+    <p>O valor mensal será pago mediante boleto bancário enviado preferencialmente por e-mail ou WhatsApp, com vencimento no dia 15 (quinze) de cada mês. O não pagamento implicará multa moratória de 10%, juros de mora de 1% ao mês e correção monetária até a data do pagamento.</p>
+
+    <div class="pagebreak"></div>
+    <h3>CLÁUSULA SÉTIMA — SERVIÇOS INCLUÍDOS</h3>
+    <ul>
+      <li>Gestão administrativa e suporte via WhatsApp (seg-sex 09h-21h; sáb 09h-15h);</li>
+      <li>Limpeza semanal das áreas comuns;</li>
+      <li>Manutenção preventiva e corretiva, mediante agendamento;</li>
+      <li>Seguro contra incêndio;</li>
+      <li>Wi-Fi de cortesia;</li>
+      <li>Coworking, sala de cinema e lavanderia.</li>
+    </ul>
+
+    ${isAP ? `
+    <h3>CLÁUSULA OITAVA — NATUREZA DO ESPAÇO E ÁREAS COMPARTILHADAS</h3>
+    <p>A unidade Andrade Pertence funciona simultaneamente como Coliving Feminino e Hostel Misto. Coworking, sala de cinema e lavanderia são compartilhados entre coliving e hostel. O módulo contratado permanece exclusivamente vinculado ao Coliving Feminino.</p>
+
+    <h3>CLÁUSULA NONA — LAVANDERIA OMO</h3>
+    <p>A lavanderia funciona por meio de fichas do sistema OMO Profissional. Valor da ficha: R$ 19,90. Horário: 07h às 23h. A CONTRATANTE deve comunicar a retirada via WhatsApp (11) 94333-0911. Fichas consumidas serão cobradas no boleto subsequente.</p>
+
+    <h3>CLÁUSULA DÉCIMA — MINI MERCADO</h3>
+    ` : `
+    <h3>CLÁUSULA OITAVA — LAVANDERIA</h3>
+    <p>A lavanderia da unidade dispõe de máquina de uso comum entre as moradoras, sem custo adicional. Horário: 07h às 23h. A CONTRATANTE compromete-se a retirar suas roupas imediatamente após o ciclo.</p>
+
+    <h3>CLÁUSULA NONA — MINI MERCADO</h3>
+    `}
+    <p>O mini mercado opera mediante pagamento imediato via QR Code (Pix, débito ou crédito). A CONTRATANTE é responsável por efetuar o pagamento no ato da retirada.</p>
+
+    <h3>CLÁUSULA ${isAP ? 'DÉCIMA PRIMEIRA' : 'DÉCIMA'} — OBRIGAÇÕES DA CONTRATANTE</h3>
+    <ul>
+      <li>Cumprir integralmente o Regulamento Interno;</li>
+      <li>Zelar pelo Quarto ${quarto} e pelas áreas comuns;</li>
+      <li>Comunicar previamente sobre visitas (regras específicas se aplicam);</li>
+      <li>Utilizar o quarto e áreas comuns exclusivamente para fins residenciais;</li>
+      <li>Responder por danos causados ao imóvel, mobília ou equipamentos (descontados da caução);</li>
+      <li>Comunicar imediatamente qualquer dano, defeito ou avaria;</li>
+      <li>Não substituir ou alterar fechaduras sem autorização expressa.</li>
+    </ul>
+
+    <h3>CLÁUSULA ${isAP ? 'DÉCIMA SEGUNDA' : 'DÉCIMA PRIMEIRA'} — VISITAS</h3>
+    <ul>
+      <li>Toda visita deverá ser previamente comunicada à CONTRATADA;</li>
+      <li>Somente visitas femininas serão autorizadas;</li>
+      <li>Visitas permitidas exclusivamente em módulos individuais;</li>
+      <li>Não é permitida visita em módulos compartilhados;</li>
+      <li>A CONTRATADA poderá restringir ou vetar visitas que comprometam segurança ou convivência.</li>
+    </ul>
+
+    <div class="pagebreak"></div>
+    <h3>CLÁUSULA ${isAP ? 'DÉCIMA TERCEIRA' : 'DÉCIMA SEGUNDA'} — REGULAMENTO INTERNO</h3>
+    <p>O presente Regulamento Interno integra o Contrato de Prestação de Serviços e possui força obrigatória durante toda a vigência da estadia na unidade ${nomeUnidade}.</p>
+
+    <h4>1. REGRAS DE SEGURANÇA</h4>
+    <ul>
+      <li>Zelar pela chave/senha de acesso, não as repassando a terceiros;</li>
+      <li>Comunicar imediatamente à CONTRATADA em caso de perda de chave ou suspeita de comprometimento da segurança;</li>
+      <li>Conferir sempre se portas, portões e fechaduras digitais estão fechados;</li>
+      <li>Não permitir entrada de terceiros sem autorização prévia;</li>
+      <li>Não compartilhar rotinas, códigos ou senhas com terceiros;</li>
+      <li>Não deixar equipamentos ligados que possam representar risco de incêndio.</li>
+    </ul>
+
+    <h4>2. REGRAS DE LIMPEZA E ORGANIZAÇÃO</h4>
+    <ul>
+      <li>Manter quarto limpo e organizado;</li>
+      <li>Lavar, secar e guardar louça imediatamente após o uso;</li>
+      <li>Não deixar restos de comida expostos;</li>
+      <li>Manter banheiros limpos após o uso;</li>
+      <li>Não descartar absorventes, papéis ou fios de cabelo nos vasos sanitários;</li>
+      <li>Trocar sacos de lixo cheios e descartar nos locais indicados;</li>
+      <li>Comunicar imediatamente qualquer dano a móveis ou equipamentos.</li>
+    </ul>
+
+    <h4>3. REGRAS DE CONVIVÊNCIA</h4>
+    <ul>
+      <li>Respeitar horários de silêncio das 23h às 07h;</li>
+      <li>Evitar música alta, gritos, arrastar móveis ou viva-voz em áreas comuns;</li>
+      <li>Tratar todas as moradoras, colaboradores e visitantes com respeito;</li>
+      <li>Utilizar áreas comuns de forma democrática e organizada;</li>
+      <li>Não consumir alimentos no coworking;</li>
+      <li>Ressarcir valores referentes a itens quebrados.</li>
+    </ul>
+
+    <h4>4. PENALIDADES</h4>
+    <p>O descumprimento poderá acarretar advertência verbal ou escrita, multa de até 2 (duas) vezes o valor mensal vigente, rescisão contratual imediata sem devolução de valores, e cobrança de indenização por danos materiais.</p>
+
+    <h3>CLÁUSULAS FINAIS — INFRAÇÃO, DADOS, ASSINATURA E FORO</h3>
+    <p><strong>INFRAÇÃO CONTRATUAL:</strong> descumprimento poderá resultar em rescisão imediata, multa de 02 (duas) vezes o valor mensal e ressarcimento por prejuízos.</p>
+    <p><strong>PROTEÇÃO DE DADOS:</strong> as partes comprometem-se a cumprir integralmente a Lei nº 13.709/2018 (LGPD).</p>
+    <p><strong>ASSINATURA DIGITAL:</strong> este contrato é assinado digitalmente, com validade jurídica nos termos da MP nº 2.200-2/2001 e Lei nº 14.063/2020.</p>
+    <p><strong>FORO:</strong> fica eleito o Foro da Comarca de São Paulo/SP, com renúncia a qualquer outro.</p>
+
+    <p style="margin-top:24px;">São Paulo, ${new Date().toLocaleDateString('pt-BR')}.</p>
+
+    <div class="assinatura">
+      <p>_____________________________________________</p>
+      <p><strong>CONTRATADA</strong><br>${razao}<br>Representada por Gabriela Laís Egéa Dias · CPF 398.286.638-30</p>
+    </div>
+    <div class="assinatura">
+      <p>_____________________________________________</p>
+      <p><strong>CONTRATANTE</strong><br>${c.nome} · CPF ${c.cpf||'—'}</p>
+    </div>
+  `;
+  document.getElementById('contrato').innerHTML = html;
+  document.title = `Contrato — ${c.nome}`;
+}
+
+function baixarPdf() {
+  if (!contrato) return;
+  const opt = {
+    margin: [15, 15, 15, 15],
+    filename: `Contrato Domus ${contrato.unidade} - ${contrato.nome}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] }
+  };
+  document.getElementById('status').textContent = 'Gerando PDF…';
+  html2pdf().set(opt).from(document.getElementById('contrato')).save().then(() => {
+    document.getElementById('status').textContent = 'PDF baixado ✓';
+    setTimeout(() => document.getElementById('status').textContent = '', 3000);
+  });
+}
+
+tentarSessao();
+</script>
+</body>
+</html>
