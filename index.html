@@ -4070,7 +4070,21 @@
               <button onclick="mostrarSubColiving('col-fila', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Lista de Espera</button>
               <button onclick="mostrarSubColiving('col-futuros', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Futuros Moradores</button>
               <button onclick="mostrarSubColiving('col-contratos', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">📋 Contratos Pendentes</button>
+              <button onclick="abrirAtalhoMoradoras()" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">👥 Moradoras</button>
+              <button onclick="window.open('/pms.html?view=boletos','_blank')" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">💰 Boletos Dominhas</button>
             </div>
+
+            <script>
+              function abrirAtalhoMoradoras() {
+                // Atalho temporario: abre a aba antiga do DG Moradoras
+                // Em uma proxima sessao, vamos refazer essa tela puxando dados reais
+                if (typeof mostrarDgTab === 'function') {
+                  const btnLateral = document.querySelector('[onclick*="mostrarDgTab(\'dg-moradoras\'"]');
+                  if (btnLateral) { mostrarDgTab('dg-moradoras', btnLateral); return; }
+                }
+                alert('Aba Moradoras: temporariamente acesse pelo menu lateral. Refatoracao em curso.');
+              }
+            </script>
 
             <!-- ======= CONTRATOS PENDENTES (iframe pra admin-contratos.html) ======= -->
             <div id="col-contratos" class="col-sub-section hidden fade-in">
