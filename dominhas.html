@@ -323,31 +323,87 @@
 
         <!-- Guia da Vila Olímpia -->
         <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
-          <div class="flex items-center gap-2 mb-4 cursor-pointer" onclick="document.getElementById('guia-vila-body').classList.toggle('hidden')">
+          <div class="flex items-center gap-2 mb-3 cursor-pointer select-none" onclick="(()=>{const b=document.getElementById('guia-vila-body');const a=document.getElementById('guia-vila-arrow');b.classList.toggle('hidden');a.textContent=b.classList.contains('hidden')?'▼':'▲';})()">
             <span class="text-xl">📍</span>
             <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold flex-1">Guia da Vila Olímpia</p>
-            <span class="text-domus-texto-suave text-sm">▼</span>
+            <span id="guia-vila-arrow" class="text-domus-texto-suave text-sm">▲</span>
           </div>
-          <div id="guia-vila-body" class="hidden space-y-3">
-            <div class="grid grid-cols-2 gap-2">
-              <div class="p-3 rounded-xl bg-green-50 border border-green-100">
-                <p class="text-sm font-medium text-green-800">🥗 Restaurantes</p>
-                <p class="text-xs text-green-600 mt-1">Opções perto da Domus</p>
-              </div>
-              <div class="p-3 rounded-xl bg-blue-50 border border-blue-100">
-                <p class="text-sm font-medium text-blue-800">🏥 Saúde</p>
-                <p class="text-xs text-blue-600 mt-1">Farmácias e UBSs</p>
-              </div>
-              <div class="p-3 rounded-xl bg-purple-50 border border-purple-100">
-                <p class="text-sm font-medium text-purple-800">🚌 Transporte</p>
-                <p class="text-xs text-purple-600 mt-1">Metrô, ônibus, bikes</p>
-              </div>
-              <div class="p-3 rounded-xl bg-amber-50 border border-amber-100">
-                <p class="text-sm font-medium text-amber-800">🛒 Mercados</p>
-                <p class="text-xs text-amber-600 mt-1">Supermercados e feiras</p>
+          <div id="guia-vila-body" class="space-y-4">
+
+            <!-- Restaurantes -->
+            <div>
+              <p class="text-xs font-semibold text-green-800 mb-2 flex items-center gap-1.5"><span>🥗</span> Restaurantes & cafés</p>
+              <div class="space-y-1.5 text-xs">
+                <div class="p-2 rounded-lg bg-green-50 border border-green-100 flex items-start justify-between gap-2">
+                  <div>
+                    <p class="font-medium text-green-900">Di Fiori</p>
+                    <p class="text-green-700/80 text-[11px]">Italiano clássico · R. Hungria, 1000</p>
+                  </div>
+                  <span class="text-[10px] text-green-700/70 whitespace-nowrap">~8 min</span>
+                </div>
+                <div class="p-2 rounded-lg bg-green-50 border border-green-100 flex items-start justify-between gap-2">
+                  <div>
+                    <p class="font-medium text-green-900">Padaria Bella Paulista (24h)</p>
+                    <p class="text-green-700/80 text-[11px]">Café da manhã, pão fresco, lanches</p>
+                  </div>
+                  <span class="text-[10px] text-green-700/70 whitespace-nowrap">~10 min</span>
+                </div>
+                <div class="p-2 rounded-lg bg-green-50 border border-green-100 flex items-start justify-between gap-2">
+                  <div>
+                    <p class="font-medium text-green-900">Sabor & Companhia</p>
+                    <p class="text-green-700/80 text-[11px]">Self-service por kg · almoço</p>
+                  </div>
+                  <span class="text-[10px] text-green-700/70 whitespace-nowrap">~5 min</span>
+                </div>
               </div>
             </div>
-            <p class="text-xs text-domus-texto-suave italic text-center mt-2">Em breve: guia completo com dicas das Dominhas!</p>
+
+            <!-- Saúde -->
+            <div>
+              <p class="text-xs font-semibold text-blue-800 mb-2 flex items-center gap-1.5"><span>🏥</span> Saúde</p>
+              <div class="space-y-1.5 text-xs">
+                <div class="p-2 rounded-lg bg-blue-50 border border-blue-100">
+                  <p class="font-medium text-blue-900">Droga Raia · Vila Olímpia</p>
+                  <p class="text-blue-700/80 text-[11px]">24h · entrega rápida pelo app</p>
+                </div>
+                <div class="p-2 rounded-lg bg-blue-50 border border-blue-100">
+                  <p class="font-medium text-blue-900">UBS Vila Olímpia</p>
+                  <p class="text-blue-700/80 text-[11px]">Atendimento SUS · agendamento Conecte SUS</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transporte -->
+            <div>
+              <p class="text-xs font-semibold text-purple-800 mb-2 flex items-center gap-1.5"><span>🚌</span> Transporte</p>
+              <div class="space-y-1.5 text-xs">
+                <div class="p-2 rounded-lg bg-purple-50 border border-purple-100">
+                  <p class="font-medium text-purple-900">Metrô Vila Olímpia (Linha 17 — em obras)</p>
+                  <p class="text-purple-700/80 text-[11px]">Ônibus: 6291-10, 775R, 805A passam aqui</p>
+                </div>
+                <div class="p-2 rounded-lg bg-purple-50 border border-purple-100">
+                  <p class="font-medium text-purple-900">Estações Bike Itaú</p>
+                  <p class="text-purple-700/80 text-[11px]">Mais perto: Av. Macuco, próximo ao parque</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mercados -->
+            <div>
+              <p class="text-xs font-semibold text-amber-800 mb-2 flex items-center gap-1.5"><span>🛒</span> Mercados & feiras</p>
+              <div class="space-y-1.5 text-xs">
+                <div class="p-2 rounded-lg bg-amber-50 border border-amber-100">
+                  <p class="font-medium text-amber-900">St Marche Vila Olímpia</p>
+                  <p class="text-amber-700/80 text-[11px]">Hortifruti bom · vinhos · padaria</p>
+                </div>
+                <div class="p-2 rounded-lg bg-amber-50 border border-amber-100">
+                  <p class="font-medium text-amber-900">Feira de quarta · R. Pedroso Alvarenga</p>
+                  <p class="text-amber-700/80 text-[11px]">Manhã, até umas 13h</p>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-[10px] text-domus-texto-suave italic text-center pt-1">Esqueci de algo? Posta na Comuna que a gente atualiza 🌿</p>
           </div>
         </div>
 
