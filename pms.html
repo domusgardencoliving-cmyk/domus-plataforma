@@ -2647,7 +2647,8 @@
       document.getElementById(view + 'View').classList.remove('hidden');
 
       document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
-      document.querySelector(`[data-view="${view}"]`).classList.add('active');
+      const _activeLink = document.querySelector(`[data-view="${view}"]`);
+      if (_activeLink) _activeLink.classList.add('active');
 
       currentView = view;
 
@@ -5101,6 +5102,16 @@
           // expand main
           const mc = document.querySelector('.main-content');
           if (mc) { mc.style.marginLeft = '0'; mc.style.width = '100%'; mc.style.padding = '16px'; }
+          // dispara a view certa quando tudo estiver pronto
+          const tryLoad = () => {
+            if (typeof loadView === 'function') {
+              try { loadView(view); } catch (e) { console.warn('embedded loadView:', e); }
+            } else {
+              setTimeout(tryLoad, 200);
+            }
+          };
+          if (document.readyState === 'complete') setTimeout(tryLoad, 100);
+          else window.addEventListener('load', () => setTimeout(tryLoad, 100));
         }
       }
     })();

@@ -11161,7 +11161,7 @@
         if (!dbRef) throw new Error('Supabase nao inicializado');
         const { data, error } = await dbRef
           .from('moradores')
-          .select('id, nome, email, unidade, quarto, inicio_contrato, fim_contrato, aluguel, status, telefone')
+          .select('id, nome, email, unidade, quarto, inicio_contrato, fim_contrato, valor, status, telefone')
           .order('inicio_contrato', { ascending: false });
         if (error) throw error;
         window._morCache = data || [];
@@ -11232,7 +11232,7 @@
           <td class="p-2 sm:p-3">${m.unidade === 'AP' ? 'Andrade Pertence' : (m.unidade === 'Rib' ? 'Ribeirão Claro' : (m.unidade || '—'))}</td>
           <td class="p-2 sm:p-3">${m.quarto || '—'}</td>
           <td class="p-2 sm:p-3">${_morFmtData(m.inicio_contrato)}</td>
-          <td class="p-2 sm:p-3">${_morFmtMoeda(m.aluguel)}</td>
+          <td class="p-2 sm:p-3">${_morFmtMoeda(m.valor)}</td>
           <td class="p-2 sm:p-3">${_morStatusBadge(m.status || 'ativa')}</td>
           <td class="p-2 sm:p-3 text-right">
             <button onclick="abrirMoradoraDetalhe('${m.id}')" class="text-domus-azul hover:underline text-[11px]">Detalhes</button>
@@ -11252,7 +11252,7 @@
         `Telefone: ${m.telefone || '—'}\n` +
         `Inicio: ${_morFmtData(m.inicio_contrato)}\n` +
         `Fim previsto: ${_morFmtData(m.fim_contrato)}\n` +
-        `Aluguel: ${_morFmtMoeda(m.aluguel)}\n` +
+        `Aluguel: ${_morFmtMoeda(m.valor)}\n` +
         `Status: ${m.status || 'ativa'}\n\n` +
         `(Edicao detalhada vem na proxima iteracao)`);
     }
