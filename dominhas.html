@@ -848,8 +848,8 @@
           if (b.inter_pix_copia_cola) {
             acoes.push('<button onclick="copiarPix(\'' + b.id + '\', this)" class="flex-1 py-2 rounded-lg bg-domus-azul text-white text-xs font-medium hover:bg-domus-azul-escuro transition flex items-center justify-center gap-1">📋 Copiar PIX</button>');
           }
-          if (b.inter_linha_digitavel) {
-            acoes.push('<button onclick="copiarLinhaDigitavel(\'' + b.id + '\', this)" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">🔢 Linha digitavel</button>');
+          if (b.inter_codigo_barras || b.inter_linha_digitavel) {
+            acoes.push('<button onclick="copiarCodigoBarras(\'' + b.id + '\', this)" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">📊 Copiar código de barras</button>');
           }
           // Botao 'Baixar boleto' SEMPRE presente — se nao tem PDF, abre janela com PIX/codigos
           acoes.push('<button onclick="abrirBoleto(\'' + b.id + '\')" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">📄 Baixar boleto</button>');
@@ -866,7 +866,7 @@
               '<div class="text-right"><p class="text-lg font-bold">' + valor + '</p><p class="text-[10px] uppercase tracking-wider font-medium">' + sit + '</p></div>' +
             '</div>' +
             (composicao.length > 1 ? '<p class="text-[11px] opacity-70 mb-2">' + composicao.join(' + ') + '</p>' : '') +
-            (acoes.length ? '<div class="flex gap-2 mt-3">' + acoes.join('') + '</div>' : '') +
+            (acoes.length ? '<div class="flex gap-2 mt-3 flex-wrap">' + acoes.join('') + '</div>' : '') +
           '</div>';
         }).join('');
 
@@ -924,10 +924,12 @@ ${b.inter_codigo_barras ? '<div class="box"><div class="label">Codigo de barras<
       try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
     }
 
-    function copiarLinhaDigitavel(boletoId, botao) {
+    function copiarCodigoBarras(boletoId, botao) {
       const b = (window._boletosMoradora || []).find(x => x.id === boletoId);
-      if (!b || !b.inter_linha_digitavel) return;
-      navigator.clipboard.writeText(b.inter_linha_digitavel).then(() => {
+      if (!b) return;
+      const txt = b.inter_codigo_barras || b.inter_linha_digitavel;
+      if (!txt) return;
+      navigator.clipboard.writeText(txt).then(() => {
         const orig = botao.innerHTML;
         botao.innerHTML = '✅ Copiado!';
         setTimeout(() => { botao.innerHTML = orig; }, 2000);
