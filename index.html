@@ -4009,7 +4009,13 @@
                 <button onclick="loadMoradoras()" class="px-3 py-2 rounded-lg border border-domus-borda text-xs hover:bg-domus-azul/10">🔄 Atualizar</button>
               </div>
 
-              <!-- KPIs -->
+              <!-- Abas por unidade -->
+              <div class="flex gap-2 mb-4 border-b border-domus-borda pb-2">
+                <button id="mor-tab-AP" onclick="setMorUnidade('AP')" class="px-4 py-2 rounded-lg text-sm font-medium bg-domus-azul text-white">Andrade Pertence</button>
+                <button id="mor-tab-Rib" onclick="setMorUnidade('Rib')" class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10">Ribeirão Claro</button>
+              </div>
+
+              <!-- KPIs (por unidade) -->
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 <div class="bg-white rounded-xl border border-domus-borda p-3">
                   <p class="text-[10px] uppercase text-domus-texto-suave">Total</p>
@@ -4033,11 +4039,6 @@
               <div class="bg-white rounded-2xl border border-domus-borda p-3 mb-3">
                 <div class="flex gap-2 flex-wrap">
                   <input id="mor-busca" oninput="renderMoradoras()" placeholder="🔍 Buscar por nome, email, quarto…" class="flex-1 min-w-40 px-3 py-2 rounded-lg border border-domus-borda text-sm" />
-                  <select id="mor-unidade" onchange="renderMoradoras()" class="px-3 py-2 rounded-lg border border-domus-borda text-sm">
-                    <option value="">Todas as unidades</option>
-                    <option value="AP">Andrade Pertence</option>
-                    <option value="Rib">Ribeirão Claro</option>
-                  </select>
                   <select id="mor-status" onchange="renderMoradoras()" class="px-3 py-2 rounded-lg border border-domus-borda text-sm">
                     <option value="ativa">Apenas ativas</option>
                     <option value="">Todos os status</option>
@@ -11194,29 +11195,50 @@
       return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     }
 
+    window._morUnid = window._morUnid || 'AP';
+
+    function setMorUnidade(u) {
+      window._morUnid = u;
+      const apBtn = document.getElementById('mor-tab-AP');
+      const ribBtn = document.getElementById('mor-tab-Rib');
+      [apBtn, ribBtn].forEach(b => {
+        if (!b) return;
+        b.classList.remove('bg-domus-azul', 'text-white');
+        b.classList.add('bg-white', 'text-domus-texto', 'border', 'border-domus-borda');
+      });
+      const ativo = u === 'AP' ? apBtn : ribBtn;
+      if (ativo) {
+        ativo.classList.remove('bg-white', 'text-domus-texto', 'border', 'border-domus-borda');
+        ativo.classList.add('bg-domus-azul', 'text-white');
+      }
+      renderMoradoras();
+    }
+
     function renderMoradoras() {
       const todas = window._morCache || [];
       const busca = (document.getElementById('mor-busca')?.value || '').toLowerCase().trim();
-      const unid = document.getElementById('mor-unidade')?.value || '';
+      const unid = window._morUnid || 'AP';
       const stat = document.getElementById('mor-status')?.value;
       // status: '' = todos; default = 'ativa'
       let arr = todas;
       if (stat !== '') arr = arr.filter(m => (m.status || 'ativa') === stat);
-      if (unid) arr = arr.filter(m => m.unidade === unid);
+      arr = arr.filter(m => m.unidade === unid);
       if (busca) arr = arr.filter(m => {
         const blob = ((m.nome || '') + ' ' + (m.email || '') + ' ' + (m.quarto || '')).toLowerCase();
         return blob.includes(busca);
       });
 
-      // KPIs (calculados sobre TODAS, nao sobre filtradas)
-      const ativas = todas.filter(m => (m.status || 'ativa') === 'ativa').length;
-      const aviso = todas.filter(m => m.status === 'aviso').length;
-      const rescisao = todas.filter(m => m.status === 'rescisao').length;
-      document.getElementById('mor-kpi-total').textContent = todas.length;
+      // KPIs calculados sobre a unidade selecionada
+      const todasUnid = todas.filter(m => m.unidade === unid);
+      const ativas = todasUnid.filter(m => (m.status || 'ativa') === 'ativa').length;
+      const aviso = todasUnid.filter(m => m.status === 'aviso').length;
+      const rescisao = todasUnid.filter(m => m.status === 'rescisao').length;
+      document.getElementById('mor-kpi-total').textContent = todasUnid.length;
       document.getElementById('mor-kpi-ativas').textContent = ativas;
       document.getElementById('mor-kpi-aviso').textContent = aviso;
       document.getElementById('mor-kpi-rescisao').textContent = rescisao;
-      document.getElementById('mor-subtitle').textContent = ativas + ' ativas · ' + aviso + ' em aviso · ' + rescisao + ' em rescisao · ' + todas.length + ' no total';
+      const unidLabel = unid === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro';
+      document.getElementById('mor-subtitle').textContent = unidLabel + ' — ' + ativas + ' ativas · ' + aviso + ' em aviso · ' + rescisao + ' em rescisao · ' + todasUnid.length + ' no total';
 
       const tbody = document.getElementById('mor-tbody');
       if (arr.length === 0) {
