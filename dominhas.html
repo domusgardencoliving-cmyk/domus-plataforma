@@ -541,23 +541,26 @@
       document.getElementById('tela-painel').classList.remove('hidden');
       document.getElementById('btn-logout').classList.remove('hidden');
 
-      // Buscar dados completos do contrato na tabela `moradores`
-      // (a RPC de login só traz nome/unidade/quarto)
+      // Buscar dados completos do contrato via RPC SECURITY DEFINER
+      // (a tabela moradores nao eh acessivel pra anon; RPC pula RLS)
       try {
-        const { data: m, error: mErr } = await db
-          .from('moradores')
-          .select('id, valor, dia_vencimento, inicio_contrato, fim_contrato, contato, email')
-          .eq('email', _morador.email)
-          .maybeSingle();
-        if (m) {
-          _morador.morador_id = m.id;       // ID na tabela moradores (financeiro)
+        const { data: m, error: mErr } = await db.rpc('obter_dados_morador_por_dominha', {
+          p_dominha_id: _morador.id
+        });
+        if (m && m.success) {
+          _morador.morador_id = m.morador_id;
           _morador.valor = m.valor;
           _morador.dia_vencimento = m.dia_vencimento;
           _morador.inicio_contrato = m.inicio_contrato;
           _morador.fim_contrato = m.fim_contrato;
-          _morador.contato = m.contato;
+          _morador.contato = m.contato || m.telefone;
+          _morador.telefone = m.telefone;
+          _morador.caucao = m.caucao;
+          _morador.caucao_paga = m.caucao_paga;
+          if (m.unidade) _morador.unidade = m.unidade;
+          if (m.quarto) _morador.quarto = m.quarto;
         } else {
-          console.warn('[painel] moradora não encontrada na tabela moradores por email:', _morador.email, mErr);
+          console.warn('[painel] obter_dados_morador_por_dominha falhou:', m, mErr);
         }
       } catch (e) { console.warn('[painel] erro ao enriquecer _morador:', e); }
 
@@ -593,9 +596,15 @@
       if (_morador.valor) {
         const valor = parseFloat(_morador.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         document.getElementById('contrato-valor').textContent = valor;
+      } else {
+        document.getElementById('contrato-valor').textContent = 'R$ —';
       }
 
-      document.getElementById('contrato-vencimento').textContent = _morador.dia_vencimento + ' de cada mês';
+      if (_morador.dia_vencimento) {
+        document.getElementById('contrato-vencimento').textContent = _morador.dia_vencimento + ' de cada mês';
+      } else {
+        document.getElementById('contrato-vencimento').textContent = '—';
+      }
 
       if (_morador.inicio_contrato) {
         const dt = new Date(_morador.inicio_contrato + 'T12:00:00');
@@ -677,6 +686,12 @@
           document.getElementById('boleto-valor').textContent = valor;
         }
 
+        if (!_morador.dia_vencimento) {
+          // Sem dia_vencimento — nao da pra calcular proximo boleto
+          const elV = document.getElementById('boleto-vencimento');
+          if (elV) elV.textContent = '—';
+          return;
+        }
         const dataVencimento = anoAtual + '-' + mesAtual + '-' + String(_morador.dia_vencimento).padStart(2, '0');
         const dtVenc = new Date(dataVencimento + 'T12:00:00');
         document.getElementById('boleto-vencimento').textContent = dtVenc.toLocaleDateString('pt-BR');
