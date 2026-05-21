@@ -926,36 +926,6 @@
           w.document.body.innerHTML = '<p>Nao consegui pegar o PDF do banco agora.</p><pre>' + (err.toString ? err.toString() : err) + '</pre><p>Usa o PIX ou o codigo de barras como alternativa.</p>';
         });
       return;
-      // Modal antigo (fallback comentado)
-      // const valor = parseFloat(b.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      const valor = parseFloat(b.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      const venc = b.data_vencimento ? new Date(b.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
-      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Boleto Domus — ${_ptBrMesAno(b.mes_referencia)}</title>
-<style>
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 24px; max-width: 540px; margin: 0 auto; color: #111; }
-  h1 { color: #008B9C; font-size: 22px; margin: 0 0 4px; }
-  .sub { color: #666; font-size: 13px; margin-bottom: 24px; }
-  .box { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-  .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-  .valor { font-size: 28px; font-weight: 700; color: #008B9C; }
-  .field { font-size: 14px; word-break: break-all; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 8px; margin-top: 6px; }
-  button { background: #008B9C; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; margin: 8px 4px 0 0; }
-  @media print { button { display: none; } }
-</style></head><body>
-<h1>Domus Garden Coliving</h1>
-<div class="sub">${b.moradora_nome || ''} · ${_ptBrMesAno(b.mes_referencia)}</div>
-<div class="box"><div class="label">Valor</div><div class="valor">${valor}</div><div class="label" style="margin-top:8px">Vencimento</div><div style="font-size:16px;font-weight:600">${venc}</div></div>
-${b.inter_pix_copia_cola ? '<div class="box"><div class="label">PIX Copia e Cola</div><div class="field">' + b.inter_pix_copia_cola + '</div></div>' : ''}
-${b.inter_linha_digitavel ? '<div class="box"><div class="label">Linha digitavel</div><div class="field">' + b.inter_linha_digitavel + '</div></div>' : ''}
-${b.inter_codigo_barras ? '<div class="box"><div class="label">Codigo de barras</div><div class="field">' + b.inter_codigo_barras + '</div></div>' : ''}
-<button onclick="window.print()">Imprimir / Salvar PDF</button>
-<button onclick="window.close()" style="background:#888">Fechar</button>
-</body></html>`;
-      const w = window.open('', '_blank');
-      if (!w) { alert('Habilite popups pra abrir o boleto.'); return; }
-      w.document.write(html);
-      w.document.close();
-      try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
     }
 
     function copiarCodigoBarras(boletoId, botao) {
