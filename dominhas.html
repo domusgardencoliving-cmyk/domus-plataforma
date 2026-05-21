@@ -759,6 +759,17 @@
         }
 
         // 3) Sistema novo: cards bonitos com PIX, PDF, vencimento
+        // Filtra boletos futuros (so mostrar mes atual ou anteriores)
+        const hojeMes = new Date();
+        const limiteISO = hojeMes.getFullYear() + '-' + String(hojeMes.getMonth() + 1).padStart(2, '0') + '-01';
+        boletos = boletos.filter(b => !b.mes_referencia || b.mes_referencia <= limiteISO);
+
+        if (boletos.length === 0) {
+          if (vazio) vazio.classList.remove('hidden');
+          if (lista) lista.classList.add('hidden');
+          return;
+        }
+
         if (vazio) vazio.classList.add('hidden');
         if (lista) lista.classList.remove('hidden');
 
@@ -781,12 +792,11 @@
           if (b.inter_pix_copia_cola) {
             acoes.push('<button onclick="copiarPix(\'' + b.id + '\', this)" class="flex-1 py-2 rounded-lg bg-domus-azul text-white text-xs font-medium hover:bg-domus-azul-escuro transition flex items-center justify-center gap-1">📋 Copiar PIX</button>');
           }
-          if (b.inter_pdf_url) {
-            acoes.push('<a href="' + b.inter_pdf_url + '" target="_blank" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">📄 Boleto PDF</a>');
-          } else if (b.inter_linha_digitavel) {
-            // Fallback quando o PDF nao veio do Inter: oferecer linha digitavel pra copiar
+          if (b.inter_linha_digitavel) {
             acoes.push('<button onclick="copiarLinhaDigitavel(\'' + b.id + '\', this)" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">🔢 Linha digitavel</button>');
           }
+          // Botao 'Baixar boleto' SEMPRE presente — se nao tem PDF, abre janela com PIX/codigos
+          acoes.push('<button onclick="abrirBoleto(\'' + b.id + '\')" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">📄 Baixar boleto</button>');
 
           const composicao = [];
           if (Number(b.valor_coliving) > 0) composicao.push('Coliving R$ ' + Number(b.valor_coliving).toFixed(2));
@@ -796,7 +806,7 @@
 
           return '<div class="rounded-xl border ' + corCard + ' p-4">' +
             '<div class="flex items-start justify-between gap-2 mb-2">' +
-              '<div><p class="text-sm font-semibold capitalize">' + (b.mes_label || '') + '</p><p class="text-xs opacity-75">Vence em ' + venc + '</p></div>' +
+              '<div><p class="text-sm font-semibold capitalize">' + _ptBrMesAno(b.mes_referencia) + '</p><p class="text-xs opacity-75">Vence em ' + venc + '</p></div>' +
               '<div class="text-right"><p class="text-lg font-bold">' + valor + '</p><p class="text-[10px] uppercase tracking-wider font-medium">' + sit + '</p></div>' +
             '</div>' +
             (composicao.length > 1 ? '<p class="text-[11px] opacity-70 mb-2">' + composicao.join(' + ') + '</p>' : '') +
@@ -810,6 +820,52 @@
         if (loading) loading.classList.add('hidden');
         if (vazio) vazio.classList.remove('hidden');
       }
+    }
+
+    function _ptBrMesAno(mesIso) {
+      if (!mesIso) return '—';
+      const [y, m] = mesIso.split('-');
+      const meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      return meses[parseInt(m, 10) - 1] + '/' + y;
+    }
+
+    function abrirBoleto(boletoId) {
+      const b = (window._boletosMoradora || []).find(x => x.id === boletoId);
+      if (!b) return;
+      if (b.inter_pdf_url) {
+        window.open(b.inter_pdf_url, '_blank');
+        try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
+        return;
+      }
+      // Sem PDF? Abre modal/janela com PIX + Linha digitavel + Codigo de barras
+      const valor = parseFloat(b.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const venc = b.data_vencimento ? new Date(b.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Boleto Domus — ${_ptBrMesAno(b.mes_referencia)}</title>
+<style>
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 24px; max-width: 540px; margin: 0 auto; color: #111; }
+  h1 { color: #008B9C; font-size: 22px; margin: 0 0 4px; }
+  .sub { color: #666; font-size: 13px; margin-bottom: 24px; }
+  .box { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .valor { font-size: 28px; font-weight: 700; color: #008B9C; }
+  .field { font-size: 14px; word-break: break-all; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 8px; margin-top: 6px; }
+  button { background: #008B9C; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; margin: 8px 4px 0 0; }
+  @media print { button { display: none; } }
+</style></head><body>
+<h1>Domus Garden Coliving</h1>
+<div class="sub">${b.moradora_nome || ''} · ${_ptBrMesAno(b.mes_referencia)}</div>
+<div class="box"><div class="label">Valor</div><div class="valor">${valor}</div><div class="label" style="margin-top:8px">Vencimento</div><div style="font-size:16px;font-weight:600">${venc}</div></div>
+${b.inter_pix_copia_cola ? '<div class="box"><div class="label">PIX Copia e Cola</div><div class="field">' + b.inter_pix_copia_cola + '</div></div>' : ''}
+${b.inter_linha_digitavel ? '<div class="box"><div class="label">Linha digitavel</div><div class="field">' + b.inter_linha_digitavel + '</div></div>' : ''}
+${b.inter_codigo_barras ? '<div class="box"><div class="label">Codigo de barras</div><div class="field">' + b.inter_codigo_barras + '</div></div>' : ''}
+<button onclick="window.print()">Imprimir / Salvar PDF</button>
+<button onclick="window.close()" style="background:#888">Fechar</button>
+</body></html>`;
+      const w = window.open('', '_blank');
+      if (!w) { alert('Habilite popups pra abrir o boleto.'); return; }
+      w.document.write(html);
+      w.document.close();
+      try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
     }
 
     function copiarLinhaDigitavel(boletoId, botao) {
