@@ -888,12 +888,29 @@
     function abrirBoleto(boletoId) {
       const b = (window._boletosMoradora || []).find(x => x.id === boletoId);
       if (!b) return;
-      if (b.inter_pdf_url) {
-        window.open(b.inter_pdf_url, '_blank');
-        try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
-        return;
-      }
-      // Sem PDF? Abre modal/janela com PIX + Linha digitavel + Codigo de barras
+      // Sempre tenta buscar PDF real do Inter via Edge Function (mesmo se já tem inter_pdf_url salvo)
+      const SUPA = 'https://motwhfbpundrhvuwjntw.supabase.co';
+      const ANON = (typeof SUPABASE_ANON !== 'undefined' && SUPABASE_ANON) ? SUPABASE_ANON : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3NDg4NjAsImV4cCI6MjA2MDMyNDg2MH0.dvLqP7BWHzVDNKTNh9RKkB-zX0pX7fG6UA4tRn6zPm0';
+      const w = window.open('about:blank', '_blank');
+      if (!w) { alert('Permita popups pra abrir o boleto.'); return; }
+      w.document.write('<title>Baixando boleto...</title><body style="font-family:sans-serif;padding:40px;text-align:center;color:#444">Buscando boleto no Banco Inter, um instantinho... 💛</body>');
+      fetch(`${SUPA}/functions/v1/baixar-pdf-boleto?boleto_id=${boletoId}&apikey=${ANON}`)
+        .then(r => r.ok ? r.blob() : r.json().then(j => Promise.reject(j.erro || 'falha')))
+        .then(blob => {
+          if (blob.type === 'application/pdf') {
+            const url = URL.createObjectURL(blob);
+            w.location.href = url;
+            try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
+          } else {
+            w.document.body.innerText = 'Boleto nao retornou PDF';
+          }
+        })
+        .catch(err => {
+          w.document.body.innerHTML = '<p>Nao consegui pegar o PDF do banco agora.</p><pre>' + (err.toString ? err.toString() : err) + '</pre><p>Usa o PIX ou o codigo de barras como alternativa.</p>';
+        });
+      return;
+      // Modal antigo (fallback comentado)
+      // const valor = parseFloat(b.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       const valor = parseFloat(b.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       const venc = b.data_vencimento ? new Date(b.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
       const html = `<!doctype html><html><head><meta charset="utf-8"><title>Boleto Domus — ${_ptBrMesAno(b.mes_referencia)}</title>
