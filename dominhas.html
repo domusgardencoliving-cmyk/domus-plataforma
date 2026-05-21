@@ -783,6 +783,9 @@
           }
           if (b.inter_pdf_url) {
             acoes.push('<a href="' + b.inter_pdf_url + '" target="_blank" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">📄 Boleto PDF</a>');
+          } else if (b.inter_linha_digitavel) {
+            // Fallback quando o PDF nao veio do Inter: oferecer linha digitavel pra copiar
+            acoes.push('<button onclick="copiarLinhaDigitavel(\'' + b.id + '\', this)" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">🔢 Linha digitavel</button>');
           }
 
           const composicao = [];
@@ -807,6 +810,17 @@
         if (loading) loading.classList.add('hidden');
         if (vazio) vazio.classList.remove('hidden');
       }
+    }
+
+    function copiarLinhaDigitavel(boletoId, botao) {
+      const b = (window._boletosMoradora || []).find(x => x.id === boletoId);
+      if (!b || !b.inter_linha_digitavel) return;
+      navigator.clipboard.writeText(b.inter_linha_digitavel).then(() => {
+        const orig = botao.innerHTML;
+        botao.innerHTML = '✅ Copiado!';
+        setTimeout(() => { botao.innerHTML = orig; }, 2000);
+        try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
+      });
     }
 
     function copiarPix(boletoId, botao) {
