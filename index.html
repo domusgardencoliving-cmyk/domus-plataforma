@@ -3995,7 +3995,7 @@
               <button onclick="mostrarSubColiving('col-futuros', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Futuros Moradores</button>
               <button onclick="mostrarSubColiving('col-contratos', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">📋 Contratos Pendentes</button>
               <button onclick="mostrarSubColiving('col-moradoras', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">👥 Moradoras</button>
-              <button onclick="mostrarSubColiving('col-boletos-dominhas', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">💰 Boletos Dominhas</button>
+              <button onclick="mostrarSubColiving('col-boletos-cbr', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">💰 Boletos Dominhas</button>
             </div>
 
 
@@ -4077,13 +4077,14 @@
               </div>
             </div>
 
-            <!-- ======= BOLETOS DOMINHAS (iframe pro PMS embedded) ======= -->
-            <div id="col-boletos-dominhas" class="col-sub-section hidden fade-in">
-              <div class="bg-white rounded-2xl border border-domus-borda overflow-hidden">
-                <iframe id="iframeBoletosDominhas" src="about:blank" style="width:100%; height: calc(100vh - 240px); border:0; min-height: 600px;" title="Boletos Dominhas"></iframe>
+
+            <!-- ======= BOLETOS DOMINHAS (sistema cbr — substitui iframe) ======= -->
+            <div id="col-boletos-cbr" class="col-sub-section hidden fade-in">
+              <div class="flex gap-2 mb-3 border-b border-domus-borda pb-2">
+                <button id="cbrTabAP" onclick="cbrSetUnidade('AP')" class="px-4 py-2 rounded-lg text-sm font-medium bg-domus-azul text-white">Andrade Pertence</button>
+                <button id="cbrTabRib" onclick="cbrSetUnidade('Rib')" class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10">Ribeirão Claro</button>
               </div>
             </div>
-
             <!-- ======= BOLETOS REAIS (DG REAL — substitui o protótipo abaixo) ======= -->
             <div id="col-boletos-real" class="hidden">
               <div class="bg-white rounded-2xl border border-domus-borda p-4 sm:p-6 mb-6">
@@ -11295,32 +11296,23 @@
       // Carregar dados quando abrir aba
       if (id === 'col-fila') carregarFilaEspera();
       if (id === 'col-moradoras') loadMoradoras();
-      if (id === 'col-boletos-dominhas') {
-        const ifr = document.getElementById('iframeBoletosDominhas');
-        if (ifr && (!ifr.src || ifr.src === 'about:blank')) {
-          ifr.src = '/pms.html?view=boletos&embedded=1';
-        }
+      if (id === 'col-boletos-cbr') {
+        // Abre o bloco cbr e dispara a unidade atual (default AP)
+        const blocoReal = document.getElementById('col-boletos-real');
+        if (blocoReal) blocoReal.classList.remove('hidden');
+        cbrSetUnidade(window.cbrUnidadeAtual || 'AP');
+      } else {
+        // Esconde bloco cbr quando troca de aba
+        const blocoReal = document.getElementById('col-boletos-real');
+        if (blocoReal && id !== 'col-ap' && id !== 'col-rib') blocoReal.classList.add('hidden');
       }
       if (id === 'col-futuros') carregarFuturos();
-      // Boletos reais (substituindo o protótipo) — mostrar/esconder bloco real
+      // Compatibilidade: AP/Rib do antigo fluxo (sub-aba unidade) tambem disparam cbr
       const blocoReal = document.getElementById('col-boletos-real');
-      if (blocoReal) {
-        if (id === 'col-ap' || id === 'col-rib') {
-          blocoReal.classList.remove('hidden');
-          // Esconder o conteúdo prototípico (fica abaixo)
-          const prototipo = document.getElementById(id);
-          if (prototipo) prototipo.style.display = 'none';
-          // Set unidade atual e carregar
-          window.cbrUnidadeAtual = id === 'col-ap' ? 'AP' : 'Rib';
-          if (!document.getElementById('cbr-mes').value) {
-            document.getElementById('cbr-mes').value = new Date().toISOString().slice(0, 7);
-          }
-          document.getElementById('cbr-titulo').textContent = `Boletos do mês — ${window.cbrUnidadeAtual === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro'}`;
-          if (typeof cbrCarregar === 'function') cbrCarregar();
-        } else {
-          blocoReal.classList.add('hidden');
-          ['col-ap','col-rib'].forEach(c => { const e = document.getElementById(c); if (e) e.style.display = ''; });
-        }
+      if (blocoReal && (id === 'col-ap' || id === 'col-rib')) {
+        // Aqui NAO mostramos o cbr (vai no col-boletos-cbr); so esconde caso o usuario tenha aberto AP/Rib
+        // Mantemos o comportamento antigo se preciso — mas sem forcar exibicao
+        blocoReal.classList.add('hidden');
       }
     }
 
@@ -11328,6 +11320,31 @@
     // COLIVING BOLETOS REAIS — Funções
     // ==========================================
     window.cbrDados = [];
+    window.cbrUnidadeAtual = window.cbrUnidadeAtual || 'AP';
+
+    function cbrSetUnidade(u) {
+      window.cbrUnidadeAtual = u;
+      const ap = document.getElementById('cbrTabAP');
+      const rib = document.getElementById('cbrTabRib');
+      [ap, rib].forEach(b => {
+        if (!b) return;
+        b.classList.remove('bg-domus-azul', 'text-white');
+        b.classList.add('bg-white', 'text-domus-texto', 'border', 'border-domus-borda');
+      });
+      const ativo = u === 'AP' ? ap : rib;
+      if (ativo) {
+        ativo.classList.remove('bg-white', 'text-domus-texto', 'border', 'border-domus-borda');
+        ativo.classList.add('bg-domus-azul', 'text-white');
+      }
+      const blocoReal = document.getElementById('col-boletos-real');
+      if (blocoReal) blocoReal.classList.remove('hidden');
+      const cbrMes = document.getElementById('cbr-mes');
+      if (cbrMes && !cbrMes.value) cbrMes.value = new Date().toISOString().slice(0, 7);
+      const titulo = document.getElementById('cbr-titulo');
+      if (titulo) titulo.textContent = `Boletos do mês — ${u === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro'}`;
+      if (typeof cbrCarregar === 'function') cbrCarregar();
+    }
+
     async function cbrCarregar() {
       const unidade = window.cbrUnidadeAtual || 'Rib';
       const mes = document.getElementById('cbr-mes').value;
