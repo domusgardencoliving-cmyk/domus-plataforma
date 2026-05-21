@@ -1658,7 +1658,7 @@
 
         <!-- BOLETOS DOMINHAS VIEW -->
         <div id="boletosView" class="view hidden">
-          <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
             <div>
               <h2 class="text-2xl font-semibold text-domus-texto">Boletos Dominhas</h2>
               <p class="text-xs text-domus-texto-suave mt-1">Substitui o BR Condomínio. Gera, envia e acompanha boletos das moradoras.</p>
@@ -1672,6 +1672,12 @@
                 + Criar lote do mes
               </button>
             </div>
+          </div>
+
+          <!-- Abas por unidade -->
+          <div class="flex gap-2 mb-4 border-b border-gray-200 pb-2">
+            <button id="bolTabAP" onclick="setBolUnidade('AP')" class="px-4 py-2 rounded-lg text-sm font-medium bg-domus-azul text-white">Andrade Pertence</button>
+            <button id="bolTabRib" onclick="setBolUnidade('Rib')" class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-domus-texto border border-domus-azul/30 hover:bg-domus-azul/10">Ribeirão Claro</button>
           </div>
 
           <!-- KPIs do lote -->
@@ -4931,11 +4937,42 @@
       }
     }
 
+    window.bolUnidade = window.bolUnidade || 'AP';
+
+    function setBolUnidade(u) {
+      window.bolUnidade = u;
+      const ap = document.getElementById('bolTabAP');
+      const rib = document.getElementById('bolTabRib');
+      [ap, rib].forEach(b => {
+        if (!b) return;
+        b.classList.remove('bg-domus-azul', 'text-white');
+        b.classList.add('bg-white', 'text-domus-texto', 'border', 'border-domus-azul/30');
+      });
+      const ativo = u === 'AP' ? ap : rib;
+      if (ativo) {
+        ativo.classList.remove('bg-white', 'text-domus-texto', 'border', 'border-domus-azul/30');
+        ativo.classList.add('bg-domus-azul', 'text-white');
+      }
+      renderBoletosKpis();
+      renderBoletosStatusLote();
+      renderBoletosTabela();
+    }
+
+    function _bolFiltradosPorUnidade() {
+      const u = window.bolUnidade || 'AP';
+      return (boletosLista || []).filter(b => {
+        // tenta varios nomes de coluna pra unidade
+        const bu = b.unidade || b.morador_unidade || b.moradora_unidade || '';
+        return String(bu).toLowerCase().startsWith(u.toLowerCase().slice(0,2));
+      });
+    }
+
     function renderBoletosKpis() {
-      const total = boletosLista.length;
-      const valorTotal = boletosLista.reduce((s, b) => s + (Number(b.valor_total) || 0), 0);
-      const pagos = boletosLista.filter(b => b.status === 'pago').length;
-      const pendentes = boletosLista.filter(b => ['pendente', 'gerado'].includes(b.status)).length;
+      const lista = _bolFiltradosPorUnidade();
+      const total = lista.length;
+      const valorTotal = lista.reduce((s, b) => s + (Number(b.valor_total) || 0), 0);
+      const pagos = lista.filter(b => b.status === 'pago').length;
+      const pendentes = lista.filter(b => ['pendente', 'gerado'].includes(b.status)).length;
 
       document.getElementById('kpiBolTotal').textContent = total;
       document.getElementById('kpiBolValor').textContent = fmtMoedaBRL(valorTotal);
@@ -4956,7 +4993,7 @@
       }[boletosLoteAtual.status] || { cor: 'bg-gray-50 border-gray-300', icone: '•', label: boletosLoteAtual.status };
 
       let acaoHtml = '';
-      if (boletosLoteAtual.status === 'rascunho' && boletosLista.length > 0) {
+      if (boletosLoteAtual.status === 'rascunho' && _bolFiltradosPorUnidade().length > 0) {
         acaoHtml = '<button onclick="enviarMaloteInter()" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">📤 Enviar malote pro Inter</button>';
       } else if (boletosLoteAtual.status === 'enviado') {
         acaoHtml = '<button onclick="notificarDominhasCarteiro()" class="bg-domus-azul text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">📲 Avisar moradoras (Carteiro)</button>';
@@ -4970,8 +5007,10 @@
 
     function renderBoletosTabela() {
       const tbody = document.getElementById('boletosTable');
-      if (!boletosLista.length) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-domus-texto-suave py-8 italic">Nenhum boleto pra esse mês ainda. Clique em "Criar lote do mês" pra gerar.</td></tr>';
+      const lista = _bolFiltradosPorUnidade();
+      if (!lista.length) {
+        const unidLabel = (window.bolUnidade || 'AP') === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-domus-texto-suave py-8 italic">Nenhum boleto em ' + unidLabel + ' pra esse mês. Crie o lote do mês ou troque a unidade.</td></tr>';
         return;
       }
 
@@ -4983,7 +5022,7 @@
         cancelado:  '<span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">Cancelado</span>'
       };
 
-      tbody.innerHTML = boletosLista.map(b => {
+      tbody.innerHTML = lista.map(b => {
         const editavel = boletosLoteAtual?.status === 'rascunho';
         const acoes = [];
         if (editavel) acoes.push('<button onclick="editarValoresBoleto(\'' + b.id + '\')" class="text-domus-azul hover:underline text-xs">✏️ Ajustar</button>');
@@ -5135,7 +5174,9 @@
 
     async function enviarMaloteInter() {
       if (!boletosLoteAtual) return;
-      if (!confirm('Enviar ' + boletosLista.length + ' boletos pro Banco Inter agora?')) return;
+      const filt = _bolFiltradosPorUnidade();
+      const unidLabel = (window.bolUnidade || 'AP') === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro';
+      if (!confirm('Enviar ' + filt.length + ' boletos de ' + unidLabel + ' pro Banco Inter agora?')) return;
       try {
         const { data, error } = await db.rpc('gerar_boletos_mock', { p_lote_id: boletosLoteAtual.id });
         if (error) throw error;
