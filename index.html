@@ -2769,10 +2769,6 @@
             <button onclick="mostrarDgTab('dg-coliving', this)" class="dg-nav-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3">
               <span>🏠</span> Coliving
             </button>
-            <button onclick="mostrarDgTab('dg-visitas', this); carregarVisitas();" class="dg-nav-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3">
-              <span>📅</span> Visitas
-              <span id="badge-visitas-pendentes" class="ml-auto text-xs bg-amber-500 px-1.5 py-0.5 rounded-full hidden">0</span>
-            </button>
             <button onclick="mostrarDgTab('dg-financeiro', this)" class="dg-nav-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3">
               <span>💰</span> Financeiro
             </button>
@@ -4000,6 +3996,7 @@
               <button onclick="mostrarSubColiving('col-contratos', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">📋 Contratos Pendentes</button>
               <button onclick="mostrarSubColiving('col-moradoras', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">👥 Moradoras</button>
               <button onclick="mostrarSubColiving('col-boletos-cbr', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">💰 Boletos Dominhas</button>
+              <button onclick="mostrarSubColiving('col-visitas', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition relative">📅 Visitas<span id="badge-visitas-pendentes" class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] bg-amber-500 text-white px-1 rounded-full hidden align-middle">0</span></button>
             </div>
 
 
@@ -4090,6 +4087,34 @@
               </div>
             </div>
             <!-- ======= BOLETOS REAIS (DG REAL — substitui o protótipo abaixo) ======= -->
+            <!-- VISITAS — pessoas inscritas em agendar-visita.html -->
+            <div id="col-visitas" class="col-sub-section hidden fade-in">
+              <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 class="font-serif text-xl sm:text-2xl text-domus-azul-escuro">📅 Visitas agendadas</h2>
+                  <p class="text-sm text-domus-texto-suave">Pessoas que se inscreveram em <a href="agendar-visita.html" target="_blank" class="text-domus-azul hover:underline">domusgardencoliving.com/agendar-visita</a></p>
+                </div>
+                <button onclick="carregarVisitas()" class="px-4 py-2 rounded-lg bg-domus-azul text-white text-sm hover:bg-domus-azul-escuro">↻ Atualizar</button>
+              </div>
+              <div class="flex flex-wrap gap-2 mb-4 text-sm">
+                <button onclick="filtrarVisitas('pendentes')" id="fv-pendentes" class="fv-btn px-3 py-1.5 rounded-lg bg-domus-azul text-white">⏳ Pendentes (futuras)</button>
+                <button onclick="filtrarVisitas('hoje')" id="fv-hoje" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">📍 Hoje</button>
+                <button onclick="filtrarVisitas('todas')" id="fv-todas" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">Todas</button>
+                <button onclick="filtrarVisitas('realizadas')" id="fv-realizadas" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">✓ Realizadas</button>
+                <button onclick="filtrarVisitas('canceladas')" id="fv-canceladas" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">✖ Canceladas</button>
+                <button onclick="filtrarVisitas('no_show')" id="fv-no_show" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">🚫 No-show</button>
+              </div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <div class="bg-white rounded-2xl border border-domus-borda p-4"><p class="text-xs text-domus-texto-suave uppercase tracking-wide">Pendentes</p><p id="kpi-visitas-pendentes" class="text-2xl font-serif text-amber-600 mt-1">—</p></div>
+                <div class="bg-white rounded-2xl border border-domus-borda p-4"><p class="text-xs text-domus-texto-suave uppercase tracking-wide">Hoje</p><p id="kpi-visitas-hoje" class="text-2xl font-serif text-domus-azul mt-1">—</p></div>
+                <div class="bg-white rounded-2xl border border-domus-borda p-4"><p class="text-xs text-domus-texto-suave uppercase tracking-wide">Realizadas (total)</p><p id="kpi-visitas-realizadas" class="text-2xl font-serif text-emerald-600 mt-1">—</p></div>
+                <div class="bg-white rounded-2xl border border-domus-borda p-4"><p class="text-xs text-domus-texto-suave uppercase tracking-wide">No-show (total)</p><p id="kpi-visitas-noshow" class="text-2xl font-serif text-red-500 mt-1">—</p></div>
+              </div>
+              <div id="visitas-empty" class="hidden text-center py-12"><div class="text-5xl mb-4">📭</div><h3 class="font-serif text-xl text-domus-azul-escuro mb-2">Nenhuma visita no filtro atual</h3><p class="text-sm text-domus-texto-suave">Mude o filtro acima ou aguarde novas inscrições.</p></div>
+              <div id="visitas-loading" class="hidden text-center py-12"><p class="text-sm text-domus-texto-suave">Carregando visitas...</p></div>
+              <div id="visitas-lista" class="space-y-3"></div>
+            </div>
+
             <div id="col-boletos-real" class="hidden">
               <div class="bg-white rounded-2xl border border-domus-borda p-4 sm:p-6 mb-6">
                 <div class="flex flex-wrap gap-4 items-end justify-between">
@@ -5405,35 +5430,7 @@
 
           </div>
 
-                    <!-- VISITAS — pessoas inscritas em agendar-visita.html -->
-          <div id="dg-visitas" class="dg-tab hidden-mod fade-in">
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <div>
-                <h1 class="font-serif text-2xl sm:text-3xl text-domus-azul-escuro">📅 Visitas agendadas</h1>
-                <p class="text-sm text-domus-texto-suave">Pessoas que se inscreveram em <a href="agendar-visita.html" target="_blank" class="text-domus-azul hover:underline">domusgardencoliving.com/agendar-visita</a></p>
-              </div>
-              <button onclick="carregarVisitas()" class="px-4 py-2 rounded-lg bg-domus-azul text-white text-sm hover:bg-domus-azul-escuro">↻ Atualizar</button>
-            </div>
-            <div class="flex flex-wrap gap-2 mb-4 text-sm">
-              <button onclick="filtrarVisitas('pendentes')" id="fv-pendentes" class="fv-btn px-3 py-1.5 rounded-lg bg-domus-azul text-white">⏳ Pendentes (futuras)</button>
-              <button onclick="filtrarVisitas('hoje')" id="fv-hoje" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">📍 Hoje</button>
-              <button onclick="filtrarVisitas('todas')" id="fv-todas" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">Todas</button>
-              <button onclick="filtrarVisitas('realizadas')" id="fv-realizadas" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">✓ Realizadas</button>
-              <button onclick="filtrarVisitas('canceladas')" id="fv-canceladas" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">✖ Canceladas</button>
-              <button onclick="filtrarVisitas('no_show')" id="fv-no_show" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">🚫 No-show</button>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              <div class="bg-white rounded-2xl border border-domus-borda p-4"><p class="text-xs text-domus-texto-suave uppercase tracking-wide">Pendentes</p><p id="kpi-visitas-pendentes" class="text-2xl font-serif text-amber-600 mt-1">—</p></div>
-              <div class="bg-white rounded-2xl border border-domus-borda p-4"><p class="text-xs text-domus-texto-suave uppercase tracking-wide">Hoje</p><p id="kpi-visitas-hoje" class="text-2xl font-serif text-domus-azul mt-1">—</p></div>
-              <div class="bg-white rounded-2xl border border-domus-borda p-4"><p class="text-xs text-domus-texto-suave uppercase tracking-wide">Realizadas (total)</p><p id="kpi-visitas-realizadas" class="text-2xl font-serif text-emerald-600 mt-1">—</p></div>
-              <div class="bg-white rounded-2xl border border-domus-borda p-4"><p class="text-xs text-domus-texto-suave uppercase tracking-wide">No-show (total)</p><p id="kpi-visitas-noshow" class="text-2xl font-serif text-red-500 mt-1">—</p></div>
-            </div>
-            <div id="visitas-empty" class="hidden text-center py-12"><div class="text-5xl mb-4">📭</div><h3 class="font-serif text-xl text-domus-azul-escuro mb-2">Nenhuma visita no filtro atual</h3><p class="text-sm text-domus-texto-suave">Mude o filtro acima ou aguarde novas inscrições.</p></div>
-            <div id="visitas-loading" class="hidden text-center py-12"><p class="text-sm text-domus-texto-suave">Carregando visitas...</p></div>
-            <div id="visitas-lista" class="space-y-3"></div>
-          </div>
-
-          <!-- FINANCEIRO -->
+                    <!-- FINANCEIRO -->
           <div id="dg-financeiro" class="dg-tab hidden-mod fade-in">
             <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div>
@@ -11339,6 +11336,7 @@
         if (blocoReal && id !== 'col-ap' && id !== 'col-rib') blocoReal.classList.add('hidden');
       }
       if (id === 'col-futuros') carregarFuturos();
+      if (id === 'col-visitas') carregarVisitas();
       // Compatibilidade: AP/Rib do antigo fluxo (sub-aba unidade) tambem disparam cbr
       const blocoReal = document.getElementById('col-boletos-real');
       if (blocoReal && (id === 'col-ap' || id === 'col-rib')) {
