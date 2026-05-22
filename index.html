@@ -2766,6 +2766,13 @@
             <button onclick="mostrarDgTab('dg-dashboard', this)" class="dg-nav-item active w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3 bg-domus-azul text-white">
               <span>📊</span> Dashboard
             </button>
+            <button onclick="mostrarDgTab('dg-moradoras', this)" class="dg-nav-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3">
+              <span>👥</span> Moradoras
+            </button>
+            <button onclick="mostrarDgTab('dg-visitas', this); carregarVisitas();" class="dg-nav-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3">
+              <span>📅</span> Visitas
+              <span id="badge-visitas-pendentes" class="ml-auto text-xs bg-amber-500 px-1.5 py-0.5 rounded-full hidden">0</span>
+            </button>
             <button onclick="mostrarDgTab('dg-coliving', this)" class="dg-nav-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3">
               <span>🏠</span> Coliving
             </button>
@@ -3976,7 +3983,138 @@
             </div>
           </div>
 
-<!-- ============================================ -->
+          <!-- MORADORAS -->
+          <div id="dg-moradoras" class="dg-tab hidden-mod fade-in">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div>
+                <h1 class="font-serif text-2xl sm:text-3xl text-domus-azul-escuro">Moradoras</h1>
+                <p class="text-sm text-domus-texto-suave">21 moradoras ativas · 1 em aviso · 0 em rescisão</p>
+              </div>
+              <button class="px-4 py-2 rounded-lg bg-domus-azul text-white text-sm hover:bg-domus-azul-escuro">➕ Nova moradora</button>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-domus-borda p-3 sm:p-4 mb-4">
+              <div class="flex gap-2 sm:gap-3 flex-wrap">
+                <input placeholder="🔍 Buscar por nome..." class="flex-1 min-w-40 px-3 py-2 rounded-lg border border-domus-borda text-sm" />
+                <select class="px-3 py-2 rounded-lg border border-domus-borda">
+                  <option>Todas as unidades</option><option>Rib</option><option>AP</option>
+                </select>
+                <select class="px-3 py-2 rounded-lg border border-domus-borda">
+                  <option>Todos os status</option><option>Ativo</option><option>Aviso</option><option>Rescisão</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-domus-borda overflow-x-auto">
+              <table class="w-full text-xs sm:text-sm whitespace-nowrap">
+                <thead class="bg-white text-domus-texto-suave uppercase text-xs">
+                  <tr>
+                    <th class="text-left p-2 sm:p-4">Nome</th>
+                    <th class="text-left p-2 sm:p-4">Unidade</th>
+                    <th class="text-left p-2 sm:p-4">Quarto</th>
+                    <th class="text-left p-2 sm:p-4">Valor</th>
+                    <th class="text-left p-2 sm:p-4">Contrato</th>
+                    <th class="text-left p-2 sm:p-4">Status</th>
+                    <th class="p-2 sm:p-4"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-t border-domus-borda hover:bg-white">
+                    <td class="p-2 sm:p-4 font-medium text-xs sm:text-sm">Maria Oliveira</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Rib</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Q3</td><td class="p-2 sm:p-4 text-xs sm:text-sm">R$ 1.850</td><td class="p-2 sm:p-4 text-xs text-domus-texto-suave">desde 10/02/25</td><td class="p-2 sm:p-4"><span class="text-xs bg-domus-azul/20 text-domus-azul-escuro px-2 py-1 rounded-full">● Ativo</span></td><td class="p-2 sm:p-4"><button class="text-domus-azul hover:underline text-xs">Editar</button></td>
+                  </tr>
+                  <tr class="border-t border-domus-borda hover:bg-white">
+                    <td class="p-2 sm:p-4 font-medium text-xs sm:text-sm">Ana Carolina Souza</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Rib</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Q1</td><td class="p-2 sm:p-4 text-xs sm:text-sm">R$ 2.100</td><td class="p-2 sm:p-4 text-xs text-domus-texto-suave">desde 01/09/24</td><td class="p-2 sm:p-4"><span class="text-xs bg-domus-azul/20 text-domus-azul-escuro px-2 py-1 rounded-full">● Ativo</span></td><td class="p-2 sm:p-4"><button class="text-domus-azul hover:underline text-xs">Editar</button></td>
+                  </tr>
+                  <tr class="border-t border-domus-borda hover:bg-white">
+                    <td class="p-2 sm:p-4 font-medium text-xs sm:text-sm">Beatriz Lima</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Rib</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Q2</td><td class="p-2 sm:p-4 text-xs sm:text-sm">R$ 1.850</td><td class="p-2 sm:p-4 text-xs text-domus-texto-suave">desde 15/11/24</td><td class="p-2 sm:p-4"><span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">● Aviso</span></td><td class="p-2 sm:p-4"><button class="text-domus-azul hover:underline text-xs">Editar</button></td>
+                  </tr>
+                  <tr class="border-t border-domus-borda hover:bg-white">
+                    <td class="p-2 sm:p-4 font-medium text-xs sm:text-sm">Camila Ferreira</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Rib</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Q4</td><td class="p-2 sm:p-4 text-xs sm:text-sm">R$ 1.950</td><td class="p-2 sm:p-4 text-xs text-domus-texto-suave">desde 22/06/25</td><td class="p-2 sm:p-4"><span class="text-xs bg-domus-azul/20 text-domus-azul-escuro px-2 py-1 rounded-full">● Ativo</span></td><td class="p-2 sm:p-4"><button class="text-domus-azul hover:underline text-xs">Editar</button></td>
+                  </tr>
+                  <tr class="border-t border-domus-borda hover:bg-white">
+                    <td class="p-2 sm:p-4 font-medium text-xs sm:text-sm">Débora Santos</td><td class="p-2 sm:p-4 text-xs sm:text-sm">AP</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Q2</td><td class="p-2 sm:p-4 text-xs sm:text-sm">R$ 2.300</td><td class="p-2 sm:p-4 text-xs text-domus-texto-suave">desde 01/03/25</td><td class="p-2 sm:p-4"><span class="text-xs bg-domus-azul/20 text-domus-azul-escuro px-2 py-1 rounded-full">● Ativo</span></td><td class="p-2 sm:p-4"><button class="text-domus-azul hover:underline text-xs">Editar</button></td>
+                  </tr>
+                  <tr class="border-t border-domus-borda hover:bg-white">
+                    <td class="p-2 sm:p-4 font-medium text-xs sm:text-sm">Eduarda Martins</td><td class="p-2 sm:p-4 text-xs sm:text-sm">AP</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Q5</td><td class="p-2 sm:p-4 text-xs sm:text-sm">R$ 1.750</td><td class="p-2 sm:p-4 text-xs text-domus-texto-suave">desde 12/01/26</td><td class="p-2 sm:p-4"><span class="text-xs bg-domus-azul/20 text-domus-azul-escuro px-2 py-1 rounded-full">● Ativo</span></td><td class="p-2 sm:p-4"><button class="text-domus-azul hover:underline text-xs">Editar</button></td>
+                  </tr>
+                  <tr class="border-t border-domus-borda hover:bg-white">
+                    <td class="p-2 sm:p-4 font-medium text-xs sm:text-sm">Fernanda Rocha</td><td class="p-2 sm:p-4 text-xs sm:text-sm">AP</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Q7</td><td class="p-2 sm:p-4 text-xs sm:text-sm">R$ 2.400</td><td class="p-2 sm:p-4 text-xs text-domus-texto-suave">desde 05/07/24</td><td class="p-2 sm:p-4"><span class="text-xs bg-domus-azul/20 text-domus-azul-escuro px-2 py-1 rounded-full">● Ativo</span></td><td class="p-2 sm:p-4"><button class="text-domus-azul hover:underline text-xs">Editar</button></td>
+                  </tr>
+                  <tr class="border-t border-domus-borda hover:bg-white">
+                    <td class="p-2 sm:p-4 font-medium text-xs sm:text-sm">Gabriela Costa</td><td class="p-2 sm:p-4 text-xs sm:text-sm">AP</td><td class="p-2 sm:p-4 text-xs sm:text-sm">Q3</td><td class="p-2 sm:p-4 text-xs sm:text-sm">R$ 1.950</td><td class="p-2 sm:p-4 text-xs text-domus-texto-suave">desde 20/10/25</td><td class="p-2 sm:p-4"><span class="text-xs bg-domus-azul/20 text-domus-azul-escuro px-2 py-1 rounded-full">● Ativo</span></td><td class="p-2 sm:p-4"><button class="text-domus-azul hover:underline text-xs">Editar</button></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="p-3 sm:p-4 border-t border-domus-borda flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-domus-texto-suave">
+                <span>Mostrando 1–8 de 22</span>
+                <div class="flex gap-1">
+                  <button class="px-3 py-1 rounded-lg bg-domus-azul text-white">1</button>
+                  <button class="px-3 py-1 rounded-lg hover:bg-white">2</button>
+                  <button class="px-3 py-1 rounded-lg hover:bg-white">3</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================================ -->
+          <!-- VISITAS — pessoas inscritas em agendar-visita -->
+          <!-- ============================================ -->
+          <div id="dg-visitas" class="dg-tab hidden-mod fade-in">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div>
+                <h1 class="font-serif text-2xl sm:text-3xl text-domus-azul-escuro">📅 Visitas agendadas</h1>
+                <p class="text-sm text-domus-texto-suave">Pessoas que se inscreveram em <a href="agendar-visita.html" target="_blank" class="text-domus-azul hover:underline">domusgardencoliving.com/agendar-visita</a></p>
+              </div>
+              <button onclick="carregarVisitas()" class="px-4 py-2 rounded-lg bg-domus-azul text-white text-sm hover:bg-domus-azul-escuro">↻ Atualizar</button>
+            </div>
+
+            <!-- Filtros -->
+            <div class="flex flex-wrap gap-2 mb-4 text-sm">
+              <button onclick="filtrarVisitas('pendentes')" id="fv-pendentes" class="fv-btn px-3 py-1.5 rounded-lg bg-domus-azul text-white">⏳ Pendentes (futuras)</button>
+              <button onclick="filtrarVisitas('hoje')" id="fv-hoje" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">📍 Hoje</button>
+              <button onclick="filtrarVisitas('todas')" id="fv-todas" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">Todas</button>
+              <button onclick="filtrarVisitas('realizadas')" id="fv-realizadas" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">✓ Realizadas</button>
+              <button onclick="filtrarVisitas('canceladas')" id="fv-canceladas" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">✖ Canceladas</button>
+              <button onclick="filtrarVisitas('no_show')" id="fv-no_show" class="fv-btn px-3 py-1.5 rounded-lg bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">🚫 No-show</button>
+            </div>
+
+            <!-- KPIs -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <div class="bg-white rounded-2xl border border-domus-borda p-4">
+                <p class="text-xs text-domus-texto-suave uppercase tracking-wide">Pendentes</p>
+                <p id="kpi-visitas-pendentes" class="text-2xl font-serif text-amber-600 mt-1">—</p>
+              </div>
+              <div class="bg-white rounded-2xl border border-domus-borda p-4">
+                <p class="text-xs text-domus-texto-suave uppercase tracking-wide">Hoje</p>
+                <p id="kpi-visitas-hoje" class="text-2xl font-serif text-domus-azul mt-1">—</p>
+              </div>
+              <div class="bg-white rounded-2xl border border-domus-borda p-4">
+                <p class="text-xs text-domus-texto-suave uppercase tracking-wide">Realizadas (total)</p>
+                <p id="kpi-visitas-realizadas" class="text-2xl font-serif text-emerald-600 mt-1">—</p>
+              </div>
+              <div class="bg-white rounded-2xl border border-domus-borda p-4">
+                <p class="text-xs text-domus-texto-suave uppercase tracking-wide">No-show (total)</p>
+                <p id="kpi-visitas-noshow" class="text-2xl font-serif text-red-500 mt-1">—</p>
+              </div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="visitas-empty" class="hidden text-center py-12">
+              <div class="text-5xl mb-4">📭</div>
+              <h3 class="font-serif text-xl text-domus-azul-escuro mb-2">Nenhuma visita no filtro atual</h3>
+              <p class="text-sm text-domus-texto-suave">Mude o filtro acima ou aguarde novas inscrições.</p>
+            </div>
+
+            <!-- Loading -->
+            <div id="visitas-loading" class="hidden text-center py-12">
+              <p class="text-sm text-domus-texto-suave">Carregando visitas...</p>
+            </div>
+
+            <!-- Lista -->
+            <div id="visitas-lista" class="space-y-3"></div>
+          </div>
+
+          <!-- ============================================ -->
           <!-- COLIVING — Gestão de quartos e boletos     -->
           <!-- ============================================ -->
           <div id="dg-coliving" class="dg-tab hidden-mod fade-in">
@@ -3993,98 +4131,8 @@
               <button onclick="mostrarSubColiving('col-rib', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Ribeirão Claro</button>
               <button onclick="mostrarSubColiving('col-fila', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Lista de Espera</button>
               <button onclick="mostrarSubColiving('col-futuros', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Futuros Moradores</button>
-              <button onclick="mostrarSubColiving('col-contratos', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">📋 Contratos Pendentes</button>
-              <button onclick="mostrarSubColiving('col-moradoras', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">👥 Moradoras</button>
-              <button onclick="mostrarSubColiving('col-boletos-cbr', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">💰 Boletos Dominhas</button>
             </div>
 
-
-            <!-- ======= MORADORAS — dados reais do banco ======= -->
-            <div id="col-moradoras" class="col-sub-section hidden fade-in">
-              <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <div>
-                  <h2 class="font-serif text-xl sm:text-2xl text-domus-azul-escuro">Moradoras</h2>
-                  <p id="mor-subtitle" class="text-xs text-domus-texto-suave">Carregando…</p>
-                </div>
-                <button onclick="loadMoradoras()" class="px-3 py-2 rounded-lg border border-domus-borda text-xs hover:bg-domus-azul/10">🔄 Atualizar</button>
-              </div>
-
-              <!-- Abas por unidade -->
-              <div class="flex gap-2 mb-4 border-b border-domus-borda pb-2">
-                <button id="mor-tab-AP" onclick="setMorUnidade('AP')" class="px-4 py-2 rounded-lg text-sm font-medium bg-domus-azul text-white">Andrade Pertence</button>
-                <button id="mor-tab-Rib" onclick="setMorUnidade('Rib')" class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10">Ribeirão Claro</button>
-              </div>
-
-              <!-- KPIs (por unidade) -->
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                <div class="bg-white rounded-xl border border-domus-borda p-3">
-                  <p class="text-[10px] uppercase text-domus-texto-suave">Total</p>
-                  <p class="text-2xl font-semibold text-domus-azul-escuro" id="mor-kpi-total">…</p>
-                </div>
-                <div class="bg-white rounded-xl border border-domus-borda p-3">
-                  <p class="text-[10px] uppercase text-domus-texto-suave">Ativas</p>
-                  <p class="text-2xl font-semibold text-green-700" id="mor-kpi-ativas">…</p>
-                </div>
-                <div class="bg-white rounded-xl border border-domus-borda p-3">
-                  <p class="text-[10px] uppercase text-domus-texto-suave">Em aviso</p>
-                  <p class="text-2xl font-semibold text-amber-600" id="mor-kpi-aviso">…</p>
-                </div>
-                <div class="bg-white rounded-xl border border-domus-borda p-3">
-                  <p class="text-[10px] uppercase text-domus-texto-suave">Rescisao</p>
-                  <p class="text-2xl font-semibold text-red-600" id="mor-kpi-rescisao">…</p>
-                </div>
-              </div>
-
-              <!-- Filtros -->
-              <div class="bg-white rounded-2xl border border-domus-borda p-3 mb-3">
-                <div class="flex gap-2 flex-wrap">
-                  <input id="mor-busca" oninput="renderMoradoras()" placeholder="🔍 Buscar por nome, email, quarto…" class="flex-1 min-w-40 px-3 py-2 rounded-lg border border-domus-borda text-sm" />
-                  <select id="mor-status" onchange="renderMoradoras()" class="px-3 py-2 rounded-lg border border-domus-borda text-sm">
-                    <option value="ativo">Apenas ativas</option>
-                    <option value="">Todos os status</option>
-                    <option value="aviso">Em aviso</option>
-                    <option value="rescisao">Em rescisao</option>
-                    <option value="encerrado">Ex-moradoras</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Tabela -->
-              <div class="bg-white rounded-2xl border border-domus-borda overflow-x-auto">
-                <table class="w-full text-xs sm:text-sm">
-                  <thead class="bg-gray-50 text-domus-texto-suave uppercase text-[10px]">
-                    <tr>
-                      <th class="text-left p-2 sm:p-3">Nome</th>
-                      <th class="text-left p-2 sm:p-3">Unidade</th>
-                      <th class="text-left p-2 sm:p-3">Quarto</th>
-                      <th class="text-left p-2 sm:p-3">Inicio</th>
-                      <th class="text-left p-2 sm:p-3">Aluguel</th>
-                      <th class="text-left p-2 sm:p-3">Status</th>
-                      <th class="text-left p-2 sm:p-3"></th>
-                    </tr>
-                  </thead>
-                  <tbody id="mor-tbody">
-                    <tr><td colspan="7" class="p-6 text-center text-domus-texto-suave text-xs">Carregando…</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- ======= CONTRATOS PENDENTES (iframe pra admin-contratos.html) ======= -->
-            <div id="col-contratos" class="col-sub-section hidden fade-in">
-              <div class="bg-white rounded-2xl border border-domus-borda overflow-hidden">
-                <iframe src="/admin-contratos.html" style="width:100%; height: calc(100vh - 240px); border:0; min-height: 600px;" title="Contratos Pendentes"></iframe>
-              </div>
-            </div>
-
-
-            <!-- ======= BOLETOS DOMINHAS (sistema cbr — substitui iframe) ======= -->
-            <div id="col-boletos-cbr" class="col-sub-section hidden fade-in">
-              <div class="flex gap-2 mb-3 border-b border-domus-borda pb-2">
-                <button id="cbrTabAP" onclick="cbrSetUnidade('AP')" class="px-4 py-2 rounded-lg text-sm font-medium bg-domus-azul text-white">Andrade Pertence</button>
-                <button id="cbrTabRib" onclick="cbrSetUnidade('Rib')" class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10">Ribeirão Claro</button>
-              </div>
-            </div>
             <!-- ======= BOLETOS REAIS (DG REAL — substitui o protótipo abaixo) ======= -->
             <div id="col-boletos-real" class="hidden">
               <div class="bg-white rounded-2xl border border-domus-borda p-4 sm:p-6 mb-6">
@@ -11148,140 +11196,6 @@
       atualizarObraUI();
     }
 
-
-    // ==========================================
-    // MORADORAS — Sub-secao Coliving (dados reais)
-    // ==========================================
-    window._morCache = [];
-
-    async function loadMoradoras() {
-      const tbody = document.getElementById('mor-tbody');
-      if (!tbody) return;
-      tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-domus-texto-suave text-xs">Carregando…</td></tr>';
-      try {
-        const dbRef = window.dbAdmin || window.sb || window.supabase;
-        if (!dbRef) throw new Error('Supabase nao inicializado');
-        const { data, error } = await dbRef
-          .from('moradores')
-          .select('id, nome, email, unidade, quarto, inicio_contrato, fim_contrato, valor, status, telefone')
-          .order('inicio_contrato', { ascending: false });
-        if (error) throw error;
-        window._morCache = data || [];
-        renderMoradoras();
-      } catch (e) {
-        console.error('loadMoradoras erro:', e);
-        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-red-600 text-xs">Erro: ' + (e.message || e) + '</td></tr>';
-      }
-    }
-
-    function _morStatusBadge(s) {
-      const map = {
-        'ativo': '<span class="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full">● Ativa</span>',
-        'ativa': '<span class="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full">● Ativa</span>',
-        'aviso': '<span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">● Aviso</span>',
-        'rescisao': '<span class="text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-full">● Rescisao</span>',
-        'encerrado': '<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">○ Encerrado</span>',
-        'ex': '<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">○ Ex</span>',
-        'pendente': '<span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">● Pendente</span>'
-      };
-      return map[s] || '<span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">' + (s || '—') + '</span>';
-    }
-
-    function _morFmtData(d) {
-      if (!d) return '—';
-      try { const [y, m, day] = d.split('-'); return day + '/' + m + '/' + y.slice(2); } catch { return d; }
-    }
-
-    function _morFmtMoeda(v) {
-      if (v == null || v === '') return '—';
-      const n = Number(v);
-      return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    }
-
-    window._morUnid = window._morUnid || 'AP';
-
-    function setMorUnidade(u) {
-      window._morUnid = u;
-      const apBtn = document.getElementById('mor-tab-AP');
-      const ribBtn = document.getElementById('mor-tab-Rib');
-      [apBtn, ribBtn].forEach(b => {
-        if (!b) return;
-        b.classList.remove('bg-domus-azul', 'text-white');
-        b.classList.add('bg-white', 'text-domus-texto', 'border', 'border-domus-borda');
-      });
-      const ativo = u === 'AP' ? apBtn : ribBtn;
-      if (ativo) {
-        ativo.classList.remove('bg-white', 'text-domus-texto', 'border', 'border-domus-borda');
-        ativo.classList.add('bg-domus-azul', 'text-white');
-      }
-      renderMoradoras();
-    }
-
-    function renderMoradoras() {
-      const todas = window._morCache || [];
-      const busca = (document.getElementById('mor-busca')?.value || '').toLowerCase().trim();
-      const unid = window._morUnid || 'AP';
-      const stat = document.getElementById('mor-status')?.value;
-      // status: '' = todos; default = 'ativo'
-      let arr = todas;
-      if (stat !== '') arr = arr.filter(m => (m.status || 'ativo') === stat);
-      arr = arr.filter(m => m.unidade === unid);
-      if (busca) arr = arr.filter(m => {
-        const blob = ((m.nome || '') + ' ' + (m.email || '') + ' ' + (m.quarto || '')).toLowerCase();
-        return blob.includes(busca);
-      });
-
-      // KPIs calculados sobre a unidade selecionada
-      const todasUnid = todas.filter(m => m.unidade === unid);
-      const ativas = todasUnid.filter(m => (m.status || 'ativo') === 'ativo').length;
-      const aviso = todasUnid.filter(m => m.status === 'aviso').length;
-      const rescisao = todasUnid.filter(m => m.status === 'rescisao').length;
-      document.getElementById('mor-kpi-total').textContent = todasUnid.length;
-      document.getElementById('mor-kpi-ativas').textContent = ativas;
-      document.getElementById('mor-kpi-aviso').textContent = aviso;
-      document.getElementById('mor-kpi-rescisao').textContent = rescisao;
-      const unidLabel = unid === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro';
-      document.getElementById('mor-subtitle').textContent = unidLabel + ' — ' + ativas + ' ativas · ' + aviso + ' em aviso · ' + rescisao + ' em rescisao · ' + todasUnid.length + ' no total';
-
-      const tbody = document.getElementById('mor-tbody');
-      if (arr.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-domus-texto-suave text-xs">Nenhuma moradora encontrada</td></tr>';
-        return;
-      }
-      tbody.innerHTML = arr.map(m => `
-        <tr class="border-t border-domus-borda hover:bg-gray-50">
-          <td class="p-2 sm:p-3">
-            <div class="font-medium text-domus-azul-escuro">${m.nome || '—'}</div>
-            <div class="text-[10px] text-domus-texto-suave">${m.email || ''}</div>
-          </td>
-          <td class="p-2 sm:p-3">${m.unidade === 'AP' ? 'Andrade Pertence' : (m.unidade === 'Rib' ? 'Ribeirão Claro' : (m.unidade || '—'))}</td>
-          <td class="p-2 sm:p-3">${m.quarto || '—'}</td>
-          <td class="p-2 sm:p-3">${_morFmtData(m.inicio_contrato)}</td>
-          <td class="p-2 sm:p-3">${_morFmtMoeda(m.valor)}</td>
-          <td class="p-2 sm:p-3">${_morStatusBadge(m.status || 'ativo')}</td>
-          <td class="p-2 sm:p-3 text-right">
-            <button onclick="abrirMoradoraDetalhe('${m.id}')" class="text-domus-azul hover:underline text-[11px]">Detalhes</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function abrirMoradoraDetalhe(id) {
-      const m = (window._morCache || []).find(x => x.id === id);
-      if (!m) return;
-      const unidLabel = m.unidade === 'AP' ? 'Andrade Pertence' : (m.unidade === 'Rib' ? 'Ribeirão Claro' : (m.unidade || '—'));
-      alert(`${m.nome}\n\n` +
-        `Unidade: ${unidLabel}\n` +
-        `Quarto: ${m.quarto || '—'}\n` +
-        `Email: ${m.email || '—'}\n` +
-        `Telefone: ${m.telefone || '—'}\n` +
-        `Inicio: ${_morFmtData(m.inicio_contrato)}\n` +
-        `Fim previsto: ${_morFmtData(m.fim_contrato)}\n` +
-        `Aluguel: ${_morFmtMoeda(m.valor)}\n` +
-        `Status: ${m.status || 'ativo'}\n\n` +
-        `(Edicao detalhada vem na proxima iteracao)`);
-    }
-
     function mostrarSubColiving(id, btn) {
       document.querySelectorAll('.col-sub-section').forEach(s => s.classList.add('hidden'));
       document.getElementById(id).classList.remove('hidden');
@@ -11295,24 +11209,26 @@
       }
       // Carregar dados quando abrir aba
       if (id === 'col-fila') carregarFilaEspera();
-      if (id === 'col-moradoras') loadMoradoras();
-      if (id === 'col-boletos-cbr') {
-        // Abre o bloco cbr e dispara a unidade atual (default AP)
-        const blocoReal = document.getElementById('col-boletos-real');
-        if (blocoReal) blocoReal.classList.remove('hidden');
-        cbrSetUnidade(window.cbrUnidadeAtual || 'AP');
-      } else {
-        // Esconde bloco cbr quando troca de aba
-        const blocoReal = document.getElementById('col-boletos-real');
-        if (blocoReal && id !== 'col-ap' && id !== 'col-rib') blocoReal.classList.add('hidden');
-      }
       if (id === 'col-futuros') carregarFuturos();
-      // Compatibilidade: AP/Rib do antigo fluxo (sub-aba unidade) tambem disparam cbr
+      // Boletos reais (substituindo o protótipo) — mostrar/esconder bloco real
       const blocoReal = document.getElementById('col-boletos-real');
-      if (blocoReal && (id === 'col-ap' || id === 'col-rib')) {
-        // Aqui NAO mostramos o cbr (vai no col-boletos-cbr); so esconde caso o usuario tenha aberto AP/Rib
-        // Mantemos o comportamento antigo se preciso — mas sem forcar exibicao
-        blocoReal.classList.add('hidden');
+      if (blocoReal) {
+        if (id === 'col-ap' || id === 'col-rib') {
+          blocoReal.classList.remove('hidden');
+          // Esconder o conteúdo prototípico (fica abaixo)
+          const prototipo = document.getElementById(id);
+          if (prototipo) prototipo.style.display = 'none';
+          // Set unidade atual e carregar
+          window.cbrUnidadeAtual = id === 'col-ap' ? 'AP' : 'Rib';
+          if (!document.getElementById('cbr-mes').value) {
+            document.getElementById('cbr-mes').value = new Date().toISOString().slice(0, 7);
+          }
+          document.getElementById('cbr-titulo').textContent = `Boletos do mês — ${window.cbrUnidadeAtual === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro'}`;
+          if (typeof cbrCarregar === 'function') cbrCarregar();
+        } else {
+          blocoReal.classList.add('hidden');
+          ['col-ap','col-rib'].forEach(c => { const e = document.getElementById(c); if (e) e.style.display = ''; });
+        }
       }
     }
 
@@ -11320,31 +11236,6 @@
     // COLIVING BOLETOS REAIS — Funções
     // ==========================================
     window.cbrDados = [];
-    window.cbrUnidadeAtual = window.cbrUnidadeAtual || 'AP';
-
-    function cbrSetUnidade(u) {
-      window.cbrUnidadeAtual = u;
-      const ap = document.getElementById('cbrTabAP');
-      const rib = document.getElementById('cbrTabRib');
-      [ap, rib].forEach(b => {
-        if (!b) return;
-        b.classList.remove('bg-domus-azul', 'text-white');
-        b.classList.add('bg-white', 'text-domus-texto', 'border', 'border-domus-borda');
-      });
-      const ativo = u === 'AP' ? ap : rib;
-      if (ativo) {
-        ativo.classList.remove('bg-white', 'text-domus-texto', 'border', 'border-domus-borda');
-        ativo.classList.add('bg-domus-azul', 'text-white');
-      }
-      const blocoReal = document.getElementById('col-boletos-real');
-      if (blocoReal) blocoReal.classList.remove('hidden');
-      const cbrMes = document.getElementById('cbr-mes');
-      if (cbrMes && !cbrMes.value) cbrMes.value = new Date().toISOString().slice(0, 7);
-      const titulo = document.getElementById('cbr-titulo');
-      if (titulo) titulo.textContent = `Boletos do mês — ${u === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro'}`;
-      if (typeof cbrCarregar === 'function') cbrCarregar();
-    }
-
     async function cbrCarregar() {
       const unidade = window.cbrUnidadeAtual || 'Rib';
       const mes = document.getElementById('cbr-mes').value;
@@ -13307,7 +13198,25 @@
     // ==========================================
     // DASHBOARD — Carrega dados reais
     // ==========================================
+    // Atualiza badge "Visitas pendentes" na sidebar (chamado pelo Dashboard load)
+    async function atualizarBadgeVisitas() {
+      try {
+        const hojeStr = new Date().toISOString().split('T')[0];
+        const { count, error } = await db
+          .from('visitas_agendadas')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'agendada')
+          .gte('data', hojeStr);
+        if (error) return;
+        const badge = document.getElementById('badge-visitas-pendentes');
+        if (!badge) return;
+        if (count && count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+        else badge.classList.add('hidden');
+      } catch (_) {}
+    }
+
     async function carregarDashboard() {
+      atualizarBadgeVisitas();
       try {
         // Financeiro do mês por unidade
         const { data: lancamentos } = await db.from('lancamentos')
@@ -17909,6 +17818,173 @@
     // ==========================================
 
     // ============================================================
+    // ===== MÓDULO VISITAS (agendar-visita.html → visitas_agendadas) =====
+    // ============================================================
+    let _vFiltro = 'pendentes';
+    let _vTodas = [];
+
+    async function carregarVisitas() {
+      const loading = document.getElementById('visitas-loading');
+      const lista = document.getElementById('visitas-lista');
+      const empty = document.getElementById('visitas-empty');
+      if (loading) loading.classList.remove('hidden');
+      if (lista) lista.innerHTML = '';
+      if (empty) empty.classList.add('hidden');
+      try {
+        const { data, error } = await db
+          .from('visitas_agendadas')
+          .select('*')
+          .order('data', { ascending: false })
+          .order('horario', { ascending: false });
+        if (error) throw error;
+        _vTodas = data || [];
+        // KPIs
+        const hojeStr = new Date().toISOString().split('T')[0];
+        const pendentes = _vTodas.filter(v => v.status === 'agendada' && v.data >= hojeStr).length;
+        const hoje = _vTodas.filter(v => v.data === hojeStr).length;
+        const realizadas = _vTodas.filter(v => v.status === 'realizada').length;
+        const noshow = _vTodas.filter(v => v.status === 'no_show').length;
+        document.getElementById('kpi-visitas-pendentes').textContent = pendentes;
+        document.getElementById('kpi-visitas-hoje').textContent = hoje;
+        document.getElementById('kpi-visitas-realizadas').textContent = realizadas;
+        document.getElementById('kpi-visitas-noshow').textContent = noshow;
+        // Badge no menu lateral
+        const badge = document.getElementById('badge-visitas-pendentes');
+        if (badge) {
+          if (pendentes > 0) { badge.textContent = pendentes; badge.classList.remove('hidden'); }
+          else badge.classList.add('hidden');
+        }
+        renderizarVisitas();
+      } catch (e) {
+        console.error('[visitas] erro:', e);
+        if (lista) lista.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm">Erro ao carregar visitas: ' + (e.message || e) + '</div>';
+      } finally {
+        if (loading) loading.classList.add('hidden');
+      }
+    }
+
+    function filtrarVisitas(filtro) {
+      _vFiltro = filtro;
+      // Atualiza botões ativos
+      document.querySelectorAll('.fv-btn').forEach(b => {
+        b.classList.remove('bg-domus-azul','text-white');
+        b.classList.add('bg-white','border','border-domus-borda','text-domus-texto','hover:bg-gray-50');
+      });
+      const btn = document.getElementById('fv-' + filtro);
+      if (btn) {
+        btn.classList.add('bg-domus-azul','text-white');
+        btn.classList.remove('bg-white','border','border-domus-borda','text-domus-texto','hover:bg-gray-50');
+      }
+      renderizarVisitas();
+    }
+
+    function renderizarVisitas() {
+      const lista = document.getElementById('visitas-lista');
+      const empty = document.getElementById('visitas-empty');
+      if (!lista) return;
+      const hojeStr = new Date().toISOString().split('T')[0];
+      let dados = _vTodas;
+      if (_vFiltro === 'pendentes')   dados = dados.filter(v => v.status === 'agendada' && v.data >= hojeStr);
+      else if (_vFiltro === 'hoje')   dados = dados.filter(v => v.data === hojeStr);
+      else if (_vFiltro === 'realizadas') dados = dados.filter(v => v.status === 'realizada');
+      else if (_vFiltro === 'canceladas') dados = dados.filter(v => v.status === 'cancelada');
+      else if (_vFiltro === 'no_show')    dados = dados.filter(v => v.status === 'no_show');
+      // Ordena por data asc no caso pendentes/hoje, desc no resto
+      if (_vFiltro === 'pendentes' || _vFiltro === 'hoje') {
+        dados.sort((a,b) => (a.data+a.horario).localeCompare(b.data+b.horario));
+      }
+      if (!dados.length) {
+        lista.innerHTML = '';
+        if (empty) empty.classList.remove('hidden');
+        return;
+      }
+      if (empty) empty.classList.add('hidden');
+
+      const fmtData = (d) => {
+        if (!d) return '—';
+        const x = new Date(d + 'T12:00:00');
+        return x.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+      };
+      const fmtHora = (h) => (h || '').substring(0,5);
+      const statusColor = {
+        agendada:  { bg: 'bg-amber-50',    border: 'border-amber-200',   txt: 'text-amber-700',    label: '⏳ Agendada' },
+        confirmada:{ bg: 'bg-domus-azul/5', border: 'border-domus-azul/20', txt: 'text-domus-azul', label: '✓ Confirmada' },
+        realizada: { bg: 'bg-emerald-50',  border: 'border-emerald-200', txt: 'text-emerald-700',  label: '✓ Realizada' },
+        cancelada: { bg: 'bg-gray-100',    border: 'border-gray-300',    txt: 'text-gray-600',     label: '✖ Cancelada' },
+        no_show:   { bg: 'bg-red-50',      border: 'border-red-200',     txt: 'text-red-700',      label: '🚫 No-show' }
+      };
+
+      lista.innerHTML = dados.map(v => {
+        const sc = statusColor[v.status] || statusColor.agendada;
+        const telLimpo = (v.whatsapp || '').replace(/\D/g, '');
+        const telLink = telLimpo.length >= 10
+          ? 'https://wa.me/' + (telLimpo.startsWith('55') ? telLimpo : '55' + telLimpo)
+          : null;
+        const selfieUrl = v.selfie_url
+          ? ('https://motwhfbpundrhvuwjntw.supabase.co/storage/v1/object/public/visitas/' + v.selfie_url)
+          : null;
+        const acoes = [];
+        if (v.status === 'agendada') {
+          acoes.push('<button onclick="mudarStatusVisita(\'' + v.id + '\',\'realizada\')" class="text-xs px-2.5 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700">✓ Marcar como realizada</button>');
+          acoes.push('<button onclick="mudarStatusVisita(\'' + v.id + '\',\'no_show\')" class="text-xs px-2.5 py-1 rounded bg-red-500 text-white hover:bg-red-600">🚫 No-show</button>');
+          acoes.push('<button onclick="cancelarVisita(\'' + v.id + '\')" class="text-xs px-2.5 py-1 rounded bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">✖ Cancelar</button>');
+        } else {
+          acoes.push('<button onclick="mudarStatusVisita(\'' + v.id + '\',\'agendada\')" class="text-xs px-2.5 py-1 rounded bg-white border border-domus-borda text-domus-texto hover:bg-gray-50">↺ Voltar pra agendada</button>');
+        }
+        if (telLink) acoes.push('<a href="' + telLink + '" target="_blank" class="text-xs px-2.5 py-1 rounded bg-green-600 text-white hover:bg-green-700">💬 WhatsApp</a>');
+
+        return '<div class="bg-white rounded-2xl border ' + sc.border + ' p-4 sm:p-5">' +
+          '<div class="flex flex-wrap items-start gap-4">' +
+            (selfieUrl ? '<a href="' + selfieUrl + '" target="_blank"><img src="' + selfieUrl + '" class="w-16 h-16 rounded-full object-cover border-2 ' + sc.border + '" /></a>' : '<div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl text-gray-400">👤</div>') +
+            '<div class="flex-1 min-w-0">' +
+              '<div class="flex flex-wrap items-center gap-2 mb-1">' +
+                '<h4 class="font-serif text-lg text-domus-azul-escuro">' + (v.nome || '—') + '</h4>' +
+                '<span class="text-[10px] ' + sc.bg + ' ' + sc.txt + ' px-2 py-0.5 rounded-full font-medium">' + sc.label + '</span>' +
+                (v.unidade ? '<span class="text-[10px] bg-domus-azul/10 text-domus-azul px-2 py-0.5 rounded-full">' + (v.unidade === 'Rib' ? 'Ribeirão Claro' : 'Andrade Pertence') + '</span>' : '') +
+              '</div>' +
+              '<div class="text-sm text-domus-texto-suave space-y-0.5">' +
+                '<div>📅 <strong class="text-domus-texto">' + fmtData(v.data) + '</strong> às ' + fmtHora(v.horario) + '</div>' +
+                '<div>📞 ' + (v.whatsapp || '—') + ' · ✉️ ' + (v.email || '—') + '</div>' +
+                (v.observacoes ? '<div class="text-xs italic mt-1.5 text-domus-texto">💬 ' + v.observacoes + '</div>' : '') +
+                (v.cancel_motivo ? '<div class="text-xs italic mt-1.5 text-red-600">Motivo cancelamento: ' + v.cancel_motivo + '</div>' : '') +
+                '<div class="text-[10px] mt-1 text-domus-texto-suave/70">Inscrita em ' + (v.criado_em ? new Date(v.criado_em).toLocaleDateString('pt-BR') + ' ' + new Date(v.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '—') + '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="mt-3 flex flex-wrap gap-2">' + acoes.join('') + '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    async function mudarStatusVisita(id, novoStatus) {
+      try {
+        const { error } = await db
+          .from('visitas_agendadas')
+          .update({ status: novoStatus })
+          .eq('id', id);
+        if (error) throw error;
+        await carregarVisitas();
+      } catch (e) {
+        alert('Erro ao atualizar status: ' + (e.message || e));
+      }
+    }
+
+    async function cancelarVisita(id) {
+      const motivo = prompt('Motivo do cancelamento (opcional):');
+      if (motivo === null) return;
+      try {
+        const { error } = await db
+          .from('visitas_agendadas')
+          .update({ status: 'cancelada', cancel_motivo: motivo || null })
+          .eq('id', id);
+        if (error) throw error;
+        await carregarVisitas();
+      } catch (e) {
+        alert('Erro ao cancelar: ' + (e.message || e));
+      }
+    }
+
+    // ============================================================
     // ===== MÓDULO LIMPEZA ADMIN =====
     // ============================================================
     let _laFiltroAtual = 'hoje';
@@ -18663,250 +18739,4 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
       }
 
       grid.innerHTML = insights.slice(0, 6).map(i => `
-        <div class="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-          <div class="flex items-start gap-2">
-            <span class="text-xl">${i.icon}</span>
-            <div class="flex-1 min-w-0">
-              <p class="text-[10px] uppercase tracking-wider text-white/70 font-semibold">${i.titulo}</p>
-              <p class="text-base font-bold mt-0.5 truncate">${i.valor}</p>
-              <p class="text-[11px] text-white/80 mt-0.5">${i.rodape}</p>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // Hook: chamar calcularInsightsPMS depois que carregarPMS terminar
-    const _carregarPMSOriginal = window.carregarPMS;
-    window.carregarPMS = async function() {
-      await _carregarPMSOriginal();
-      try { calcularInsightsPMS(); } catch(e) { console.warn('insights:', e); }
-    };
-
-    // ============================================================
-    // CHAT IA — placeholder por enquanto
-    // ============================================================
-
-    function abrirChatIA() {
-      const modal = document.createElement('div');
-      modal.className = 'fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4';
-      modal.innerHTML = `
-        <div class="bg-white rounded-2xl max-w-md w-full">
-          <div class="p-5 border-b border-domus-borda flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-xl">✨</span>
-              <h3 class="font-serif text-xl text-domus-azul-escuro italic">Domus IA</h3>
-            </div>
-            <button onclick="this.closest('.fixed').remove()" class="text-2xl leading-none text-gray-400">×</button>
-          </div>
-          <div class="p-5 space-y-3">
-            <div class="bg-domus-azul/10 rounded-xl p-4 text-sm text-domus-texto">
-              <p class="font-semibold text-domus-azul-escuro mb-2">👋 Oi, Gabi!</p>
-              <p>Em breve eu vou poder responder perguntas tipo:</p>
-              <ul class="mt-2 space-y-1 text-xs list-disc list-inside text-domus-texto-suave">
-                <li>"Quem foi meu hóspede mais frequente esse ano?"</li>
-                <li>"Qual mês teve maior ocupação no Studio 1?"</li>
-                <li>"Quanto eu fatura ria se ocupasse 100% do hostel?"</li>
-                <li>"Que dia da semana tem mais cancelamento?"</li>
-              </ul>
-              <p class="mt-3 text-xs text-domus-texto-suave italic">Por enquanto, os insights automáticos no topo já te dão o resumo do dia. Conversa de verdade vem em breve.</p>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    }
-
-    // ============================================================
-    // CADASTRO MANUAL DE NOVA RESERVA
-    // ============================================================
-    function abrirModalNovaReserva() {
-      const hoje = new Date().toISOString().split('T')[0];
-      const amanha = new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0];
-      const modal = document.createElement('div');
-      modal.className = 'fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto';
-      modal.innerHTML = `
-        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[95vh] overflow-y-auto">
-          <div class="p-5 border-b border-domus-borda flex items-center justify-between sticky top-0 bg-white z-10">
-            <div>
-              <h3 class="font-serif text-xl text-domus-azul-escuro">➕ Nova reserva direta</h3>
-              <p class="text-xs text-domus-texto-suave mt-0.5">Cadastro manual no PMS</p>
-            </div>
-            <button onclick="this.closest('.fixed').remove()" class="text-2xl leading-none text-gray-400">×</button>
-          </div>
-          <form onsubmit="event.preventDefault(); criarReservaManual(this);" class="p-5 space-y-3">
-            <div>
-              <label class="text-xs font-medium text-domus-texto uppercase">Nome do hóspede *</label>
-              <input name="hospede_nome" required class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-xs font-medium text-domus-texto uppercase">CPF / Doc</label>
-                <input name="hospede_documento" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-              </div>
-              <div>
-                <label class="text-xs font-medium text-domus-texto uppercase">Telefone</label>
-                <input name="hospede_contato" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-              </div>
-            </div>
-            <div>
-              <label class="text-xs font-medium text-domus-texto uppercase">Quarto / Cama *</label>
-              <select name="quarto" required class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-                <option value="">Escolha...</option>
-                <option value="Studio 1">Studio 1</option>
-                <option value="Studio 2">Studio 2</option>
-                <option value="Individual 3">Individual 3</option>
-                <option value="Individual 4">Individual 4</option>
-                <option value="Individual 5">Individual 5</option>
-                <option value="Hostel 6 - Cama 1">Hostel 6 - Cama 1</option>
-                <option value="Hostel 6 - Cama 2">Hostel 6 - Cama 2</option>
-                <option value="Hostel 6 - Cama 3">Hostel 6 - Cama 3</option>
-                <option value="Hostel 6 - Cama 4">Hostel 6 - Cama 4</option>
-                <option value="Hostel 7 - Cama 5">Hostel 7 - Cama 5</option>
-                <option value="Hostel 7 - Cama 6">Hostel 7 - Cama 6</option>
-                <option value="Hostel 7 - Cama 7">Hostel 7 - Cama 7</option>
-                <option value="Hostel 7 - Cama 8">Hostel 7 - Cama 8</option>
-                <option value="Casa das Meninas">Casa das Meninas</option>
-              </select>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-xs font-medium text-domus-texto uppercase">Check-in *</label>
-                <input type="date" name="checkin" required value="${hoje}" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-              </div>
-              <div>
-                <label class="text-xs font-medium text-domus-texto uppercase">Check-out *</label>
-                <input type="date" name="checkout" required value="${amanha}" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-xs font-medium text-domus-texto uppercase">Nº hóspedes</label>
-                <input type="number" name="num_hospedes" min="1" value="1" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-              </div>
-              <div>
-                <label class="text-xs font-medium text-domus-texto uppercase">Valor total (R$)</label>
-                <input type="number" name="valor_total" step="0.01" min="0" placeholder="0,00" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-xs font-medium text-domus-texto uppercase">Origem</label>
-                <select name="plataforma" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-                  <option value="Direto">Direto</option>
-                  <option value="WhatsApp">WhatsApp</option>
-                  <option value="Booking">Booking</option>
-                  <option value="Airbnb">Airbnb</option>
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
-              <div>
-                <label class="text-xs font-medium text-domus-texto uppercase">Pagamento</label>
-                <select name="forma_pagamento" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-                  <option value="">A definir</option>
-                  <option value="Pix">Pix</option>
-                  <option value="Cartão">Cartão</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                  <option value="Transferência">Transferência</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label class="text-xs font-medium text-domus-texto uppercase">Status inicial</label>
-              <select name="status" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm">
-                <option value="confirmada" selected>Confirmada</option>
-                <option value="em_espera">Em espera (aguardando pagamento)</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-xs font-medium text-domus-texto uppercase">Observações</label>
-              <textarea name="observacoes" rows="2" placeholder="Algo importante sobre essa reserva?" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda text-sm"></textarea>
-            </div>
-            <button type="submit" class="w-full py-2.5 rounded-xl bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro transition">Criar reserva</button>
-          </form>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    }
-
-    async function criarReservaManual(form) {
-      const dados = {
-        hospede_nome: form.hospede_nome.value.trim(),
-        hospede_documento: form.hospede_documento.value.trim() || null,
-        hospede_contato: form.hospede_contato.value.trim() || null,
-        quarto: form.quarto.value,
-        checkin: form.checkin.value,
-        checkout: form.checkout.value,
-        valor_total: parseFloat(form.valor_total.value) || 0,
-        plataforma: form.plataforma ? form.plataforma.value : 'Direto',
-        observacoes: form.observacoes ? form.observacoes.value.trim() : null,
-        status: 'confirmada',
-        cama: form.quarto.value
-      };
-      try {
-        const { error } = await db.from('reservas').insert(dados);
-        if (error) throw error;
-        alert('Reserva criada com sucesso!');
-        const m = document.querySelector('.fixed.inset-0.z-\\[60\\]');
-        if (m) m.remove();
-        if (typeof carregarPMS === 'function') carregarPMS();
-      } catch (err) {
-        console.error('Erro ao criar reserva:', err);
-        alert('Erro ao criar reserva: ' + (err.message || 'desconhecido'));
-      }
-    }
-
-  </script>
-
-  <!-- ==========================================
-       MODAL DE LOGIN ADMIN (DG Gestão / engrenagem)
-       Reconstituído após truncamento.
-       ========================================== -->
-  <div id="login-overlay" class="hidden fixed inset-0 z-[200] flex items-start sm:items-center justify-center overflow-y-auto" style="backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.55); padding: 16px 0;">
-    <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md mx-4 relative my-auto" style="max-height: calc(100vh - 32px); overflow-y: auto;">
-      <button onclick="fecharLogin()" class="absolute top-4 right-4 text-domus-texto-suave hover:text-domus-texto text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition" aria-label="Fechar">&times;</button>
-
-      <div class="text-center mb-6">
-        <h2 class="font-serif text-2xl text-domus-azul-escuro">DG Gestão</h2>
-        <p class="text-sm text-domus-texto-suave mt-1">Acesso restrito</p>
-      </div>
-
-      <form onsubmit="event.preventDefault(); tentarLogin();" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-domus-texto mb-1">E-mail</label>
-          <input id="login-email" type="email" required placeholder="seu@email.com"
-            class="w-full px-4 py-2.5 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" autocomplete="username" />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-domus-texto mb-1">Senha</label>
-          <div class="relative">
-            <input id="login-senha" type="password" required placeholder="senha"
-              class="w-full px-4 py-2.5 pr-12 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" autocomplete="current-password" />
-            <button type="button" onclick="toggleSenha()" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-domus-texto-suave hover:text-domus-texto text-base" aria-label="Mostrar/ocultar senha" style="background:transparent;border:none;cursor:pointer;">👁️</button>
-          </div>
-        </div>
-
-        <label class="flex items-center gap-2 text-sm text-domus-texto-suave cursor-pointer">
-          <input id="login-lembrar" type="checkbox" class="w-4 h-4 rounded border-domus-borda text-domus-azul focus:ring-domus-azul" />
-          <span>Lembrar de mim</span>
-        </label>
-
-        <div id="login-erro" class="hidden text-sm text-red-600 text-center p-2 bg-red-50 rounded-lg"></div>
-
-        <button type="submit" id="btn-entrar-dg"
-          style="display:flex !important; visibility:visible !important; opacity:1 !important; width:100% !important; background:#008B9C !important; color:#fff !important; padding:14px !important; border-radius:10px !important; font-weight:700 !important; align-items:center !important; justify-content:center !important; gap:8px !important; cursor:pointer !important; border:none !important; font-size:16px !important; margin-top:12px !important; min-height:48px !important; touch-action:manipulation !important; -webkit-appearance:none !important; appearance:none !important; box-shadow:0 4px 12px rgba(0,139,156,0.3) !important; position:relative !important; z-index:1 !important;">
-          <span id="login-texto" style="color:#fff !important; font-weight:700 !important;">Entrar</span>
-          <span id="login-spinner" class="hidden inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-        </button>
-
-        <!-- Backup link Entrar — fallback caso o botão acima quebre por algum motivo -->
-        <div style="text-align:center; margin-top:8px; font-size:13px; color:#64748b;">
-          Botão sumiu? <a href="#" onclick="event.preventDefault(); tentarLogin();" style="color:#008B9C; text-decoration:underline; font-weight:600;">Clique aqui pra entrar</a>
-        </div>
-      </form>
-    </div>
-  </div>
-
-</body>
-</html>
+        <div class="bg-white/10 rounded-xl p-3 
