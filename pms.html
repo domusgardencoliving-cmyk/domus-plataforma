@@ -5624,7 +5624,10 @@
         } catch(_) {}
         const _diariaLoad = parseFloat(r.valor_diaria) ||
                             (parseFloat(r.valor_total || 0) / _noitesLoad) || 0;
-        document.getElementById('editResValor').value = _diariaLoad ? Number(_diariaLoad).toFixed(2) : '';
+        const _inpValor = document.getElementById('editResValor');
+        _inpValor.value = _diariaLoad ? Number(_diariaLoad).toFixed(2) : '';
+        delete _inpValor.dataset.diariaAnterior;
+        document.getElementById('editResAjusteDiaria').classList.add('hidden');
         document.getElementById('editResObs').value = r.observacoes || '';
         // Popula dropdown de quartos disponíveis na janela checkin-checkout
         await popularQuartosDisponiveis(r.checkin, r.checkout, r.cama || r.quarto || '', r.id);
@@ -5673,6 +5676,48 @@
         sel.innerHTML = '<option value="' + (quartoAtual || '') + '">' + (quartoAtual || 'erro ao carregar') + '</option>';
         hint.textContent = 'Não consegui verificar disponibilidade — usando quarto atual.';
       }
+    }
+
+    // Ao trocar o quarto, pre-preenche diária com preço base do novo quarto
+    // mas deixa botão "↩ Manter R$ X" pra reverter (caso a mudança de quarto
+    // tenha sido decisão da casa, não do hóspede).
+    function aoMudarQuartoEditarReserva() {
+      const sel = document.getElementById('editResQuarto');
+      const novoId = sel.value;
+      const novoQuarto = QUARTOS.find(q => q.id === novoId);
+      if (!novoQuarto) return;
+      const inp = document.getElementById('editResValor');
+      const diariaAtual = parseFloat(inp.value) || 0;
+      const diariaNova = parseFloat(novoQuarto.preco) || 0;
+      if (diariaNova <= 0 || diariaNova === diariaAtual) return;
+      // Salva a diária anterior pro botão de reverter
+      inp.dataset.diariaAnterior = diariaAtual ? diariaAtual.toFixed(2) : '';
+      inp.value = diariaNova.toFixed(2);
+      atualizarTotalEditarReserva();
+      // Mostra banner amarelo
+      const banner = document.getElementById('editResAjusteDiaria');
+      const txt = document.getElementById('editResAjusteDiariaTxt');
+      const old = document.getElementById('editResAjusteDiariaOld');
+      const btn = document.getElementById('editResAjusteDiariaUndo');
+      txt.innerHTML = '💡 Diária ajustada pra <strong>R$ ' + diariaNova.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</strong> (preço base de ' + novoQuarto.label + ').';
+      if (diariaAtual > 0) {
+        old.textContent = diariaAtual.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+      banner.classList.remove('hidden');
+    }
+
+    // Reverte diária pro valor antes da troca de quarto
+    function reverterDiariaEditarReserva() {
+      const inp = document.getElementById('editResValor');
+      const anterior = parseFloat(inp.dataset.diariaAnterior) || 0;
+      if (anterior > 0) {
+        inp.value = anterior.toFixed(2);
+        atualizarTotalEditarReserva();
+      }
+      document.getElementById('editResAjusteDiaria').classList.add('hidden');
     }
 
     // Atualiza preview "N noites × R$ X = R$ Y" no modal Editar Reserva
@@ -6059,39 +6104,4 @@
       } catch (e) { console.warn('init tab-button:', e); }
     });
 
-    // Fallback: se o DOMContentLoaded já passou (ex: iframe), chama agora
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      try { tentarRestaurarSessao(); } catch(e) { console.error('init session (fallback):', e); mostrarFormularioLogin(); }
-    }
-  </script>
-  <!-- Modal Cancelar Reserva (com motivo) -->
-  <div id="cancelarReservaModal" class="hidden">
-    <div class="modal-overlay" onclick="fecharCancelarReservaModal()"></div>
-    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-      <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full pointer-events-auto max-h-[90vh] overflow-y-auto">
-        <h3 class="text-lg font-semibold text-domus-texto mb-4">Cancelar Reserva</h3>
-        <p class="text-sm text-domus-texto-suave mb-4">Por que essa reserva está sendo cancelada?</p>
-
-        <form id="cancelarReservaForm" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-domus-texto mb-1">Motivo *</label>
-            <select id="cancMotivo" required onchange="onMotivoCancelamentoChange()"
-              class="w-full px-3 py-2 border border-domus-borda rounded text-sm">
-              <option value="">Selecione um motivo</option>
-              <option value="hospede_desistiu">Hóspede desistiu</option>
-              <option value="sem_pagamento">Sem pagamento (no-show)</option>
-              <option value="reserva_duplicada">Reserva duplicada</option>
-              <option value="erro_de_digitacao">Erro de digitação</option>
-              <option value="por_engano">Reserva por engano (não contabilizar nas estatísticas)</option>
-              <option value="overbooking">Overbooking — remanejada</option>
-              <option value="outro">Outro</option>
-            </select>
-          </div>
-
-          <div id="cancObsWrap">
-            <label class="block text-sm font-medium text-domus-texto mb-1">Observação (opcional)</label>
-            <textarea id="cancObs" rows="3" placeholder="Detalhes adicionais sobre o cancelamento..."
-              class="w-full px-3 py-2 border border-domus-borda rounded text-sm"></textarea>
-          </div>
-
-          <div id="cancEnganoAviso" class="hidden p-3 bg-amber-50 border border-amber-200 rounded text-xs text-
+    // Fallback: s
