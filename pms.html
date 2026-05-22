@@ -21,6 +21,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <!-- Fonts -->
@@ -1949,6 +1950,10 @@
           <button onclick="enviarVoucherEmail()"
             class="w-full px-4 py-2 bg-white border border-domus-borda text-domus-texto rounded text-sm hover:bg-gray-50 flex items-center justify-center gap-2">
             ✉️ Enviar Voucher por E-mail
+          </button>
+          <button onclick="baixarVoucherPDF()"
+            class="w-full px-4 py-2 bg-domus-azul-escuro text-white rounded text-sm hover:opacity-90 flex items-center justify-center gap-2">
+            📄 Baixar Voucher (PDF)
           </button>
 
           <button onclick="closeAcaoModal()"
@@ -6094,4 +6099,246 @@
       try { document.getElementById('novoCupomForm').reset(); } catch(e){}
     }
     function closeBloqueioModal() {
-  
+      document.getElementById('bloqueioModal').classList.add('hidden');
+      try { document.getElementById('bloqueioForm').reset(); } catch(e){}
+    }
+    function closeDetalheHospede() {
+      document.getElementById('detalheHospedeModal').classList.add('hidden');
+    }
+    function closePagamentoModal() {
+      document.getElementById('pagamentoModal').classList.add('hidden');
+      try { document.getElementById('pagamentoForm').reset(); } catch(e){}
+    }
+    function abrirBloqueioModal() {
+      try { document.getElementById('blQuarto').value = ''; } catch(e){}
+      try { document.getElementById('blDe').value = ''; } catch(e){}
+      try { document.getElementById('blAte').value = ''; } catch(e){}
+      try { resetarDropdownQuartos('blQuarto','blQuartoStatus'); } catch(e){}
+      document.getElementById('bloqueioModal').classList.remove('hidden');
+    }
+    async function abrirPagamentoModal() {
+      if (!_currentReservaId) return;
+      try {
+        const { data: r } = await db.from('reservas').select('*').eq('id', _currentReservaId).maybeSingle();
+        if (!r) return;
+        document.getElementById('pagResumoNome').textContent = r.hospede_nome || '—';
+        document.getElementById('pagResumoDatas').textContent =
+          fmtData(r.checkin) + ' → ' + fmtData(r.checkout);
+        const total = parseFloat(r.valor_total || 0);
+        document.getElementById('pagResumoTotal').textContent = 'R$ ' + total.toFixed(2);
+        // Recebido (soma de pagamentos)
+        let recebido = 0;
+        try {
+          const { data: pgs } = await db.from('pagamentos').select('valor').eq('reserva_id', _currentReservaId);
+          recebido = (pgs||[]).reduce((s,p) => s + parseFloat(p.valor || 0), 0);
+        } catch(e){}
+        document.getElementById('pagResumoRecebido').textContent = 'R$ ' + recebido.toFixed(2);
+        document.getElementById('pagResumoSaldo').textContent = 'R$ ' + (total - recebido).toFixed(2);
+        document.getElementById('pagamentoModal').classList.remove('hidden');
+      } catch (e) { console.error(e); mostrarToast('Erro ao abrir pagamento', 'error'); }
+    }
+
+    function atualizarLabelValor() {
+      const tipo = document.getElementById('ncTipo').value;
+      const lbl = document.getElementById('ncValorLabel');
+      if (!lbl) return;
+      lbl.textContent = tipo === 'percentual' ? 'Valor do Desconto (%) *' : 'Valor do Desconto (R$) *';
+    }
+
+    function gerarCodigoCupom() {
+      const r = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const el = document.getElementById('ncCodigo');
+      if (el) el.value = 'DOMUS-' + r;
+    }
+
+    function normalizarTelefone(t) {
+      if (!t) return '';
+      let s = String(t).replace(/\D/g, '');
+      if (s.length === 11) return '55' + s;
+      if (s.length === 13 && s.startsWith('55')) return s;
+      return s;
+    }
+
+    function aplicarFiltrosReservas() {
+      if (typeof loadReservas === 'function') loadReservas();
+    }
+
+    // Stubs pra ações que dependem de implementação completa (evita console errors)
+    async function gerarVoucherPDF() {
+      mostrarToast('Voucher: abra o PMS em tela cheia (pms.html) — funcionalidade completa só lá', 'info');
+    }
+    async function gerarReciboPDF() {
+      mostrarToast('Recibo: abra o PMS em tela cheia (pms.html)', 'info');
+    }
+    async function enviarVoucherEmail() {
+      mostrarToast('Envio por e-mail: abra o PMS em tela cheia (pms.html)', 'info');
+    }
+
+    // ========================================================
+    // BAIXAR VOUCHER PDF — usa html2pdf.js (carregado no head).
+    // Monta HTML inline com os dados da reserva atual, gera PDF
+    // e dispara download. Funciona client-side, sem servidor.
+    // ========================================================
+    async function baixarVoucherPDF() {
+      try {
+        const rid = _currentReservaId || (window.reservaAtualId || null);
+        if (!rid) { mostrarToast('Reserva não selecionada', 'error'); return; }
+        if (typeof html2pdf === 'undefined') {
+          mostrarToast('Biblioteca PDF não carregou — atualize a página e tente de novo', 'error');
+          return;
+        }
+        mostrarToast('Gerando PDF...', 'info');
+        const { data: r, error } = await db.from('reservas')
+          .select('hospede_nome, hospede_contato, checkin, checkout, valor_total, valor_diaria, cama, quarto, plataforma, id')
+          .eq('id', rid).single();
+        if (error || !r) { mostrarToast('Reserva não encontrada', 'error'); return; }
+
+        // Calcula noites + diária (se faltar)
+        const noites = (r.checkin && r.checkout)
+          ? Math.max(1, Math.round((new Date(r.checkout) - new Date(r.checkin)) / 86400000))
+          : 1;
+        const diaria = parseFloat(r.valor_diaria) || (parseFloat(r.valor_total || 0) / noites) || 0;
+        const total = parseFloat(r.valor_total) || (diaria * noites);
+
+        // Unidade: H6/H7/Studio/Individual → AP; Rib... → Rib (futuro)
+        const camaStr = (r.cama || r.quarto || '').toLowerCase();
+        const isRib = camaStr.includes('rib');
+        const unidadeNome = isRib ? 'Domus Ribeirão Claro' : 'Domus Andrade Pertence';
+        const endereco = isRib
+          ? 'Rua Ribeirão Claro, 547 · Vila Olímpia · São Paulo · SP'
+          : 'Rua Dr. Andrade Pertence, 73 · Vila Olímpia · São Paulo · SP';
+        const mapsUrl = isRib
+          ? 'https://maps.google.com/?q=Rua+Ribeirão+Claro,+547,+Vila+Olímpia,+São+Paulo'
+          : 'https://maps.google.com/?q=Rua+Dr.+Andrade+Pertence,+73,+Vila+Olímpia,+São+Paulo';
+
+        // Nome amigável do quarto
+        const qInfo = QUARTOS.find(q => q.id === (r.cama || r.quarto));
+        const quartoLabel = qInfo ? qInfo.label : (r.cama || r.quarto || '—');
+
+        // Formatadores
+        const fmtData = (s) => {
+          if (!s) return '—';
+          const d = new Date(s + 'T12:00:00');
+          return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+        };
+        const fmtBRL = (n) => 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const codigo = String(r.id).substring(0, 8).toUpperCase();
+        const nome = r.hospede_nome || 'Hóspede';
+        const primeiroNome = nome.split(' ')[0];
+
+        // HTML do voucher (mesma identidade visual do template Brunno)
+        const html = `
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color:#2C3E50; background:#F8F5F0; padding:24px 16px; width:600px;">
+  <div style="max-width:560px; margin:0 auto; background:#fff; border-radius:18px; overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#008B9C 0%,#0A3142 100%); padding:30px 28px; color:#fff; text-align:center;">
+      <h1 style="margin:0; font-family:Georgia,serif; font-size:24px; font-weight:normal; color:#fff;">Domus Garden Coliving</h1>
+      <p style="margin:6px 0 0; font-size:12px; opacity:0.9; letter-spacing:1px; text-transform:uppercase;">Voucher de Reserva</p>
+    </div>
+    <div style="text-align:center; padding:22px 28px 6px;">
+      <span style="display:inline-block; background:#D4EDDA; color:#155724; padding:6px 16px; border-radius:999px; font-size:11px; font-weight:bold; letter-spacing:1px;">&#10003; RESERVA CONFIRMADA</span>
+    </div>
+    <div style="padding:8px 28px 22px; text-align:center;">
+      <h2 style="margin:0; font-family:Georgia,serif; font-size:20px; color:#0A3142;">Olá, ${primeiroNome}!</h2>
+      <p style="margin:8px 0 0; color:#5A6B7B; font-size:13px;">Sua estadia está reservada. Aqui está seu voucher para guardar.</p>
+    </div>
+    <div style="margin:0 28px 14px; background:#F8F5F0; border-radius:12px; padding:18px;">
+      <table style="width:100%; border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0; font-size:11px; color:#8A9BA9; letter-spacing:1px; text-transform:uppercase;">Código da reserva</td>
+          <td style="padding:6px 0; font-family:'Courier New',monospace; font-size:15px; font-weight:bold; color:#0A3142; text-align:right;">${codigo}</td>
+        </tr>
+        <tr><td colspan="2" style="border-top:1px dashed #D5C9B8; height:1px;"></td></tr>
+        <tr>
+          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Acomodação</td>
+          <td style="padding:9px 0; font-size:13px; font-weight:600; color:#2C3E50; text-align:right;">${quartoLabel}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Unidade</td>
+          <td style="padding:9px 0; font-size:13px; font-weight:600; color:#2C3E50; text-align:right;">${unidadeNome}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Check-in</td>
+          <td style="padding:9px 0; font-size:13px; color:#2C3E50; text-align:right;">${fmtData(r.checkin)} <span style="color:#8A9BA9; font-size:11px;">(a partir das 16h)</span></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Check-out</td>
+          <td style="padding:9px 0; font-size:13px; color:#2C3E50; text-align:right;">${fmtData(r.checkout)} <span style="color:#8A9BA9; font-size:11px;">(até as 13h)</span></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Número de noites</td>
+          <td style="padding:9px 0; font-size:13px; font-weight:600; color:#2C3E50; text-align:right;">${noites} noite${noites > 1 ? 's' : ''}</td>
+        </tr>
+        <tr><td colspan="2" style="border-top:1px dashed #D5C9B8; height:1px;"></td></tr>
+        <tr>
+          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Diária</td>
+          <td style="padding:9px 0; font-size:13px; color:#2C3E50; text-align:right;">${fmtBRL(diaria)}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Valor total</td>
+          <td style="padding:9px 0; font-size:17px; font-weight:bold; color:#008B9C; font-family:Georgia,serif; text-align:right;">${fmtBRL(total)}</td>
+        </tr>
+      </table>
+    </div>
+    <div style="padding:6px 28px 22px;">
+      <p style="margin:0; font-size:10px; color:#8A9BA9; letter-spacing:1px; text-transform:uppercase;">Endereço</p>
+      <p style="margin:6px 0 0; font-size:13px; color:#2C3E50; line-height:1.5;">${endereco}</p>
+      <p style="margin:8px 0 0;"><a href="${mapsUrl}" style="color:#008B9C; text-decoration:none; font-size:12px; font-weight:600;">&#128205; Abrir no Google Maps &rarr;</a></p>
+    </div>
+    <div style="padding:0 28px 22px;">
+      <p style="margin:0; font-size:10px; color:#8A9BA9; letter-spacing:1px; text-transform:uppercase;">Próximos passos</p>
+      <ol style="margin:8px 0 0; padding-left:18px; color:#5A6B7B; font-size:12px; line-height:1.7;">
+        <li><strong>No dia do seu check-in, às 14h</strong> (2h antes da chegada), você recebe automaticamente pelo WhatsApp: endereço, vídeo de como chegar, senha da porta da rua e Wi-Fi</li>
+        <li>Você não precisa fazer nada — é só relaxar e curtir a viagem</li>
+        <li>Qualquer dúvida antes ou durante, é só responder nosso WhatsApp: (11) 94333-0911</li>
+      </ol>
+    </div>
+    <div style="background:#F8F5F0; padding:18px 28px; text-align:center; border-top:1px solid #E8DDD0;">
+      <p style="margin:0; font-family:Georgia,serif; font-style:italic; color:#8A9BA9; font-size:12px;">"Mais leve que hotel, mais humana que aluguel."</p>
+      <p style="margin:10px 0 0; font-size:10px; color:#A8B5C0;">Domus Garden Coliving · Desde 2021 · São Paulo, SP</p>
+    </div>
+  </div>
+</div>`;
+
+        // Wrapper temporário (fora da tela) pra render
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'fixed';
+        wrapper.style.left = '-9999px';
+        wrapper.style.top = '0';
+        wrapper.innerHTML = html;
+        document.body.appendChild(wrapper);
+
+        const nomeArquivo = 'Voucher_' + (nome.replace(/[^\w-]+/g, '_')) + '_' + (r.checkin || '').replace(/-/g, '') + '.pdf';
+
+        await html2pdf().set({
+          margin: 0,
+          filename: nomeArquivo,
+          image: { type: 'jpeg', quality: 0.95 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#F8F5F0' },
+          jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
+        }).from(wrapper).save();
+
+        document.body.removeChild(wrapper);
+        mostrarToast('✅ Voucher baixado: ' + nomeArquivo, 'success');
+      } catch (e) {
+        console.error('[baixarVoucherPDF] erro:', e);
+        mostrarToast('Erro ao gerar PDF: ' + (e.message || e), 'error');
+      }
+    }
+    async function enviarVoucherWhatsApp() {
+      try {
+        var rid = _currentReservaId || (typeof reservaAtualId !== 'undefined' && reservaAtualId) || (window.reservaAtualId || null);
+        if (!rid) { mostrarToast('Reserva não selecionada', 'erro'); return; }
+        var { data: r, error } = await db.from('reservas')
+          .select('hospede_nome, hospede_contato, checkin, checkout, valor_total, canal_codigo, quarto')
+          .eq('id', rid).single();
+        if (error || !r) { mostrarToast('Erro ao carregar reserva', 'erro'); return; }
+        var tel = (r.hospede_contato || '').replace(/\D/g, '');
+        if (!tel || tel.length < 10) { mostrarToast('Hóspede sem telefone válido', 'erro'); return; }
+        if (tel.length === 10 || tel.length === 11) tel = '55' + tel;
+        var fmtData = function(d){ if(!d) return ''; var p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
+        var nome = (r.hospede_nome || '').split(' ')[0] || 'Hóspede';
+        var msg = 'Oi, ' + nome + '! 💛\n\n' +
+          'Sua reserva na Domus Garden está confirmada:\n\n' +
+          '🏡 ' + (r.quarto || 'Acomodação a definir') + '\n' +
+          '📅 Check-in: ' + fmtData(r.checkin) + ' às 16h\n' +
+          '📅 Check-out: ' + fmtData(r.checkout) + ' até 1
