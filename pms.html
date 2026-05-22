@@ -5611,6 +5611,20 @@
         document.getElementById('editResId').value = r.id;
         document.getElementById('editResNome').value = r.hospede_nome || '';
         document.getElementById('editResTel').value = r.hospede_contato || r.hospede_telefone || '';
+        // Carrega o link com o CRM (se existir) e mostra status
+        const _editHid = document.getElementById('editResHospedeId');
+        _editHid.value = r.hospede_id || '';
+        const _editSt = document.getElementById('editResNomeStatus');
+        if (_editSt) {
+          if (r.hospede_id) {
+            _editSt.textContent = '✓ Vinculado ao CRM';
+            _editSt.className = 'text-[10px] mt-1 text-domus-azul';
+          } else {
+            _editSt.textContent = '⚠ Sem link no CRM — busque ou clique no + pra vincular';
+            _editSt.className = 'text-[10px] mt-1 text-amber-600';
+          }
+        }
+        document.getElementById('editResNomeResults').classList.add('hidden');
         document.getElementById('editResCheckin').value = (r.checkin || '').slice(0,10);
         document.getElementById('editResCheckout').value = (r.checkout || '').slice(0,10);
         document.getElementById('editResQuarto').value = r.quarto || r.cama || '';
@@ -5752,9 +5766,11 @@
       e.preventDefault();
       const id = document.getElementById('editResId').value;
       if (!id) { mostrarToast('ID da reserva ausente', 'error'); return; }
+      const _editHidVal = (document.getElementById('editResHospedeId').value || '').trim();
       const updates = {
         hospede_nome:    document.getElementById('editResNome').value.trim(),
         hospede_contato: document.getElementById('editResTel').value.trim(),
+        hospede_id:      _editHidVal || null,
         checkin:         document.getElementById('editResCheckin').value,
         checkout:        document.getElementById('editResCheckout').value,
         quarto:          document.getElementById('editResQuarto').value.trim(),
@@ -5977,131 +5993,105 @@
       if (!box || !inp) return;
       if (!box.contains(e.target) && e.target !== inp) box.classList.add('hidden');
     });
+
+    // ============ AUTOCOMPLETE CRM — EDITAR RESERVA ============
+    // Mesma logica do nr, mas usando IDs editRes*. Garante que ao editar
+    // uma reserva o nome continue vinculado ao CRM (hospede_id).
+    let _hospAcDebEdit;
+    async function buscarHospedesAutocompleteEdit(termo) {
+      const box = document.getElementById('editResNomeResults');
+      if (!box) return;
+      var hid = document.getElementById('editResHospedeId'); if (hid) hid.value = '';
+      const st = document.getElementById('editResNomeStatus');
+      if (st) st.classList.add('hidden');
+      clearTimeout(_hospAcDebEdit);
+      termo = (termo || '').trim();
+      if (termo.length < 2) { box.classList.add('hidden'); box.innerHTML=''; return; }
+      _hospAcDebEdit = setTimeout(async () => {
+        try {
+          let lista = [];
+          try {
+            const r = await db.from('hospedes')
+              .select('id, nome, email, telefone, total_estadias')
+              .ilike('nome', '%' + termo + '%')
+              .order('total_estadias', { ascending: false, nullsFirst: false })
+              .limit(8);
+            lista = r.data || [];
+          } catch (e) { /* tabela pode nao existir */ }
+          if (!lista.length) {
+            const r2 = await db.from('reservas')
+              .select('hospede_nome, hospede_contato')
+              .ilike('hospede_nome', '%' + termo + '%')
+              .neq('hospede_nome','')
+              .limit(20);
+            const seen = new Set();
+            (r2.data || []).forEach(x => {
+              const k = (x.hospede_nome||'').toLowerCase();
+              if (k && !seen.has(k)) {
+                seen.add(k);
+                lista.push({ id: null, nome: x.hospede_nome, telefone: x.hospede_contato || '', email: '' });
+              }
+            });
+            lista = lista.slice(0, 8);
+          }
+          renderHospedesAutocompleteEdit(lista, termo);
+        } catch (err) { console.warn('autocomplete edit err:', err); box.classList.add('hidden'); }
+      }, 250);
+    }
+
+    function renderHospedesAutocompleteEdit(lista, termo) {
+      const box = document.getElementById('editResNomeResults');
+      if (!box) return;
+      if (!lista.length) {
+        box.innerHTML = '<div class="p-3 text-sm text-domus-texto-suave">Ninguém com esse nome ainda. Clique no <strong>+</strong> pra cadastrar.</div>';
+        box.classList.remove('hidden');
+        return;
+      }
+      const rows = lista.map(h => {
+        const sub = [h.telefone, h.email].filter(Boolean).join(' · ');
+        const estadias = h.total_estadias ? '<span class="ml-2 text-[10px] bg-domus-azul/10 text-domus-azul px-1.5 py-0.5 rounded-full">'+h.total_estadias+'×</span>' : '';
+        const dataAttr = 'data-id="' + (h.id || '') + '" data-nome="' + (h.nome||'').replace(/"/g,'&quot;') + '" data-tel="' + (h.telefone||'').replace(/"/g,'&quot;') + '" data-email="' + (h.email||'').replace(/"/g,'&quot;') + '"';
+        return '<button type="button" ' + dataAttr + ' onclick="selecionarHospedeEdit(this)" class="w-full text-left px-3 py-2 hover:bg-domus-azul/5 border-b border-gray-100 last:border-0">'
+          + '<div class="text-sm text-domus-texto font-medium">' + (h.nome||'') + estadias + '</div>'
+          + (sub ? '<div class="text-[11px] text-domus-texto-suave">' + sub + '</div>' : '')
+          + '</button>';
+      }).join('');
+      box.innerHTML = rows + '<button type="button" onclick="abrirNovoClienteEdit()" class="w-full text-left px-3 py-2 border-t-2 border-domus-azul/30 text-sm text-domus-azul font-medium hover:bg-domus-azul/5">+ Cadastrar "' + termo + '" como novo cliente</button>';
+      box.classList.remove('hidden');
+    }
+
+    function selecionarHospedeEdit(btn) {
+      const nome = btn.getAttribute('data-nome') || '';
+      const tel = btn.getAttribute('data-tel') || '';
+      const email = btn.getAttribute('data-email') || '';
+      const id = btn.getAttribute('data-id') || '';
+      document.getElementById('editResNome').value = nome;
+      document.getElementById('editResTel').value = email || tel;
+      document.getElementById('editResHospedeId').value = id;
+      document.getElementById('editResNomeResults').classList.add('hidden');
+      const st = document.getElementById('editResNomeStatus');
+      if (st) { st.textContent = '✓ Hóspede vinculado ao CRM'; st.classList.remove('hidden'); st.classList.remove('text-green-600'); st.classList.add('text-domus-azul'); }
+    }
+
+    function abrirNovoClienteEdit() {
+      document.getElementById('editResHospedeId').value = '';
+      document.getElementById('editResNomeResults').classList.add('hidden');
+      const st = document.getElementById('editResNomeStatus');
+      if (st) { st.textContent = '⚠ Reserva ficará sem link no CRM — cadastre pelo CRM antes pra evitar duplicata'; st.classList.remove('hidden'); st.classList.remove('text-domus-azul'); st.classList.add('text-amber-600'); }
+      const tel = document.getElementById('editResTel');
+      if (tel) tel.focus();
+    }
+
+    // Fechar dropdown do edit se clicar fora
+    document.addEventListener('click', function(e) {
+      const box = document.getElementById('editResNomeResults');
+      const inp = document.getElementById('editResNome');
+      if (!box || !inp) return;
+      if (!box.contains(e.target) && e.target !== inp) box.classList.add('hidden');
+    });
     function closeNovoCupomModal() {
       document.getElementById('novoCupomModal').classList.add('hidden');
       try { document.getElementById('novoCupomForm').reset(); } catch(e){}
     }
     function closeBloqueioModal() {
-      document.getElementById('bloqueioModal').classList.add('hidden');
-      try { document.getElementById('bloqueioForm').reset(); } catch(e){}
-    }
-    function closeDetalheHospede() {
-      document.getElementById('detalheHospedeModal').classList.add('hidden');
-    }
-    function closePagamentoModal() {
-      document.getElementById('pagamentoModal').classList.add('hidden');
-      try { document.getElementById('pagamentoForm').reset(); } catch(e){}
-    }
-    function abrirBloqueioModal() {
-      try { document.getElementById('blQuarto').value = ''; } catch(e){}
-      try { document.getElementById('blDe').value = ''; } catch(e){}
-      try { document.getElementById('blAte').value = ''; } catch(e){}
-      try { resetarDropdownQuartos('blQuarto','blQuartoStatus'); } catch(e){}
-      document.getElementById('bloqueioModal').classList.remove('hidden');
-    }
-    async function abrirPagamentoModal() {
-      if (!_currentReservaId) return;
-      try {
-        const { data: r } = await db.from('reservas').select('*').eq('id', _currentReservaId).maybeSingle();
-        if (!r) return;
-        document.getElementById('pagResumoNome').textContent = r.hospede_nome || '—';
-        document.getElementById('pagResumoDatas').textContent =
-          fmtData(r.checkin) + ' → ' + fmtData(r.checkout);
-        const total = parseFloat(r.valor_total || 0);
-        document.getElementById('pagResumoTotal').textContent = 'R$ ' + total.toFixed(2);
-        // Recebido (soma de pagamentos)
-        let recebido = 0;
-        try {
-          const { data: pgs } = await db.from('pagamentos').select('valor').eq('reserva_id', _currentReservaId);
-          recebido = (pgs||[]).reduce((s,p) => s + parseFloat(p.valor || 0), 0);
-        } catch(e){}
-        document.getElementById('pagResumoRecebido').textContent = 'R$ ' + recebido.toFixed(2);
-        document.getElementById('pagResumoSaldo').textContent = 'R$ ' + (total - recebido).toFixed(2);
-        document.getElementById('pagamentoModal').classList.remove('hidden');
-      } catch (e) { console.error(e); mostrarToast('Erro ao abrir pagamento', 'error'); }
-    }
-
-    function atualizarLabelValor() {
-      const tipo = document.getElementById('ncTipo').value;
-      const lbl = document.getElementById('ncValorLabel');
-      if (!lbl) return;
-      lbl.textContent = tipo === 'percentual' ? 'Valor do Desconto (%) *' : 'Valor do Desconto (R$) *';
-    }
-
-    function gerarCodigoCupom() {
-      const r = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const el = document.getElementById('ncCodigo');
-      if (el) el.value = 'DOMUS-' + r;
-    }
-
-    function normalizarTelefone(t) {
-      if (!t) return '';
-      let s = String(t).replace(/\D/g, '');
-      if (s.length === 11) return '55' + s;
-      if (s.length === 13 && s.startsWith('55')) return s;
-      return s;
-    }
-
-    function aplicarFiltrosReservas() {
-      if (typeof loadReservas === 'function') loadReservas();
-    }
-
-    // Stubs pra ações que dependem de implementação completa (evita console errors)
-    async function gerarVoucherPDF() {
-      mostrarToast('Voucher: abra o PMS em tela cheia (pms.html) — funcionalidade completa só lá', 'info');
-    }
-    async function gerarReciboPDF() {
-      mostrarToast('Recibo: abra o PMS em tela cheia (pms.html)', 'info');
-    }
-    async function enviarVoucherEmail() {
-      mostrarToast('Envio por e-mail: abra o PMS em tela cheia (pms.html)', 'info');
-    }
-    async function enviarVoucherWhatsApp() {
-      try {
-        var rid = _currentReservaId || (typeof reservaAtualId !== 'undefined' && reservaAtualId) || (window.reservaAtualId || null);
-        if (!rid) { mostrarToast('Reserva não selecionada', 'erro'); return; }
-        var { data: r, error } = await db.from('reservas')
-          .select('hospede_nome, hospede_contato, checkin, checkout, valor_total, canal_codigo, quarto')
-          .eq('id', rid).single();
-        if (error || !r) { mostrarToast('Erro ao carregar reserva', 'erro'); return; }
-        var tel = (r.hospede_contato || '').replace(/\D/g, '');
-        if (!tel || tel.length < 10) { mostrarToast('Hóspede sem telefone válido', 'erro'); return; }
-        if (tel.length === 10 || tel.length === 11) tel = '55' + tel;
-        var fmtData = function(d){ if(!d) return ''; var p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
-        var nome = (r.hospede_nome || '').split(' ')[0] || 'Hóspede';
-        var msg = 'Oi, ' + nome + '! 💛\n\n' +
-          'Sua reserva na Domus Garden está confirmada:\n\n' +
-          '🏡 ' + (r.quarto || 'Acomodação a definir') + '\n' +
-          '📅 Check-in: ' + fmtData(r.checkin) + ' às 16h\n' +
-          '📅 Check-out: ' + fmtData(r.checkout) + ' até 13h\n' +
-          (r.valor_total ? '💰 Total: R$ ' + Number(r.valor_total).toLocaleString('pt-BR', {minimumFractionDigits:2}) + '\n' : '') +
-          '\n📍 Endereço: você recebe um dia antes do check-in.\n' +
-          '\nQualquer dúvida, é só responder por aqui! 🌿';
-        var url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(msg);
-        window.open(url, '_blank');
-      } catch(e) {
-        console.error(e);
-        mostrarToast('Erro ao abrir WhatsApp: ' + (e.message || e), 'erro');
-      }
-    }
-
-    // ==========================================
-    // INIT — verifica sessão (localStorage) e mostra app
-    // ==========================================
-    document.addEventListener('DOMContentLoaded', () => {
-      // Tenta restaurar sessão imediatamente (sem esperar nada)
-      try { tentarRestaurarSessao(); } catch(e) { console.error('init session:', e); mostrarFormularioLogin(); }
-
-      // Listeners do filtro de Reservas
-      try {
-        document.querySelectorAll('.tab-button[data-status]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            document.querySelectorAll('.tab-button[data-status]').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if (typeof aplicarFiltrosReservas === 'function') aplicarFiltrosReservas();
-          });
-        });
-      } catch (e) { console.warn('init tab-button:', e); }
-    });
-
-    // Fallback: s
+  
