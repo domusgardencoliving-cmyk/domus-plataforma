@@ -916,6 +916,10 @@
           <span>⚠️</span>
           <span>Problemas <span id="badgeProblemas" style="background:#ef4444;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;margin-left:4px;display:none;">0</span></span>
         </a>
+        <a href="#" data-view="boletos" class="sidebar-link">
+          <span>💰</span>
+          <span>Boletos Dominhas</span>
+        </a>
       </div>
 
       <div class="sidebar-footer">
@@ -1658,26 +1662,17 @@
 
         <!-- BOLETOS DOMINHAS VIEW -->
         <div id="boletosView" class="view hidden">
-          <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
+          <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
             <div>
               <h2 class="text-2xl font-semibold text-domus-texto">Boletos Dominhas</h2>
               <p class="text-xs text-domus-texto-suave mt-1">Substitui o BR Condomínio. Gera, envia e acompanha boletos das moradoras.</p>
             </div>
             <div class="flex items-center gap-2">
               <input type="month" id="boletosMes" class="border border-domus-azul/30 rounded px-3 py-2 text-sm" />
-              <button id="btnReplicarMes" onclick="replicarMesAnterior()" class="border-2 border-amber-300 text-amber-800 bg-amber-50 px-4 py-2 rounded text-sm hover:bg-amber-100">
-                📋 Replicar mes anterior
-              </button>
               <button id="btnCriarLote" onclick="criarLoteBoletos()" class="bg-domus-azul text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">
-                + Criar lote do mes
+                + Criar lote do mês
               </button>
             </div>
-          </div>
-
-          <!-- Abas por unidade -->
-          <div class="flex gap-2 mb-4 border-b border-gray-200 pb-2">
-            <button id="bolTabAP" onclick="setBolUnidade('AP')" class="px-4 py-2 rounded-lg text-sm font-medium bg-domus-azul text-white">Andrade Pertence</button>
-            <button id="bolTabRib" onclick="setBolUnidade('Rib')" class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-domus-texto border border-domus-azul/30 hover:bg-domus-azul/10">Ribeirão Claro</button>
           </div>
 
           <!-- KPIs do lote -->
@@ -1757,33 +1752,23 @@
             <p id="nrNomeStatus" class="text-[11px] text-domus-texto-suave mt-1 hidden"></p>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-domus-texto mb-1">📱 Telefone</label>
-              <input id="nrTelefone" type="text" placeholder="+55 11 99999-9999"
-                oninput="atualizarAvisoContato()"
-                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-domus-texto mb-1">✉️ E-mail</label>
-              <input id="nrEmail" type="email" placeholder="hospede@email.com"
-                oninput="atualizarAvisoContato()"
-                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
-            </div>
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">E-mail ou Telefone</label>
+            <input id="nrContato" type="text" placeholder="E-mail ou telefone"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
           </div>
-          <p id="nrContatoAviso" class="text-[11px] text-amber-700 -mt-2 hidden">⚠️ Cadastro incompleto — preencha pelo menos o telefone pra mandar check-in</p>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-domus-texto mb-1">Check-in *</label>
               <input id="nrCheckin" type="date" required
-                onchange="atualizarQuartosDisponiveis('nrQuarto','nrCheckin','nrCheckout')"
+                onchange="atualizarQuartosDisponiveis('nrQuarto','nrCheckin','nrCheckout'); atualizarTotalNovaReserva();"
                 class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
             </div>
             <div>
               <label class="block text-sm font-medium text-domus-texto mb-1">Check-out *</label>
               <input id="nrCheckout" type="date" required
-                onchange="atualizarQuartosDisponiveis('nrQuarto','nrCheckin','nrCheckout')"
+                onchange="atualizarQuartosDisponiveis('nrQuarto','nrCheckin','nrCheckout'); atualizarTotalNovaReserva();"
                 class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
             </div>
           </div>
@@ -1823,9 +1808,11 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-domus-texto mb-1">Valor Total (R$) *</label>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Valor da diária (R$) *</label>
             <input id="nrValor" type="number" required step="0.01" min="0" placeholder="0.00"
+              oninput="atualizarTotalNovaReserva()"
               class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            <p id="nrValorPreview" class="text-xs text-domus-texto-suave mt-1">Preencha check-in, check-out e diária pra ver o total.</p>
           </div>
 
           <div>
@@ -1927,27 +1914,7 @@
           <span id="acaoStatusBadge" class="font-semibold">—</span>
         </div>
 
-        <!-- Bloco específico quando a reserva é um BLOQUEIO -->
-        <div id="acaoBlocoBloqueio" class="hidden space-y-2">
-          <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-            🔒 Esta entrada é um <strong>bloqueio de período</strong> — não há hóspede associado.
-            <span id="acaoBloqueioMotivo" class="block mt-1 text-xs"></span>
-          </div>
-          <button onclick="removerBloqueio()" id="btnRemoverBloqueio"
-            class="w-full px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 flex items-center justify-center gap-2 font-medium">
-            🔓 Remover Bloqueio (liberar quarto)
-          </button>
-          <button onclick="abrirEditarReserva()"
-            class="w-full px-4 py-2 bg-domus-azul text-white rounded text-sm hover:bg-domus-azul-escuro flex items-center justify-center gap-2">
-            ✏️ Editar período / quarto
-          </button>
-          <button onclick="closeAcaoModal()"
-            class="w-full px-4 py-2 bg-gray-200 text-domus-texto rounded text-sm hover:bg-gray-300 mt-3">
-            Fechar
-          </button>
-        </div>
-
-        <div id="acaoBlocoReserva" class="space-y-2">
+        <div class="space-y-2">
           <p class="text-xs text-domus-texto-suave font-semibold uppercase tracking-wide mb-1">Status</p>
           <button onclick="fazerCheckinComMensagem()" id="btnCheckin"
             class="w-full px-4 py-2 bg-domus-verde text-white rounded text-sm hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
@@ -2663,8 +2630,7 @@
       document.getElementById(view + 'View').classList.remove('hidden');
 
       document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
-      const _activeLink = document.querySelector(`[data-view="${view}"]`);
-      if (_activeLink) _activeLink.classList.add('active');
+      document.querySelector(`[data-view="${view}"]`).classList.add('active');
 
       currentView = view;
 
@@ -2694,13 +2660,12 @@
       const hoje = hojeISO();
 
       try {
-        // OCUPAÇÃO: quem dorme hoje na casa (checkin <= hoje E checkout > hoje).
-        // .gt em vez de .gte pra não contar quem fez check-out hoje (já saiu).
+        // OCUPAÇÃO: tudo que está ativo hoje (não cancelada/rescindida)
         const { data: reservas } = await db
           .from('reservas')
           .select('*')
           .lte('checkin', hoje)
-          .gt('checkout', hoje)
+          .gte('checkout', hoje)
           .not('status', 'in', '(cancelada,rescindida)')
           .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
 
@@ -4947,42 +4912,11 @@
       }
     }
 
-    window.bolUnidade = window.bolUnidade || 'AP';
-
-    function setBolUnidade(u) {
-      window.bolUnidade = u;
-      const ap = document.getElementById('bolTabAP');
-      const rib = document.getElementById('bolTabRib');
-      [ap, rib].forEach(b => {
-        if (!b) return;
-        b.classList.remove('bg-domus-azul', 'text-white');
-        b.classList.add('bg-white', 'text-domus-texto', 'border', 'border-domus-azul/30');
-      });
-      const ativo = u === 'AP' ? ap : rib;
-      if (ativo) {
-        ativo.classList.remove('bg-white', 'text-domus-texto', 'border', 'border-domus-azul/30');
-        ativo.classList.add('bg-domus-azul', 'text-white');
-      }
-      renderBoletosKpis();
-      renderBoletosStatusLote();
-      renderBoletosTabela();
-    }
-
-    function _bolFiltradosPorUnidade() {
-      const u = window.bolUnidade || 'AP';
-      return (boletosLista || []).filter(b => {
-        // tenta varios nomes de coluna pra unidade
-        const bu = b.unidade || b.morador_unidade || b.moradora_unidade || '';
-        return String(bu).toLowerCase().startsWith(u.toLowerCase().slice(0,2));
-      });
-    }
-
     function renderBoletosKpis() {
-      const lista = _bolFiltradosPorUnidade();
-      const total = lista.length;
-      const valorTotal = lista.reduce((s, b) => s + (Number(b.valor_total) || 0), 0);
-      const pagos = lista.filter(b => b.status === 'pago').length;
-      const pendentes = lista.filter(b => ['pendente', 'gerado'].includes(b.status)).length;
+      const total = boletosLista.length;
+      const valorTotal = boletosLista.reduce((s, b) => s + (Number(b.valor_total) || 0), 0);
+      const pagos = boletosLista.filter(b => b.status === 'pago').length;
+      const pendentes = boletosLista.filter(b => ['pendente', 'gerado'].includes(b.status)).length;
 
       document.getElementById('kpiBolTotal').textContent = total;
       document.getElementById('kpiBolValor').textContent = fmtMoedaBRL(valorTotal);
@@ -5003,7 +4937,7 @@
       }[boletosLoteAtual.status] || { cor: 'bg-gray-50 border-gray-300', icone: '•', label: boletosLoteAtual.status };
 
       let acaoHtml = '';
-      if (boletosLoteAtual.status === 'rascunho' && _bolFiltradosPorUnidade().length > 0) {
+      if (boletosLoteAtual.status === 'rascunho' && boletosLista.length > 0) {
         acaoHtml = '<button onclick="enviarMaloteInter()" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">📤 Enviar malote pro Inter</button>';
       } else if (boletosLoteAtual.status === 'enviado') {
         acaoHtml = '<button onclick="notificarDominhasCarteiro()" class="bg-domus-azul text-white px-4 py-2 rounded text-sm hover:bg-opacity-90">📲 Avisar moradoras (Carteiro)</button>';
@@ -5017,10 +4951,8 @@
 
     function renderBoletosTabela() {
       const tbody = document.getElementById('boletosTable');
-      const lista = _bolFiltradosPorUnidade();
-      if (!lista.length) {
-        const unidLabel = (window.bolUnidade || 'AP') === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro';
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-domus-texto-suave py-8 italic">Nenhum boleto em ' + unidLabel + ' pra esse mês. Crie o lote do mês ou troque a unidade.</td></tr>';
+      if (!boletosLista.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-domus-texto-suave py-8 italic">Nenhum boleto pra esse mês ainda. Clique em "Criar lote do mês" pra gerar.</td></tr>';
         return;
       }
 
@@ -5032,7 +4964,7 @@
         cancelado:  '<span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">Cancelado</span>'
       };
 
-      tbody.innerHTML = lista.map(b => {
+      tbody.innerHTML = boletosLista.map(b => {
         const editavel = boletosLoteAtual?.status === 'rascunho';
         const acoes = [];
         if (editavel) acoes.push('<button onclick="editarValoresBoleto(\'' + b.id + '\')" class="text-domus-azul hover:underline text-xs">✏️ Ajustar</button>');
@@ -5053,118 +4985,6 @@
       }).join('');
     }
 
-
-    // ==========================================
-    // BOLETOS DOMINHAS — Replicar mes anterior
-    // ==========================================
-    async function replicarMesAnterior() {
-      const inputMes = document.getElementById('boletosMes');
-      if (!inputMes.value) { mostrarToast('Selecione um mes primeiro', 'erro'); return; }
-      const [y, m] = inputMes.value.split('-').map(Number);
-      // Mes anterior
-      const dt = new Date(y, m - 2, 1); // m-2 pq mes em JS eh 0-indexed
-      const mesAnteriorISO = dt.toISOString().slice(0, 7) + '-01';
-      const mesAtualISO = inputMes.value + '-01';
-
-      const btn = document.getElementById('btnReplicarMes');
-      btn.disabled = true; const txtOriginal = btn.textContent; btn.textContent = 'Replicando...';
-      try {
-        // 1. Garante que o lote do mes atual existe (cria se nao tiver)
-        if (!boletosLoteAtual) {
-          const { data: novoLote, error: errCria } = await db.rpc('criar_lote_boletos_mes', { p_mes_referencia: mesAtualISO });
-          if (errCria) throw errCria;
-          // recarrega pra pegar lote
-          await loadBoletos();
-          if (!boletosLoteAtual) throw new Error('Nao foi possivel criar/encontrar lote do mes');
-        }
-
-        // 2. Busca lote do mes anterior
-        const { data: loteAnt, error: errLote } = await db
-          .from('dominhas_lotes')
-          .select('id')
-          .eq('mes_referencia', mesAnteriorISO)
-          .maybeSingle();
-        if (errLote) throw errLote;
-        if (!loteAnt) {
-          mostrarToast('Nao tem lote no mes anterior pra replicar', 'erro');
-          return;
-        }
-
-        // 3. Busca boletos do mes anterior (por morador)
-        const { data: boletosAnt, error: errBA } = await db
-          .from('dominhas_boletos')
-          .select('morador_id, valor_coliving, valor_energia, valor_extras, valor_multas, valor_descontos, valor_total')
-          .eq('lote_id', loteAnt.id);
-        if (errBA) throw errBA;
-
-        if (!boletosAnt || boletosAnt.length === 0) {
-          mostrarToast('Lote anterior esta vazio', 'erro');
-          return;
-        }
-
-        // 4. Para cada boleto do mes atual, replica os valores (apenas se ainda estiver no status inicial)
-        const mapAnt = new Map((boletosAnt || []).map(b => [b.morador_id, b]));
-        let atualizados = 0;
-        for (const b of boletosLista) {
-          // Soh replica em boletos que ainda nao foram emitidos/pagos
-          if (!['rascunho', 'gerado', 'criado'].includes(b.status)) continue;
-          const ant = mapAnt.get(b.morador_id);
-          if (!ant) continue;
-          // Mantem o valor_coliving do mes atual (pode ter aumentado), copia o restante
-          const novoTotal = Number(b.valor_coliving || 0)
-            + Number(ant.valor_energia || 0)
-            + Number(ant.valor_extras || 0)
-            + Number(ant.valor_multas || 0)
-            - Number(ant.valor_descontos || 0);
-          const { error: errUp } = await db.from('dominhas_boletos').update({
-            valor_energia: ant.valor_energia || 0,
-            valor_extras: ant.valor_extras || 0,
-            valor_multas: ant.valor_multas || 0,
-            valor_descontos: ant.valor_descontos || 0,
-            valor_total: novoTotal
-          }).eq('id', b.id);
-          if (!errUp) atualizados++;
-        }
-
-        mostrarToast('Replicados ' + atualizados + ' boletos do mes anterior', 'sucesso');
-        await loadBoletos();
-      } catch (e) {
-        console.error('replicarMesAnterior:', e);
-        mostrarToast('Erro: ' + (e.message || e), 'erro');
-      } finally {
-        btn.disabled = false; btn.textContent = txtOriginal;
-      }
-    }
-
-    // ==========================================
-    // EMBEDDED MODE (pra iframe dentro de Coliving)
-    // ==========================================
-    (function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('embedded') === '1') {
-        document.documentElement.classList.add('pms-embedded');
-        const view = urlParams.get('view');
-        if (view) {
-          // hide sidebar
-          const sb = document.querySelector('.sidebar');
-          if (sb) sb.style.display = 'none';
-          // expand main
-          const mc = document.querySelector('.main-content');
-          if (mc) { mc.style.marginLeft = '0'; mc.style.width = '100%'; mc.style.padding = '16px'; }
-          // dispara a view certa quando tudo estiver pronto
-          const tryLoad = () => {
-            if (typeof loadView === 'function') {
-              try { loadView(view); } catch (e) { console.warn('embedded loadView:', e); }
-            } else {
-              setTimeout(tryLoad, 200);
-            }
-          };
-          if (document.readyState === 'complete') setTimeout(tryLoad, 100);
-          else window.addEventListener('load', () => setTimeout(tryLoad, 100));
-        }
-      }
-    })();
-
     async function criarLoteBoletos() {
       const mesISO = document.getElementById('boletosMes').value + '-01';
       const btn = document.getElementById('btnCriarLote');
@@ -5184,9 +5004,7 @@
 
     async function enviarMaloteInter() {
       if (!boletosLoteAtual) return;
-      const filt = _bolFiltradosPorUnidade();
-      const unidLabel = (window.bolUnidade || 'AP') === 'AP' ? 'Andrade Pertence' : 'Ribeirão Claro';
-      if (!confirm('Enviar ' + filt.length + ' boletos de ' + unidLabel + ' pro Banco Inter agora?')) return;
+      if (!confirm('Enviar ' + boletosLista.length + ' boletos pro Banco Inter agora?')) return;
       try {
         const { data, error } = await db.rpc('gerar_boletos_mock', { p_lote_id: boletosLoteAtual.id });
         if (error) throw error;
@@ -5239,13 +5057,33 @@
     // ==========================================
     // FORMS
     // ==========================================
+    // Atualiza preview "N noites × R$ X = R$ Y" no modal Nova Reserva
+    function atualizarTotalNovaReserva() {
+      const preview = document.getElementById('nrValorPreview');
+      if (!preview) return;
+      const diaria = parseFloat(document.getElementById('nrValor').value) || 0;
+      const ci = document.getElementById('nrCheckin').value;
+      const co = document.getElementById('nrCheckout').value;
+      if (!ci || !co || diaria <= 0) {
+        preview.textContent = 'Preencha check-in, check-out e diária pra ver o total.';
+        preview.style.color = '';
+        return;
+      }
+      const noites = Math.round((new Date(co) - new Date(ci)) / 86400000);
+      if (noites <= 0) {
+        preview.textContent = 'Check-out precisa ser depois do check-in.';
+        preview.style.color = '#c0392b';
+        return;
+      }
+      const total = diaria * noites;
+      const fmt = (n) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      preview.innerHTML = noites + ' noite' + (noites > 1 ? 's' : '') + ' × R$ ' + fmt(diaria) + ' = <strong style="color:#008B9C;">R$ ' + fmt(total) + '</strong>';
+      preview.style.color = '';
+    }
+
     document.getElementById('novaReservaForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const nome = document.getElementById('nrNome').value.trim();
-      const telefoneRaw = (document.getElementById('nrTelefone')?.value || '').trim();
-      const emailRaw = (document.getElementById('nrEmail')?.value || '').trim();
-      const contatoRaw = telefoneRaw; // 'hospede_contato' segue sendo o telefone (primordial pro check-in)
-      const hospedeIdSelecionado = (document.getElementById('nrHospedeId')?.value || '').trim();
       const quarto = document.getElementById('nrQuarto').value;
       const checkin = document.getElementById('nrCheckin').value;
       const checkout = document.getElementById('nrCheckout').value;
@@ -5269,45 +5107,14 @@
           return;
         }
 
-        // Se o usuario digitou o nome direto mas nao selecionou do dropdown,
-        // tenta achar hospede no CRM pelo nome exato (case-insensitive) pra puxar dados
-        let hospedeIdFinal = hospedeIdSelecionado || null;
-        let contatoFinal = contatoRaw;
-        let emailFinal = emailRaw;
-        if (!hospedeIdFinal && nome) {
-          try {
-            const { data: h } = await db.from('hospedes').select('id, telefone, email').ilike('nome', nome).limit(1).maybeSingle();
-            if (h) {
-              hospedeIdFinal = h.id;
-              if (!contatoFinal) contatoFinal = h.telefone || '';
-              if (!emailFinal) emailFinal = h.email || '';
-            }
-          } catch(e) {}
-        }
-        // Se preencheu email/telefone novo e tem hospede_id, atualiza no CRM
-        if (hospedeIdFinal && (telefoneRaw || emailRaw)) {
-          try {
-            const upd = {};
-            if (telefoneRaw) upd.telefone = telefoneRaw;
-            if (emailRaw) upd.email = emailRaw;
-            await db.from('hospedes').update(upd).eq('id', hospedeIdFinal);
-          } catch(e) { console.warn('CRM update falhou:', e); }
-        }
-        // Aviso de cadastro incompleto (nao bloqueia)
-        if (!contatoFinal) {
-          mostrarToast('⚠️ Reserva criada SEM telefone — vai precisar atualizar antes do check-in', 'warning');
-        } else if (!emailFinal) {
-          mostrarToast('ℹ️ Reserva criada sem email no cadastro (telefone OK)', 'info');
-        }
-
-        const payload = {
-          hospede_nome: nome,
-          hospede_contato: contatoFinal || null,
-          hospede_id: hospedeIdFinal || null,
-          cama: quarto, checkin, checkout, plataforma,
-          valor_total: parseFloat(valor), status: 'confirmada'
-        };
-        const { error } = await db.from('reservas').insert(payload);
+        // Valor digitado agora é DIARIA — total = diaria × n° noites (igual Hospedin)
+        const _diaria = parseFloat(valor) || 0;
+        const _noites = Math.max(1, Math.round((new Date(checkout) - new Date(checkin)) / 86400000));
+        const _total = _diaria * _noites;
+        const { error } = await db.from('reservas').insert({
+          hospede_nome: nome, cama: quarto, checkin, checkout, plataforma,
+          valor_total: _total, valor_diaria: _diaria, noites: _noites, status: 'confirmada'
+        });
         if (error) {
           // Banco rejeitou (provavel: EXCLUSION CONSTRAINT pegou conflito que escapou da pre-checagem)
           if ((error.message||'').includes('reservas_no_overbooking') || error.code === '23P01') {
@@ -5500,86 +5307,14 @@
         if (!r) { mostrarToast('Reserva não encontrada', 'error'); return; }
         const badge = document.getElementById('acaoStatusBadge');
         if (badge) badge.textContent = (r.status || '—').toUpperCase();
-        // Detecta se é bloqueio (entrada criada pelo bloqueioForm, sem hóspede real)
-        const isBloqueio = (r.canal_codigo === 'bloqueio') || (r.plataforma === 'Bloqueio');
-        const blocoBloq = document.getElementById('acaoBlocoBloqueio');
-        const blocoRes  = document.getElementById('acaoBlocoReserva');
-        const tituloEl  = document.querySelector('#acaoModal h3');
-        if (isBloqueio) {
-          // Mostra UI específica do bloqueio, esconde botões de hospedagem
-          if (blocoBloq) blocoBloq.classList.remove('hidden');
-          if (blocoRes)  blocoRes.classList.add('hidden');
-          if (tituloEl)  tituloEl.textContent = 'Bloqueio de Período';
-          const motivoEl = document.getElementById('acaoBloqueioMotivo');
-          if (motivoEl) {
-            const motivo = (r.observacoes || (r.hospede_nome || '').replace(/^\[BLOQUEIO\]\s*/i, '') || '').trim();
-            motivoEl.textContent = motivo ? ('Motivo: ' + motivo) : '';
-          }
-        } else {
-          // UI padrão de reserva normal
-          if (blocoBloq) blocoBloq.classList.add('hidden');
-          if (blocoRes)  blocoRes.classList.remove('hidden');
-          if (tituloEl)  tituloEl.textContent = 'Ações da Reserva';
-          // Habilita/desabilita botões conforme status
-          const status = (r.status || '').toLowerCase().replace('_','-');
-          const setDisabled = (id, disabled) => { const el = document.getElementById(id); if (el) el.disabled = !!disabled; };
-          setDisabled('btnCheckin', status === 'check-in' || status === 'check-out' || status === 'cancelada');
-          setDisabled('btnCheckout', status !== 'check-in');
-          setDisabled('btnCancelar', status === 'cancelada' || status === 'check-out');
-        }
+        // Habilita/desabilita botões conforme status
+        const status = (r.status || '').toLowerCase().replace('_','-');
+        const setDisabled = (id, disabled) => { const el = document.getElementById(id); if (el) el.disabled = !!disabled; };
+        setDisabled('btnCheckin', status === 'check-in' || status === 'check-out' || status === 'cancelada');
+        setDisabled('btnCheckout', status !== 'check-in');
+        setDisabled('btnCancelar', status === 'cancelada' || status === 'check-out');
         document.getElementById('acaoModal').classList.remove('hidden');
       } catch (e) { console.error(e); mostrarToast('Erro ao abrir reserva', 'error'); }
-    }
-
-    // ============================================================
-    // REMOVER BLOQUEIO — devolve disponibilidade do quarto na data
-    // Bloqueios DG não têm hospedin_id, então DELETE é seguro.
-    // Filtro extra .eq('canal_codigo','bloqueio') garante que NUNCA
-    // apaga uma reserva de hóspede de verdade, mesmo se chamada por engano.
-    // ============================================================
-    async function removerBloqueio() {
-      if (!_currentReservaId) return;
-      if (!confirm('Remover este bloqueio? O quarto volta a ficar disponível nessas datas.')) return;
-      const reservaIdLocal = _currentReservaId;
-      const btn = document.getElementById('btnRemoverBloqueio');
-      if (btn) { btn.disabled = true; btn.textContent = 'Removendo...'; }
-      try {
-        // UPDATE status='cancelada' (em vez de DELETE) pra que o sync push
-        // consiga empurrar o cancelamento pro Hospedin. Se deletássemos local,
-        // a linha sumiria antes do PUT chegar lá.
-        const agora = new Date().toISOString();
-        const { error: errUpd } = await db
-          .from('reservas')
-          .update({
-            status: 'cancelada',
-            nao_contabilizar: true,
-            cancelado_em: agora,
-            atualizado_em: agora,
-            motivo_cancelamento: 'Bloqueio removido pelo PMS',
-            status_sync_hospedin: 'pendente'
-          })
-          .eq('id', reservaIdLocal)
-          .eq('canal_codigo', 'bloqueio');
-        if (errUpd) {
-          console.error('[removerBloqueio] UPDATE falhou:', errUpd);
-          mostrarToast('Erro ao remover bloqueio: ' + (errUpd.message || 'desconhecido'), 'error');
-          return;
-        }
-        mostrarToast('Bloqueio removido — sincronizando com o Hospedin… ✅', 'success');
-        closeAcaoModal();
-        // Recarrega vista atual
-        if (typeof currentView !== 'undefined') {
-          if (currentView === 'home') loadHome();
-          else if (currentView === 'mapa') { try { renderMapa(); } catch(e){} try { loadMapa(); } catch(e){} }
-          else if (currentView === 'reservas') loadReservas();
-          else if (currentView === 'hospedes') loadHospedes();
-        }
-      } catch (e) {
-        console.error('[removerBloqueio] exceção:', e);
-        mostrarToast('Erro inesperado ao remover bloqueio', 'error');
-      } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '🔓 Remover Bloqueio (liberar quarto)'; }
-      }
     }
 
     function closeAcaoModal() {
@@ -5879,12 +5614,23 @@
         document.getElementById('editResCheckin').value = (r.checkin || '').slice(0,10);
         document.getElementById('editResCheckout').value = (r.checkout || '').slice(0,10);
         document.getElementById('editResQuarto').value = r.quarto || r.cama || '';
-        document.getElementById('editResValor').value = r.valor_total || '';
+        // Campo "Valor" agora é DIARIA. Se valor_diaria existe, usa direto.
+        // Senao calcula valor_total / n°noites pra mostrar a diária equivalente.
+        let _noitesLoad = 1;
+        try {
+          if (r.checkin && r.checkout) {
+            _noitesLoad = Math.max(1, Math.round((new Date(r.checkout) - new Date(r.checkin)) / 86400000));
+          }
+        } catch(_) {}
+        const _diariaLoad = parseFloat(r.valor_diaria) ||
+                            (parseFloat(r.valor_total || 0) / _noitesLoad) || 0;
+        document.getElementById('editResValor').value = _diariaLoad ? Number(_diariaLoad).toFixed(2) : '';
         document.getElementById('editResObs').value = r.observacoes || '';
         // Popula dropdown de quartos disponíveis na janela checkin-checkout
         await popularQuartosDisponiveis(r.checkin, r.checkout, r.cama || r.quarto || '', r.id);
         closeAcaoModal();
         document.getElementById('editarReservaModal').classList.remove('hidden');
+        atualizarTotalEditarReserva();
       } catch (e) { mostrarToast('Erro ao abrir edição: ' + e.message, 'error'); }
     }
 
@@ -5929,6 +5675,30 @@
       }
     }
 
+    // Atualiza preview "N noites × R$ X = R$ Y" no modal Editar Reserva
+    function atualizarTotalEditarReserva() {
+      const preview = document.getElementById('editResValorPreview');
+      if (!preview) return;
+      const diaria = parseFloat(document.getElementById('editResValor').value) || 0;
+      const ci = document.getElementById('editResCheckin').value;
+      const co = document.getElementById('editResCheckout').value;
+      if (!ci || !co || diaria <= 0) {
+        preview.textContent = '';
+        preview.style.color = '';
+        return;
+      }
+      const noites = Math.round((new Date(co) - new Date(ci)) / 86400000);
+      if (noites <= 0) {
+        preview.textContent = 'Check-out precisa ser depois do check-in.';
+        preview.style.color = '#c0392b';
+        return;
+      }
+      const total = diaria * noites;
+      const fmt = (n) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      preview.innerHTML = noites + ' noite' + (noites > 1 ? 's' : '') + ' × R$ ' + fmt(diaria) + ' = <strong style="color:#008B9C;">R$ ' + fmt(total) + '</strong>';
+      preview.style.color = '';
+    }
+
     function fecharEditarReservaModal() {
       document.getElementById('editarReservaModal').classList.add('hidden');
     }
@@ -5946,9 +5716,18 @@
         cama:            document.getElementById('editResQuarto').value.trim(),
         observacoes:     document.getElementById('editResObs').value.trim()
       };
-      // Só inclui valor_total se foi preenchido (campo é NOT NULL no banco)
+      // Campo agora é DIARIA — recalcula total a partir de noites
       const valorEdit = parseFloat(document.getElementById('editResValor').value);
-      if (!isNaN(valorEdit) && valorEdit > 0) updates.valor_total = valorEdit;
+      if (!isNaN(valorEdit) && valorEdit > 0) {
+        const _ciE = document.getElementById('editResCheckin').value;
+        const _coE = document.getElementById('editResCheckout').value;
+        const _noitesE = (_ciE && _coE)
+          ? Math.max(1, Math.round((new Date(_coE) - new Date(_ciE)) / 86400000))
+          : 1;
+        updates.valor_diaria = valorEdit;
+        updates.noites = _noitesE;
+        updates.valor_total = valorEdit * _noitesE;
+      }
       try {
         const { data, error } = await db.from('reservas').update(updates).eq('id', id).select('id');
         if (error) throw error;
@@ -6123,47 +5902,17 @@
       box.classList.remove('hidden');
     }
 
-    function atualizarAvisoContato() {
-      const tel = (document.getElementById('nrTelefone')?.value || '').trim();
-      const em = (document.getElementById('nrEmail')?.value || '').trim();
-      const aviso = document.getElementById('nrContatoAviso');
-      if (!aviso) return;
-      if (!tel && !em) {
-        aviso.textContent = '⚠️ Sem telefone E sem email — pelo menos o telefone eh essencial pra mandar instrucao de check-in';
-        aviso.classList.remove('hidden');
-      } else if (!tel) {
-        aviso.textContent = '⚠️ Falta o telefone — sem ele nao consegue mandar instrucao de check-in';
-        aviso.classList.remove('hidden');
-      } else if (!em) {
-        aviso.textContent = 'ℹ️ Telefone OK. Email tambem ajuda pra confirmacao (opcional)';
-        aviso.classList.remove('hidden');
-        aviso.classList.remove('text-amber-700');
-        aviso.classList.add('text-domus-azul');
-      } else {
-        aviso.classList.add('hidden');
-      }
-    }
-
     function selecionarHospede(btn) {
       const nome = btn.getAttribute('data-nome') || '';
       const tel = btn.getAttribute('data-tel') || '';
       const email = btn.getAttribute('data-email') || '';
       const id = btn.getAttribute('data-id') || '';
       document.getElementById('nrNome').value = nome;
-      const telEl = document.getElementById('nrTelefone'); if (telEl) telEl.value = tel || '';
-      const emEl = document.getElementById('nrEmail'); if (emEl) emEl.value = email || '';
+      document.getElementById('nrContato').value = email || tel;
       document.getElementById('nrHospedeId').value = id;
       document.getElementById('nrNomeResults').classList.add('hidden');
       const st = document.getElementById('nrNomeStatus');
-      const partes = [];
-      if (tel) partes.push('telefone'); else partes.push('SEM telefone');
-      if (email) partes.push('email'); else partes.push('SEM email');
-      if (st) {
-        st.textContent = '✓ Hospede do CRM (' + partes.join(' · ') + ')';
-        st.classList.remove('hidden');
-        st.classList.toggle('text-amber-700', !tel || !email);
-        st.classList.toggle('text-domus-azul', !!(tel && email));
-      }
+      if (st) { st.textContent = '✓ Hóspede selecionado do CRM'; st.classList.remove('hidden'); st.classList.add('text-domus-azul'); }
     }
 
     function abrirNovoCliente() {
@@ -6345,76 +6094,4 @@
               class="w-full px-3 py-2 border border-domus-borda rounded text-sm"></textarea>
           </div>
 
-          <div id="cancEnganoAviso" class="hidden p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
-            ⚠️ Reservas marcadas como "por engano" <strong>não entram nas estatísticas</strong> de receita, ocupação ou taxa de cancelamento. Use somente quando a reserva nunca deveria ter existido (clique acidental, teste, etc.).
-          </div>
-
-          <div class="flex gap-2 pt-2">
-            <button type="button" onclick="fecharCancelarReservaModal()"
-              class="flex-1 px-4 py-2 bg-gray-100 text-domus-texto rounded text-sm hover:bg-gray-200">
-              Voltar
-            </button>
-            <button type="submit"
-              class="flex-1 px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 font-medium">
-              Confirmar cancelamento
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Modal Editar Reserva -->
-  <div id="editarReservaModal" class="hidden">
-    <div class="modal-overlay" onclick="fecharEditarReservaModal()"></div>
-    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-      <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full pointer-events-auto max-h-[90vh] overflow-y-auto">
-        <h3 class="text-lg font-semibold text-domus-texto mb-4">Editar Reserva</h3>
-        <form onsubmit="salvarEdicaoReserva(event)" class="space-y-3">
-          <input type="hidden" id="editResId" />
-          <div>
-            <label class="block text-xs font-medium text-domus-texto-suave mb-1">Nome do hóspede</label>
-            <input id="editResNome" type="text" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-domus-texto-suave mb-1">WhatsApp</label>
-            <input id="editResTel" type="text" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" placeholder="11999999999" />
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-xs font-medium text-domus-texto-suave mb-1">Check-in</label>
-              <input id="editResCheckin" type="date" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-domus-texto-suave mb-1">Check-out</label>
-              <input id="editResCheckout" type="date" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" />
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-domus-texto-suave mb-1">Quarto / Cama</label>
-            <select id="editResQuarto" class="w-full px-3 py-2 border border-domus-borda rounded text-sm">
-              <option value="">Carregando quartos disponíveis...</option>
-            </select>
-            <p id="editResQuartoHint" class="text-[10px] text-domus-texto-suave mt-1"></p>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-domus-texto-suave mb-1">Valor total (R$)</label>
-            <input id="editResValor" type="number" step="0.01" class="w-full px-3 py-2 border border-domus-borda rounded text-sm" />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-domus-texto-suave mb-1">Observações</label>
-            <textarea id="editResObs" rows="2" class="w-full px-3 py-2 border border-domus-borda rounded text-sm"></textarea>
-          </div>
-          <div class="flex gap-2 mt-4">
-            <button type="button" onclick="fecharEditarReservaModal()" class="flex-1 px-4 py-2 bg-gray-200 text-domus-texto rounded text-sm">Cancelar</button>
-            <button type="submit" class="flex-1 px-4 py-2 bg-domus-azul text-white rounded text-sm hover:bg-domus-azul-escuro">Salvar mudanças</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-</body>
-</html>
-   
+          <div id="cancEnganoAviso" class="hidden p-3 bg-amber-50 border border-amber-200 rounded text-xs text-
