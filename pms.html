@@ -4629,23 +4629,45 @@
 
     function abrirDetalheHospede(hospede, reservas) {
       const container = document.getElementById('detalheHospedeContent');
+      const nomeSafe = (hospede.nome || '?').trim();
+      const inicial = nomeSafe.charAt(0).toUpperCase() || '?';
+      const emailVal = hospede.email || '';
+      const telVal = hospede.telefone || hospede.contato || '';
+      const telLimpo = telVal ? (telVal.replace(/\D/g, '')) : '';
+      const telWa = telLimpo ? (telLimpo.length === 10 || telLimpo.length === 11 ? '55' + telLimpo : telLimpo) : '';
+
+      const corStatus = (s) => {
+        const k = (s||'').toLowerCase();
+        if (k.includes('check-in')) return 'bg-emerald-50 text-emerald-700';
+        if (k.includes('check-out')) return 'bg-slate-100 text-slate-600';
+        if (k === 'cancelada') return 'bg-red-50 text-red-700';
+        return 'bg-amber-50 text-amber-700';
+      };
+
       const resHtml = reservas.length > 0
         ? reservas.slice(0, 10).map(r => `
-          <tr>
-            <td>${fmtData(r.checkin)}</td>
-          </tr>
+          <div class="flex items-center justify-between py-2 px-3 border-b border-slate-100 last:border-0 text-xs">
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-domus-texto">${(r.cama || r.quarto || '—')}</div>
+              <div class="text-domus-texto-suave">${fmtData(r.checkin)} → ${fmtData(r.checkout)}</div>
+            </div>
+            <div class="text-right ml-2">
+              <span class="text-[10px] px-1.5 py-0.5 rounded ${corStatus(r.status)}">${r.status || '—'}</span>
+              ${r.valor_total ? `<div class="text-[11px] mt-0.5 text-domus-texto">R$ ${Number(r.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>` : ''}
+            </div>
+          </div>
         `).join('')
-        : '<tr><td colspan="1" style="text-align:center;color:#999;">Nenhuma reserva encontrada</td></tr>';
+        : '<div class="text-center text-domus-texto-suave py-4 text-sm">Nenhuma reserva encontrada</div>';
 
       container.innerHTML = `
-        <div class="flex items-start gap-4 mb-6">
-          <div class="w-14 h-14 rounded-full bg-domus-azul flex items-center justify-center text-white text-xl font-bold">
-            ${hospede.nome.charAt(0).toUpperCase()}
+        <div class="flex items-start gap-4 mb-5">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0" style="background:linear-gradient(135deg,#008B9C,#0A3142)">
+            ${inicial}
           </div>
-          <div>
-            <h4 class="text-lg font-bold text-domus-texto">${hospede.nome}</h4>
-            <p class="text-sm text-domus-texto-suave">${hospede.email || 'Sem e-mail'}</p>
-            <p class="text-sm text-domus-texto-suave">${hospede.telefone || 'Sem telefone'}</p>
+          <div class="flex-1 min-w-0">
+            <h4 class="text-lg font-bold text-domus-texto truncate">${nomeSafe}</h4>
+            ${emailVal ? `<a href="mailto:${emailVal}" class="text-sm text-domus-azul hover:underline truncate block">${emailVal}</a>` : '<p class="text-sm text-domus-texto-suave">Sem e-mail</p>'}
+            ${telVal ? `<a href="https://wa.me/${telWa}" target="_blank" class="text-sm text-domus-azul hover:underline">${telVal}</a>` : '<p class="text-sm text-domus-texto-suave">Sem telefone</p>'}
           </div>
         </div>
 
@@ -4670,6 +4692,11 @@
             <p class="text-sm text-amber-900">${hospede.observacoes}</p>
           </div>
         ` : ''}
+
+        <div class="mb-4">
+          <p class="text-xs font-semibold text-domus-texto-suave uppercase tracking-wider mb-2">Últimas reservas</p>
+          <div class="bg-white border border-domus-borda rounded-lg overflow-hidden">${resHtml}</div>
+        </div>
 
         <div class="flex gap-2">
           ${hospede.email ? `<a href="mailto:${hospede.email}" class="flex-1 px-3 py-2 bg-white border border-domus-borda rounded text-sm text-center hover:bg-gray-50">✉️ E-mail</a>` : ''}
@@ -6403,41 +6430,4 @@
 
         // Wrapper temporário (fora da tela) pra render
         const wrapper = document.createElement('div');
-        wrapper.style.position = 'fixed';
-        wrapper.style.left = '-9999px';
-        wrapper.style.top = '0';
-        wrapper.innerHTML = html;
-        document.body.appendChild(wrapper);
-
-        const nomeArquivo = 'Voucher_' + (nome.replace(/[^\w-]+/g, '_')) + '_' + (r.checkin || '').replace(/-/g, '') + '.pdf';
-
-        await html2pdf().set({
-          margin: 0,
-          filename: nomeArquivo,
-          image: { type: 'jpeg', quality: 0.95 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#F8F5F0' },
-          jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
-        }).from(wrapper).save();
-
-        document.body.removeChild(wrapper);
-        mostrarToast('✅ Voucher baixado: ' + nomeArquivo, 'success');
-      } catch (e) {
-        console.error('[baixarVoucherPDF] erro:', e);
-        mostrarToast('Erro ao gerar PDF: ' + (e.message || e), 'error');
-      }
-    }
-    async function enviarVoucherWhatsApp() {
-      try {
-        var rid = _currentReservaId || (typeof reservaAtualId !== 'undefined' && reservaAtualId) || (window.reservaAtualId || null);
-        if (!rid) { mostrarToast('Reserva não selecionada', 'error'); return; }
-        var { data: r, error } = await db.from('reservas')
-          .select('hospede_nome, hospede_contato, checkin, checkout, valor_total, canal_codigo, quarto')
-          .eq('id', rid).single();
-        if (error || !r) { mostrarToast('Erro ao carregar reserva', 'error'); return; }
-        var tel = (r.hospede_contato || '').replace(/\D/g, '');
-        if (!tel || tel.length < 10) { mostrarToast('Hóspede sem telefone válido', 'error'); return; }
-        if (tel.length === 10 || tel.length === 11) tel = '55' + tel;
-        var fmtData = function(d){ if(!d) return ''; var p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
-        var nome = (r.hospede_nome || '').split(' ')[0] || 'Hóspede';
-        var msg = 'Oi, ' + nome + '! 💛\n\n' +
-          'Sua reserva na Domus G
+     
