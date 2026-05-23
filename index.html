@@ -27,7 +27,7 @@
   <meta property="og:description" content="Coliving feminino e hostel misto em Vila Olímpia, São Paulo. Mais leve que hotel, mais humana que aluguel." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://domusgardencoliving.com" />
-  <meta property="og:image" content="https://dg-gestao.vercel.app/images/og-reservar.jpg" />
+  <meta property="og:image" content="https://domusgardencoliving.com/images/og-reservar.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:locale" content="pt_BR" />
@@ -35,10 +35,10 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Domus Garden — Coliving e Hostel em Vila Olímpia" />
   <meta name="twitter:description" content="Coliving feminino e hostel misto em Vila Olímpia, São Paulo." />
-  <meta name="twitter:image" content="https://dg-gestao.vercel.app/images/og-reservar.jpg" />
+  <meta name="twitter:image" content="https://domusgardencoliving.com/images/og-reservar.jpg" />
   <meta name="robots" content="index, follow" />
   <meta name="author" content="Domus Garden Coliving" />
-  <meta name="theme-color" content="#2C3E6B" />
+  <meta name="theme-color" content="#008B9C" />
   <link rel="canonical" href="https://domusgardencoliving.com" />
   <script type="application/ld+json">
   {
@@ -369,7 +369,7 @@ html { scroll-behavior: smooth; }
   <div id="mod-site" class="modulo pt-10">
 
     <!-- NAV DO SITE -->
-    <nav class="sticky top-10 z-40 bg-white/95 backdrop-blur border-b border-domus-borda">
+    <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-domus-borda">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <img src="images/logo-transparente.png" alt="Domus Garden" class="h-9 sm:h-12 w-auto" />
@@ -417,6 +417,7 @@ html { scroll-behavior: smooth; }
           <a onclick="scrollPara('contato');document.getElementById('menu-mobile').classList.add('hidden')" class="cursor-pointer hover:text-domus-azul py-2" data-i18n="nav_contato">Contato</a>
         </div>
         <div class="flex flex-col gap-2 pt-2 border-t border-domus-borda">
+          <button onclick="mostrarModulo('fila');document.getElementById('menu-mobile').classList.add('hidden')" class="w-full px-4 py-2.5 rounded-full bg-domus-azul text-white text-sm font-medium hover:bg-domus-azul-escuro transition inline-block text-center" data-i18n="hero_btn_fila">Entrar na lista de espera</button>
           <a href="dominhas.html" class="w-full px-4 py-2.5 rounded-full border border-domus-borda text-domus-texto text-sm font-medium hover:bg-gray-50 transition inline-block text-center" data-i18n="nav_portal">Portal Dominhas</a>
           <a href="minha-conta.html" class="w-full px-4 py-2.5 rounded-full border border-domus-azul/40 text-domus-azul text-sm font-medium hover:bg-domus-azul/5 transition inline-flex items-center justify-center gap-1.5" data-i18n="nav_minha_conta">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
@@ -448,8 +449,6 @@ html { scroll-behavior: smooth; }
         </p>
         <h1 class="font-serif text-3xl sm:text-5xl md:text-6xl leading-tight mb-8 sm:mb-10" data-i18n="hero_title">Um jeito novo de morar <br/>(e de se hospedar) em São Paulo.</h1>
         <div class="flex gap-3 justify-center flex-wrap">
-          <button onclick="scrollPara('unidades')"
-             class="px-7 py-3 rounded-full text-white font-medium shadow-md transition" style="background:#F08A8A;" onmouseover="this.style.background='#D67373'" onmouseout="this.style.background='#F08A8A'" data-i18n="hero_btn_coliving">Quero conhecer o coliving</button>
           <button onclick="mostrarModulo('hostel')"
              class="px-7 py-3 rounded-full text-white font-medium shadow-md transition inline-block" style="background:#FF385C;" onmouseover="this.style.background='#E31C5F'" onmouseout="this.style.background='#FF385C'" data-i18n="hero_btn_hostel">Reservar no hostel</button>
           <button onclick="mostrarModulo('fila')"
@@ -630,30 +629,33 @@ html { scroll-behavior: smooth; }
         </div>
         <div class="grid md:grid-cols-3 gap-6">
           <!-- 4 Compartilhado feminino — AP -->
-          <div class="rounded-2xl overflow-hidden bg-white shadow-sm border border-domus-borda">
+          <div class="rounded-2xl overflow-hidden bg-white shadow-sm border border-domus-borda hover:shadow-lg transition">
             <img src="images/compartilhado-ap.jpg" loading="lazy" alt="Compartilhado feminino — Unidade AP" class="w-full h-56 object-cover" />
             <div class="p-5">
               <h3 class="font-serif text-xl text-domus-azul-escuro">Compartilhado feminino — Unidade AP</h3>
               <p class="text-domus-azul font-medium mt-3">a partir de R$ 1.250/mês*</p>
               <p class="text-xs text-domus-texto mt-1">Contrato mínimo de 3 meses</p>
+              <button onclick="mostrarModulo('fila')" class="mt-4 w-full py-2.5 rounded-full bg-domus-azul/10 text-domus-azul text-sm font-medium hover:bg-domus-azul hover:text-white transition">Entrar na lista de espera →</button>
             </div>
           </div>
           <!-- 5 Compartilhado — RC -->
-          <div class="rounded-2xl overflow-hidden bg-white shadow-sm border border-domus-borda">
+          <div class="rounded-2xl overflow-hidden bg-white shadow-sm border border-domus-borda hover:shadow-lg transition">
             <img src="images/compartilhado-rib.jpg" loading="lazy" alt="Compartilhado feminino — Unidade RC" class="w-full h-56 object-cover" />
             <div class="p-5">
               <h3 class="font-serif text-xl text-domus-azul-escuro">Compartilhado feminino — Unidade RC</h3>
               <p class="text-domus-azul font-medium mt-3">a partir de R$ 1.198/mês*</p>
               <p class="text-xs text-domus-texto mt-1">Contrato mínimo de 3 meses</p>
+              <button onclick="mostrarModulo('fila')" class="mt-4 w-full py-2.5 rounded-full bg-domus-azul/10 text-domus-azul text-sm font-medium hover:bg-domus-azul hover:text-white transition">Entrar na lista de espera →</button>
             </div>
           </div>
           <!-- 6 Individual — RC -->
-          <div class="rounded-2xl overflow-hidden bg-white shadow-sm border border-domus-borda">
+          <div class="rounded-2xl overflow-hidden bg-white shadow-sm border border-domus-borda hover:shadow-lg transition">
             <img src="images/individual-rib.jpg" loading="lazy" alt="Individual feminino — Unidade RC" class="w-full h-56 object-cover" />
             <div class="p-5">
               <h3 class="font-serif text-xl text-domus-azul-escuro">Individual feminino — Unidade RC</h3>
               <p class="text-domus-azul font-medium mt-3">a partir de R$ 1.749/mês*</p>
               <p class="text-xs text-domus-texto mt-1">Contrato mínimo de 3 meses</p>
+              <button onclick="mostrarModulo('fila')" class="mt-4 w-full py-2.5 rounded-full bg-domus-azul/10 text-domus-azul text-sm font-medium hover:bg-domus-azul hover:text-white transition">Entrar na lista de espera →</button>
             </div>
           </div>
         </div>
@@ -8053,7 +8055,7 @@ html { scroll-behavior: smooth; }
           <!-- ETAPA 3: Flexibilidade + Aceite -->
           <div id="fila-step-3" class="fila-step hidden">
             <h2 class="text-sm font-semibold text-domus-rosa uppercase tracking-wider mb-1">Etapa 3 de 3</h2>
-            <p class="font-serif text-xl text-domus-azul-escuro mb-5">Últimas perguntinhas, prometemos!</p>
+            <p class="font-serif text-xl text-domus-azul-escuro mb-5">Últimas perguntas, prometemos!</p>
             <div class="space-y-4">
 
               <div class="p-4 rounded-xl bg-domus-bege/40 border border-domus-borda/50">
@@ -13239,7 +13241,7 @@ html { scroll-behavior: smooth; }
         nav_portal: 'Portal Dominhas', nav_minha_conta: 'Minha conta', nav_hostel: 'Reserve seu Hostel',
         hero_tagline: 'Mais leve que hotel, mais humana que aluguel.',
         hero_title: 'Um jeito novo de morar <br/>(e de se hospedar) em São Paulo.',
-        hero_btn_coliving: 'Quero conhecer o coliving', hero_btn_hostel: 'Reservar no hostel', hero_btn_fila: 'Entrar na lista de espera',
+        hero_btn_hostel: 'Reservar no hostel', hero_btn_fila: 'Entrar na lista de espera',
         section_jeito: 'O jeito Domus de morar',
         card1_title: 'Entrada fácil', card1_desc: 'Mais autonomia com fechadura digital e acesso sem burocracia.',
         card2_title: 'Casa que funciona', card2_desc: 'Ambientes organizados, espaços integrados e estrutura bem cuidada.',
@@ -13270,7 +13272,7 @@ html { scroll-behavior: smooth; }
         nav_portal: 'Resident Portal', nav_minha_conta: 'My account', nav_hostel: 'Book the Hostel',
         hero_tagline: 'Lighter than a hotel, warmer than a rental.',
         hero_title: 'A new way to live <br/>(and stay) in São Paulo.',
-        hero_btn_coliving: 'Explore the coliving', hero_btn_hostel: 'Book the hostel', hero_btn_fila: 'Join the waitlist',
+        hero_btn_hostel: 'Book the hostel', hero_btn_fila: 'Join the waitlist',
         section_jeito: 'The Domus way of living',
         card1_title: 'Easy check-in', card1_desc: 'More freedom with digital locks and hassle-free access.',
         card2_title: 'A home that works', card2_desc: 'Organized spaces, integrated areas and well-maintained structure.',
@@ -13301,7 +13303,7 @@ html { scroll-behavior: smooth; }
         nav_portal: 'Portal Residentes', nav_minha_conta: 'Mi cuenta', nav_hostel: 'Reservar Hostel',
         hero_tagline: 'Más liviano que un hotel, más humano que un alquiler.',
         hero_title: 'Una nueva forma de vivir <br/>(y hospedarse) en São Paulo.',
-        hero_btn_coliving: 'Quiero conocer el coliving', hero_btn_hostel: 'Reservar en el hostel', hero_btn_fila: 'Entrar en la lista de espera',
+        hero_btn_hostel: 'Reservar en el hostel', hero_btn_fila: 'Entrar en la lista de espera',
         section_jeito: 'El estilo Domus de vivir',
         card1_title: 'Entrada fácil', card1_desc: 'Más autonomía con cerradura digital y acceso sin burocracia.',
         card2_title: 'Casa que funciona', card2_desc: 'Ambientes organizados, espacios integrados y estructura bien cuidada.',
