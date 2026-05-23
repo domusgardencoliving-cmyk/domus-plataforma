@@ -1,12 +1,11 @@
 // =========================================================
-// EDGE FUNCTION: gmail-poll-atrio (v2)
+// EDGE FUNCTION: gmail-poll-atrio (v3)
 // =========================================================
 // Polling do Gmail a cada 10 min (cron). Diferenças da v1:
 // - Le refresh_token da tabela contas_canais (em vez de env var)
 // - Suporta multiplas contas Gmail conectadas (loop por linha)
 // - Sem dependencia supabase-js (fetch direto, evita BOOT_ERROR)
-//
-// Criada 22/05/2026.
+// - v3 (22/05/2026): decode UTF-8 correto + stripHtml pra evitar emojis corrompidos
 // =========================================================
 
 const SUPA = Deno.env.get("SUPABASE_URL")!;
@@ -26,7 +25,7 @@ const detectarCanal = (from: string, subject: string): string | null => {
   if (f.includes("booking.com") || f.includes("booking")) return "booking";
   if (f.includes("webquartos") || f.includes("web quartos")) return "webquartos";
   if (f.includes("expedia") || f.includes("hotels.com")) return "expedia";
-  return "email"; // e-mail direto (não-OTA)
+  return "email";
 };
 
 // Decodifica base64url -> UTF-8 (preservando emojis e acentos)
@@ -57,20 +56,16 @@ const stripHtml = (html: string): string => {
 };
 
 const extrairBody = (payload: any, snippet: string): string => {
-  // Tenta text/plain primeiro (mais limpo)
   const procurar = (p: any): { tipo: string; data: string } | null => {
     if (p?.body?.data && p.mimeType === "text/plain") return { tipo: "text", data: p.body.data };
     if (p?.body?.data && p.mimeType === "text/html") return { tipo: "html", data: p.body.data };
     if (p?.parts) {
-      // text/plain tem prioridade
       for (const part of p.parts) {
         if (part.mimeType === "text/plain" && part.body?.data) return { tipo: "text", data: part.body.data };
       }
-      // depois html
       for (const part of p.parts) {
         if (part.mimeType === "text/html" && part.body?.data) return { tipo: "html", data: part.body.data };
       }
-      // depois recursivo (multipart aninhado)
       for (const part of p.parts) {
         const r = procurar(part);
         if (r) return r;
@@ -109,7 +104,6 @@ Deno.serve(async () => {
     return new Response(JSON.stringify({ ok: false, erro: "GOOGLE_CLIENT_ID/SECRET nao configurado" }), { headers: { "Content-Type": "application/json" } });
   }
 
-  // 1. Busca contas gmail conectadas (com refresh_token)
   const r0 = await fetch(SUPA + "/rest/v1/contas_canais?canal=eq.gmail&status=eq.conectado&select=id,identificador,refresh_token", { headers: h });
   const contas = await r0.json();
   if (!Array.isArray(contas) || contas.length === 0) {
@@ -130,7 +124,6 @@ Deno.serve(async () => {
       continue;
     }
 
-    // 2. Busca emails recentes (1 dia) de Airbnb/Booking/Webquartos OU qualquer outro
     const q = "newer_than:1d -from:noreply -from:no-reply";
     const userPath = conta.identificador === "unknown" ? "me" : encodeURIComponent(conta.identificador);
     const listRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/${userPath}/messages?q=${encodeURIComponent(q)}&maxResults=30`, {
@@ -141,15 +134,19 @@ Deno.serve(async () => {
     let novos = 0, jaTinha = 0, erros = 0;
 
     for (const msgId of messageIds) {
-      // Dedup: já processamos esse email?
       const rDup = await fetch(SUPA + "/rest/v1/mensagens_inbox?external_message_id=eq." + msgId + "&select=id&limit=1", { headers: h });
       const dupArr = await rDup.json();
       if (Array.isArray(dupArr) && dupArr.length > 0) { jaTinha++; continue; }
 
-      // Detalhes do email
       const detRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/${userPath}/messages/${msgId}?format=full`, {
         headers: { "Authorization": "Bearer " + accessToken }
       });
       const det = await detRes.json();
-      const headers: Record<string, string> = {};
-      for (const hd of (det.payload?.headers ||
+      const headersMap: Record<string, string> = {};
+      for (const hd of (det.payload?.headers || [])) headersMap[hd.name.toLowerCase()] = hd.value;
+
+      const from = headersMap["from"] || "";
+      const subject = headersMap["subject"] || "(sem assunto)";
+      const canal = detectarCanal(from, subject) || "email";
+      const bodyText = extrairBody(det.payload, det.snippet || "").slice(0, 3000);
+      const fromEmail 
