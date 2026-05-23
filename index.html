@@ -13442,7 +13442,7 @@ html { scroll-behavior: smooth; }
         }
         if (telLink) acoes.push('<a href="' + telLink + '" target="_blank" class="text-xs px-2.5 py-1 rounded bg-green-600 text-white hover:bg-green-700">💬 WhatsApp</a>');
         return '<div class="bg-white rounded-2xl border ' + sc.border + ' p-4 sm:p-5"><div class="flex flex-wrap items-start gap-4">' +
-          (selfieUrl ? '<a href="' + selfieUrl + '" target="_blank"><img src="' + selfieUrl + '" class="w-16 h-16 rounded-full object-cover border-2 ' + sc.border + '" /></a>' : '<div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl text-gray-400">👤</div>') +
+          (selfieUrl ? '<a href="' + selfieUrl + '" target="_blank"><img src="' + selfieUrl + '" class="w-16 h-16 rounded-full object-cover border-2 ' + sc.border + '" onerror="this.parentElement.outerHTML=\'<div class=\\\'w-16 h-16 rounded-full bg-domus-azul flex items-center justify-center text-xl font-bold text-white\\\'>' + ((v.nome||'?')[0]).toUpperCase() + '</div>\'" /></a>' : '<div class="w-16 h-16 rounded-full bg-domus-azul flex items-center justify-center text-xl font-bold text-white">' + ((v.nome||'?')[0]).toUpperCase() + '</div>') +
           '<div class="flex-1 min-w-0"><div class="flex flex-wrap items-center gap-2 mb-1"><h4 class="font-serif text-lg text-domus-azul-escuro">' + (v.nome || '—') + '</h4>' +
           '<span class="text-[10px] ' + sc.bg + ' ' + sc.txt + ' px-2 py-0.5 rounded-full font-medium">' + sc.label + '</span>' +
           (v.unidade ? '<span class="text-[10px] bg-domus-azul/10 text-domus-azul px-2 py-0.5 rounded-full">' + (v.unidade === 'Rib' ? 'Ribeirão Claro' : 'Andrade Pertence') + '</span>' : '') +
