@@ -247,21 +247,21 @@
     </div>
 
     <div id="conversa-ativa" class="hidden flex-1 flex-col">
-      <header class="header-mobile lg:px-5 lg:py-3">
-        <button class="btn-iconico" onclick="fecharConversa()" aria-label="Voltar">
-          <svg><use href="#ico-back"/></svg>
-        </button>
-        <div class="w-10 h-10 rounded-full text-white flex items-center justify-center font-bold flex-shrink-0" style="background:var(--azul-domus)" id="conv-avatar">?</div>
-        <div class="flex-1 min-w-0">
-          <p class="font-semibold text-sm truncate" id="conv-nome">—</p>
-          <p class="text-xs text-slate-500 flex items-center gap-1.5">
-            <span class="ico-wrap ico-wrap-sm" id="conv-canal-ico" style="width:16px;height:16px;border-radius:4px"></span>
-            <span id="conv-extra" class="truncate">—</span>
-          </p>
+      <header class="header-mobile lg:px-5 lg:py-3" style="border-bottom:1px solid #E5E9EE">
+        <button class="btn-iconico" onclick="fecharConversa()" aria-label="Voltar"><svg><use href="#ico-back"/></svg></button>
+        <div class="relative flex-shrink-0">
+          <div class="w-11 h-11 rounded-full text-white flex items-center justify-center font-bold" style="background:linear-gradient(135deg,#008B9C,#0A3142)" id="conv-avatar">?</div>
+          <span class="ico-wrap ico-wrap-sm absolute -bottom-1 -right-1 border-2 border-white" id="conv-canal-ico" style="width:20px;height:20px;border-radius:6px"></span>
         </div>
-        <button class="btn-iconico" aria-label="Mais opções">
-          <svg><use href="#ico-mais"/></svg>
-        </button>
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-base truncate" style="color:var(--azul-escuro)" id="conv-nome">—</p>
+          <p class="text-xs text-slate-500 flex items-center gap-1.5"><span id="conv-canal-nome" class="font-medium" style="color:var(--azul-domus)">—</span><span class="text-slate-300">·</span><span id="conv-extra" class="truncate">—</span></p>
+        </div>
+        <div class="hidden lg:flex gap-1">
+          <button onclick="togglePainelHospede()" class="btn-iconico" title="Perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></button>
+          <button onclick="marcarResolvida()" class="btn-iconico" title="Resolvida"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button>
+        </div>
+        <button class="btn-iconico" aria-label="Mais"><svg><use href="#ico-mais"/></svg></button>
       </header>
 
       <div id="mensagens-area" class="flex-1 overflow-y-auto p-4 lg:p-5 flex flex-col gap-2 scroll-clean"></div>
@@ -287,18 +287,46 @@
           <textarea id="texto-resposta" placeholder="Mensagem…" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); enviarMensagem();}" class="flex-1 px-3 py-2.5 rounded-2xl border border-slate-200 focus:border-domus-azul focus:outline-none resize-none" rows="1" style="min-height:44px;max-height:120px"></textarea>
           <button id="btn-enviar" onclick="enviarMensagem()" class="w-11 h-11 rounded-full text-white flex items-center justify-center flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed" style="background:var(--azul-domus)" aria-label="Enviar"><svg width="20" height="20"><use href="#ico-send"/></svg></button>
         </div>
-        <div class="hidden lg:flex gap-3 mt-2 text-[11px] text-slate-400">
-          <button class="hover:text-slate-600">⚡ Modelos</button>
+        <div class="hidden lg:flex gap-3 mt-2 text-[11px] text-slate-400 relative">
+          <button onclick="toggleModelos()" class="hover:text-slate-600">⚡ Modelos</button>
           <span>•</span>
-          <button class="hover:text-slate-600">🎟️ Cupom</button>
+          <button class="hover:text-slate-600" onclick="alert('Em breve')">🎟️ Cupom</button>
           <span>•</span>
-          <button class="hover:text-slate-600">🏠 Indicar quarto</button>
+          <button class="hover:text-slate-600" onclick="alert('Em breve')">🏠 Indicar quarto</button>
           <span>•</span>
-          <button class="hover:text-slate-600">📅 Disponibilidade</button>
+          <button class="hover:text-slate-600" onclick="alert('Em breve')">📅 Disponibilidade</button>
+        </div>
+        <div id="modelos-dropdown" class="hidden absolute bottom-20 left-4 right-4 lg:left-auto lg:right-5 lg:w-96 bg-white border border-slate-200 rounded-xl shadow-xl z-30 max-h-80 overflow-y-auto scroll-clean">
+          <div class="sticky top-0 bg-white border-b border-slate-100 px-3 py-2 flex justify-between items-center"><p class="text-xs font-semibold text-slate-700">Modelos de resposta</p><button onclick="toggleModelos()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button></div>
+          <div id="modelos-lista" class="p-2 space-y-1"><p class="text-xs text-slate-400 italic p-3">Carregando...</p></div>
         </div>
       </footer>
     </div>
   </main>
+
+  <!-- ===== PAINEL CONTEXTO DO HÓSPEDE (desktop only) ===== -->
+  <aside id="painel-hospede" class="hidden lg:flex flex-col bg-white border-l border-slate-200 overflow-y-auto scroll-clean" style="width:300px;flex-shrink:0">
+    <div id="painel-hospede-vazio" class="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-400"><div class="text-4xl mb-3">👤</div><p class="text-sm" style="color:var(--azul-escuro)">Selecione uma conversa pra ver o perfil</p></div>
+    <div id="painel-hospede-conteudo" class="hidden p-5">
+      <div class="text-center mb-5 pb-5 border-b border-slate-100">
+        <div class="w-20 h-20 rounded-full text-white flex items-center justify-center text-2xl font-bold mx-auto mb-3" style="background:linear-gradient(135deg,#008B9C,#0A3142)" id="ph-avatar">?</div>
+        <p class="font-serif text-lg" style="color:var(--azul-escuro)" id="ph-nome">—</p>
+        <p class="text-xs text-slate-500 mt-1" id="ph-email">—</p>
+        <p class="text-xs text-slate-500" id="ph-telefone"></p>
+      </div>
+      <div class="mb-5"><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Reservas</p><div id="ph-reservas" class="space-y-2"><p class="text-xs text-slate-400 italic">Carregando...</p></div></div>
+      <div class="mb-5"><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Canal</p>
+        <div class="flex items-center gap-2 p-3 rounded-lg bg-slate-50"><span class="ico-wrap ico-wrap-sm" id="ph-canal-ico" style="width:24px;height:24px;border-radius:6px"></span><div class="flex-1 min-w-0"><p class="text-sm font-medium" id="ph-canal-nome">—</p><p class="text-[11px] text-slate-500 truncate" id="ph-canal-id">—</p></div></div>
+      </div>
+      <div class="mb-5"><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Ações rápidas</p>
+        <div class="space-y-1.5">
+          <button onclick="window.open('pms.html','_blank')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2" style="color:var(--azul-escuro)">📅 <span>Ver no PMS</span></button>
+          <button onclick="marcarResolvida()" class="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2" style="color:var(--azul-escuro)">✓ <span>Marcar resolvida</span></button>
+        </div>
+      </div>
+      <div><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Info</p><div class="text-xs text-slate-600 space-y-1"><p>Primeira: <span id="ph-primeira" class="text-slate-400">—</span></p><p>Total: <span id="ph-total" class="text-slate-400">—</span></p></div></div>
+    </div>
+  </aside>
 
 </div>
 
@@ -341,7 +369,6 @@
       const { data, error } = await db.from('conversas')
         .select('*').order('atualizada_em', { ascending: false }).limit(100);
       if (error) { console.warn('Erro carregando conversas:', error.message); return; }
-      // Busca última mensagem de cada conversa pra preview (1 query so)
       const ids = (data || []).map(c => c.id);
       if (ids.length) {
         const { data: msgs } = await db.from('mensagens_inbox')
@@ -349,16 +376,8 @@
           .in('conversa_id', ids)
           .order('enviada_em', { ascending: false });
         const previewByConv = {};
-        (msgs || []).forEach(m => {
-          if (!previewByConv[m.conversa_id]) {
-            previewByConv[m.conversa_id] = { preview: (m.conteudo || '').slice(0, 100), em: m.enviada_em };
-          }
-        });
-        (data || []).forEach(c => {
-          const p = previewByConv[c.id];
-          c.ultima_mensagem_preview = p ? p.preview : '';
-          c.ultima_mensagem_em = p ? p.em : c.atualizada_em;
-        });
+        (msgs || []).forEach(m => { if (!previewByConv[m.conversa_id]) previewByConv[m.conversa_id] = { preview: (m.conteudo || '').slice(0, 100), em: m.enviada_em }; });
+        (data || []).forEach(c => { const p = previewByConv[c.id]; c.ultima_mensagem_preview = p ? p.preview : ''; c.ultima_mensagem_em = p ? p.em : c.atualizada_em; });
       }
       _conversas = data || [];
       renderLista();
@@ -440,8 +459,148 @@
     ico.innerHTML = '<svg style="width:10px;height:10px"><use href="#' + cfg.ico + '"/></svg>';
 
     try {
-      const { data: msgs } = await db.from('mensagens_inbox')
-        .select('*').eq('conversa_id', id).order('enviada_em', { ascending: true });
+      const { data: msgs } = await db.from('mensagens_inbox').select('*').eq('conversa_id', id).order('enviada_em', { ascending: true });
       const area = document.getElementById('mensagens-area');
-      area.innerHTML = (msgs || []).map(function(m){
-        const cls = 'msg-' + (m.direcao === 'entrada' ? 'entrada' : (m.autor_tipo
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const ontem = new Date(hoje); ontem.setDate(ontem.getDate()-1);
+      let ud = null;
+      const html = (msgs || []).map(function(m){
+        const dt = new Date(m.enviada_em);
+        const dia = new Date(dt); dia.setHours(0,0,0,0);
+        let sep = '';
+        if (!ud || dia.getTime() !== ud.getTime()) {
+          let l;
+          if (dia.getTime()===hoje.getTime()) l='Hoje';
+          else if (dia.getTime()===ontem.getTime()) l='Ontem';
+          else l = dia.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:dia.getFullYear()!==hoje.getFullYear()?'numeric':undefined});
+          sep = '<div class="text-center my-2"><span class="inline-block text-[11px] text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200">'+l+'</span></div>';
+          ud = dia;
+        }
+        const cls = 'msg-' + (m.direcao === 'entrada' ? 'entrada' : (m.autor_tipo === 'ia' ? 'ia' : 'saida'));
+        const horaCls = m.direcao === 'entrada' ? 'text-slate-400' : 'text-white/70';
+        const hora = dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        return sep + '<div class="' + cls + ' max-w-[80%] lg:max-w-[70%] px-4 py-2.5"><p class="text-base lg:text-sm whitespace-pre-wrap">' + escapar(m.conteudo || '') + '</p><p class="text-[10px] mt-1 ' + horaCls + '">' + hora + '</p></div>';
+      }).join('');
+      area.innerHTML = html || '<div class="flex-1 flex items-center justify-center text-slate-400 text-sm py-8">Nenhuma mensagem ainda</div>';
+      area.scrollTop = area.scrollHeight;
+      if (conv.nao_lidas > 0) { await db.from('conversas').update({ nao_lidas: 0 }).eq('id', id); conv.nao_lidas = 0; }
+      popularPainelHospede(conv, msgs || []);
+    } catch(e) { console.warn(e); }
+
+    renderLista();
+  }
+
+  async function popularPainelHospede(conv, msgs) {
+    const v = document.getElementById('painel-hospede-vazio');
+    const c = document.getElementById('painel-hospede-conteudo');
+    if (!c) return;
+    v.classList.add('hidden'); c.classList.remove('hidden');
+    const cfg = CANAIS[conv.canal] || CANAIS.manual;
+    const nome = conv.hospede_nome_cache || 'Sem nome';
+    document.getElementById('ph-avatar').textContent = (nome||'?').charAt(0).toUpperCase();
+    document.getElementById('ph-nome').textContent = nome;
+    document.getElementById('ph-email').textContent = conv.identificador_externo || '—';
+    document.getElementById('ph-telefone').textContent = conv.hospede_telefone_cache || '';
+    const phIco = document.getElementById('ph-canal-ico');
+    phIco.className = 'ico-wrap ico-wrap-sm ' + cfg.bg;
+    phIco.innerHTML = '<svg style="width:14px;height:14px"><use href="#'+cfg.ico+'"/></svg>';
+    document.getElementById('ph-canal-nome').textContent = cfg.nome;
+    document.getElementById('ph-canal-id').textContent = conv.identificador_externo || '—';
+    document.getElementById('ph-total').textContent = msgs.length + ' mensagens';
+    if (msgs.length > 0) { document.getElementById('ph-primeira').textContent = new Date(msgs[0].enviada_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}); }
+    const headerIco = document.getElementById('conv-canal-ico');
+    headerIco.className = 'ico-wrap ico-wrap-sm absolute -bottom-1 -right-1 border-2 border-white ' + cfg.bg;
+    headerIco.innerHTML = '<svg style="width:11px;height:11px"><use href="#'+cfg.ico+'"/></svg>';
+    const ccn = document.getElementById('conv-canal-nome');
+    if (ccn) ccn.textContent = cfg.nome;
+    // Busca reservas pelo nome
+    const reservasEl = document.getElementById('ph-reservas');
+    reservasEl.innerHTML = '<p class="text-xs text-slate-400 italic">Buscando...</p>';
+    try {
+      const nb = (nome||'').trim();
+      let query = db.from('reservas').select('id, hospede_nome, cama, checkin, checkout, status, valor_total').order('checkin', { ascending: false }).limit(5);
+      if (nb && nb !== 'Sem nome') query = query.ilike('hospede_nome', '%'+nb+'%');
+      const { data: reservas } = await query;
+      if (!reservas || reservas.length === 0) {
+        reservasEl.innerHTML = '<p class="text-xs text-slate-400 italic">Nenhuma reserva</p>';
+      } else {
+        reservasEl.innerHTML = reservas.map(function(r){
+          const cor = r.status === 'check-in' ? 'bg-emerald-50 text-emerald-700' : r.status === 'cancelada' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-700';
+          return '<div class="p-2 rounded-lg bg-slate-50 text-xs"><div class="flex justify-between"><span class="font-medium" style="color:var(--azul-escuro)">'+escapar(r.cama||'—')+'</span><span class="text-[10px] px-1.5 py-0.5 rounded '+cor+'">'+escapar(r.status||'')+'</span></div><p class="text-slate-500 mt-1">'+(r.checkin||'')+' → '+(r.checkout||'')+'</p>'+(r.valor_total?'<p class="text-slate-600 font-medium mt-0.5">R$ '+Number(r.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</p>':'')+'</div>';
+        }).join('');
+      }
+    } catch(e) { reservasEl.innerHTML = '<p class="text-xs text-red-400">Erro buscando</p>'; }
+  }
+
+  function togglePainelHospede() { const p = document.getElementById('painel-hospede'); if (p) p.classList.toggle('hidden'); }
+
+  async function marcarResolvida() {
+    if (!_ativa) return;
+    if (!confirm('Marcar conversa como resolvida?')) return;
+    try { await db.from('conversas').update({ prioridade: 'resolvida', nao_lidas: 0 }).eq('id', _ativa); alert('✓ Resolvida'); await carregarConversas(); } catch(e) { alert('Erro: '+e.message); }
+  }
+
+  async function enviarMensagem() {
+    const ta = document.getElementById('texto-resposta');
+    const btn = document.getElementById('btn-enviar');
+    const texto = (ta.value || '').trim();
+    if (!_ativa) { alert('Selecione uma conversa primeiro'); return; }
+    if (!texto) return;
+    btn.disabled = true;
+    const original = ta.value;
+    ta.value = ''; ta.style.height = '44px';
+    try {
+      const r = await fetch('https://motwhfbpundrhvuwjntw.supabase.co/functions/v1/enviar-mensagem-canal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+        body: JSON.stringify({ conversa_id: _ativa, texto })
+      });
+      const data = await r.json();
+      if (!r.ok || data.erro) { ta.value = original; alert('Erro: ' + (data.erro || r.statusText)); return; }
+      await abrirConversa(_ativa);
+    } catch(e) { ta.value = original; alert('Erro de rede: ' + e.message); }
+    finally { btn.disabled = false; ta.focus(); }
+  }
+
+  // ===== MODELOS DE RESPOSTA =====
+  let _modelos = null;
+  async function toggleModelos() {
+    const dd = document.getElementById('modelos-dropdown');
+    if (!dd) return;
+    if (!dd.classList.contains('hidden')) { dd.classList.add('hidden'); return; }
+    dd.classList.remove('hidden');
+    if (_modelos === null) {
+      try { const { data } = await db.from('templates_resposta_atrio').select('*').limit(50); _modelos = data || []; } catch(e) { _modelos = []; }
+    }
+    const lista = document.getElementById('modelos-lista');
+    if (_modelos.length === 0) { lista.innerHTML = '<p class="text-xs text-slate-400 italic p-3">Nenhum modelo cadastrado</p>'; return; }
+    lista.innerHTML = _modelos.map(function(m){
+      const cat = (m.categoria||'geral').toUpperCase();
+      const titulo = escapar(m.titulo || m.nome || 'Sem titulo');
+      const preview = escapar((m.texto || m.mensagem || '').slice(0, 80));
+      const data = encodeURIComponent(m.texto || m.mensagem || '');
+      return '<button onclick="usarModelo(\''+data+'\')" class="w-full text-left p-2.5 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200"><div class="flex items-start gap-2"><span class="text-[9px] px-1.5 py-0.5 rounded font-semibold flex-shrink-0 mt-0.5" style="background:rgba(0,139,156,0.1);color:var(--azul-domus)">'+cat+'</span><div class="flex-1 min-w-0"><p class="text-sm font-medium" style="color:var(--azul-escuro)">'+titulo+'</p><p class="text-xs text-slate-500 truncate">'+preview+'</p></div></div></button>';
+    }).join('');
+  }
+  function usarModelo(enc) {
+    const ta = document.getElementById('texto-resposta');
+    let texto = decodeURIComponent(enc);
+    const conv = _conversas.find(c => c.id === _ativa);
+    if (conv) { const pn = (conv.hospede_nome_cache||'').split(' ')[0]; texto = texto.replace(/\{nome\}/g, pn).replace(/\{Nome\}/g, pn); }
+    ta.value = texto; ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,120)+'px'; ta.focus();
+    document.getElementById('modelos-dropdown').classList.add('hidden');
+  }
+
+  function escapar(s) { return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  carregarConversas();
+  setInterval(carregarConversas, 30000);
+
+  document.getElementById('texto-resposta').addEventListener('input', function(){
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+</script>
+
+</body>
+</html>
