@@ -105,6 +105,7 @@
     })();
   </script>
   <style>
+html { scroll-behavior: smooth; }
     /* Esconde partes admin/dev quando o site está em modo público */
     html.modo-publico .apenas-admin { display: none !important; }
     /* Remove o padding-top (que existia pra barra do protótipo) em modo público */
@@ -379,14 +380,14 @@
             <span class="text-domus-texto-suave hidden xl:inline">· Vila Olímpia</span>
           </div>
         </div>
-        <div class="hidden lg:flex items-center gap-7 text-sm text-domus-texto">
-          <a onclick="scrollPara('home')" class="cursor-pointer hover:text-domus-azul transition" data-i18n="nav_inicio">Início</a>
+        <div class="hidden md:flex items-center gap-7 text-sm text-domus-texto">
+          <a onclick="scrollPara('home')" role="button" tabindex="0" onkeydown="if(event.key==='Enter')scrollPara('home')" class="cursor-pointer hover:text-domus-azul transition" data-i18n="nav_inicio">Início</a>
           <a onclick="scrollPara('unidades')" class="cursor-pointer hover:text-domus-azul transition" data-i18n="nav_unidades">Unidades</a>
           <a onclick="scrollPara('acomodacoes')" class="cursor-pointer hover:text-domus-azul transition" data-i18n="nav_acomodacoes">Acomodações</a>
           <a onclick="scrollPara('espaco')" class="cursor-pointer hover:text-domus-azul transition" data-i18n="nav_espaco">Espaços Domus</a>
           <a onclick="scrollPara('contato')" class="cursor-pointer hover:text-domus-azul transition" data-i18n="nav_contato">Contato</a>
         </div>
-        <div class="hidden sm:flex items-center gap-2">
+        <div class="hidden md:flex items-center gap-2">
           <!-- Bandeirinhas de idioma (escondidas em telas médias pra dar espaço) -->
           <div class="hidden lg:flex gap-1 items-center mr-1">
             <button onclick="trocarIdioma('pt')" class="lang-flag w-6 h-6 rounded-full flex items-center justify-center text-sm hover:scale-125 transition opacity-100" title="Português" data-lang="pt">🇧🇷</button>
@@ -402,12 +403,12 @@
           <button onclick="mostrarModulo('hostel')" class="px-4 py-1.5 rounded-full bg-domus-rosa text-white text-xs font-semibold hover:bg-domus-rosa-escuro transition inline-block whitespace-nowrap" data-i18n="nav_hostel">Reserve seu Hostel</button>
         </div>
         <!-- Hamburger mobile -->
-        <button onclick="document.getElementById('menu-mobile').classList.toggle('hidden')" class="sm:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 transition" aria-label="Menu">
+        <button onclick="document.getElementById('menu-mobile').classList.toggle('hidden')" class="md:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 transition" aria-label="Menu">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
       </div>
       <!-- Menu mobile dropdown -->
-      <div id="menu-mobile" class="hidden sm:hidden border-t border-domus-borda bg-white px-4 pb-4">
+      <div id="menu-mobile" class="hidden md:hidden border-t border-domus-borda bg-white px-4 pb-4">
         <div class="flex flex-col gap-3 py-3 text-sm text-domus-texto">
           <a onclick="scrollPara('home');document.getElementById('menu-mobile').classList.add('hidden')" class="cursor-pointer hover:text-domus-azul py-2" data-i18n="nav_inicio">Início</a>
           <a onclick="scrollPara('unidades');document.getElementById('menu-mobile').classList.add('hidden')" class="cursor-pointer hover:text-domus-azul py-2" data-i18n="nav_unidades">Unidades</a>
@@ -447,6 +448,8 @@
         </p>
         <h1 class="font-serif text-3xl sm:text-5xl md:text-6xl leading-tight mb-8 sm:mb-10" data-i18n="hero_title">Um jeito novo de morar <br/>(e de se hospedar) em São Paulo.</h1>
         <div class="flex gap-3 justify-center flex-wrap">
+          <button onclick="scrollPara('unidades')"
+             class="px-7 py-3 rounded-full text-white font-medium shadow-md transition" style="background:#F08A8A;" onmouseover="this.style.background='#D67373'" onmouseout="this.style.background='#F08A8A'" data-i18n="hero_btn_coliving">Quero conhecer o coliving</button>
           <button onclick="mostrarModulo('hostel')"
              class="px-7 py-3 rounded-full text-white font-medium shadow-md transition inline-block" style="background:#FF385C;" onmouseover="this.style.background='#E31C5F'" onmouseout="this.style.background='#FF385C'" data-i18n="hero_btn_hostel">Reservar no hostel</button>
           <button onclick="mostrarModulo('fila')"
