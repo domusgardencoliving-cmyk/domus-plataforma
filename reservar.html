@@ -27,6 +27,34 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏡</text></svg>" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+    // PORTEIRO DE ERROS — hospede nunca ve mensagem tecnica.
+    // Qualquer erro JS catastrofico OU rejeicao de Promise nao tratada
+    // redireciona pra /ops.html (Domussauro).
+    (function instalarPorteiroErros(){
+      function ehErroNaoCritico(msg){
+        if(!msg) return true;
+        var m = String(msg).toLowerCase();
+        return m.indexOf('resizeobserver') >= 0
+          || m.indexOf('script error') >= 0
+          || m.indexOf('non-error promise rejection') >= 0;
+      }
+      function redirecionarOps(origem, detalhe){
+        try { console.error('[porteiro/' + origem + ']', detalhe); } catch(e){}
+        var p = (window.location.pathname || '').toLowerCase();
+        if (p.indexOf('/ops') === 0 || p.indexOf('/404') === 0 || p.indexOf('/voltamos') === 0) return;
+        window.location.href = '/ops.html';
+      }
+      window.addEventListener('error', function(ev){
+        if (ehErroNaoCritico(ev && ev.message)) return;
+        redirecionarOps('error', ev && (ev.error || ev.message));
+      });
+      window.addEventListener('unhandledrejection', function(ev){
+        var r = ev && ev.reason;
+        if (ehErroNaoCritico(r && r.message)) return;
+        redirecionarOps('promise', r);
+      });
+    })();
+
     tailwind.config = {
       theme: {
         extend: {
@@ -1435,7 +1463,28 @@
           sucEl.classList.remove('hidden');
         }
 
-        setTimeout(function() { mostrarPrStep(window._destinoPosLogin || 2); window._destinoPosLogin = null; }, 1500);
+        // Se faltam dados (doc/tel/nome), forca passar pelo step-1 antes do pagamento
+        var faltaDoc = !_doc || _doc.trim().length < 3;
+        var faltaTel = !_tel || _tel.replace(/[^0-9]/g,'').length < 10;
+        var faltaNome = !_nome || _nome.trim().length < 2;
+        var precisaCompletar = faltaDoc || faltaTel || faltaNome;
+        var destinoOriginal = window._destinoPosLogin || 2;
+        setTimeout(function() {
+          if (precisaCompletar) {
+            try {
+              var qfalta = [];
+              if (faltaDoc) qfalta.push('CPF/Passaporte');
+              if (faltaTel) qfalta.push('telefone');
+              if (faltaNome) qfalta.push('nome');
+              dgToast('Pra finalizar precisamos completar seu cadastro: ' + qfalta.join(', ') + '. Preencha os campos vazios :)', 6000);
+            } catch(e) {}
+            window._destinoPosLogin = destinoOriginal;
+            mostrarPrStep(1);
+          } else {
+            mostrarPrStep(destinoOriginal);
+            window._destinoPosLogin = null;
+          }
+        }, 1500);
 
       } catch (err) {
         console.error('Erro no login:', err);
@@ -1515,8 +1564,32 @@
           resultEl.classList.remove('hidden');
         }
 
-        // Ir pra etapa 2 (ou destino marcado, ex: 3 = pagamento) depois de 1.5s
-        setTimeout(function() { mostrarPrStep(window._destinoPosLogin || 2); window._destinoPosLogin = null; }, 1500);
+        // Ir pra etapa 2 — MAS se faltam dados obrigatorios (doc, telefone, nome),
+        // joga pra etapa 1 (cadastro) pro hospede completar antes de pagar.
+        // Senao o sistema valida na hora do pagamento, da erro generico,
+        // e o hospede nao sabe onde preencher (perde venda).
+        var faltaDoc = !_doc || _doc.trim().length < 3;
+        var faltaTel = !_tel || _tel.replace(/[^0-9]/g,'').length < 10;
+        var faltaNome = !_nome || _nome.trim().length < 2;
+        var precisaCompletar = faltaDoc || faltaTel || faltaNome;
+        var destinoOriginal = window._destinoPosLogin || 2;
+        setTimeout(function() {
+          if (precisaCompletar) {
+            // Avisa o hospede do que falta e leva pra etapa 1
+            try {
+              var qfalta = [];
+              if (faltaDoc) qfalta.push('CPF/Passaporte');
+              if (faltaTel) qfalta.push('telefone');
+              if (faltaNome) qfalta.push('nome');
+              dgToast('Pra finalizar precisamos completar seu cadastro: ' + qfalta.join(', ') + '. Preencha os campos vazios :)', 6000);
+            } catch(e) {}
+            window._destinoPosLogin = destinoOriginal; // mantem onde queria ir depois
+            mostrarPrStep(1);
+          } else {
+            mostrarPrStep(destinoOriginal);
+            window._destinoPosLogin = null;
+          }
+        }, 1500);
 
       } catch (err) {
         console.error('Erro no login:', err);
@@ -2478,36 +2551,53 @@
         });
       }
 
-      // Cadastrar hóspede (se não é retorno)
+      // Cadastrar/atualizar hóspede (UPSERT por email — mantém CRM sincronizado)
+      // Roda SEMPRE (mesmo com _hospedeRetorno): se hóspede mudou email/tel/doc no form, atualiza
       var hospedeId = _hospedeRetorno?.hospede_id || null;
-      if (!_hospedeRetorno) {
-        try {
-          var senhaVal = document.getElementById('pr-senha')?.value || '';
-          var docLimpo = (document.getElementById('pr-documento')?.value.trim() || '').replace(/[^0-9a-zA-Z]/g, '');
-          var { data: hData, error: hErr } = await db.from('hospedes').insert({
-            nome: document.getElementById('pr-nome')?.value.trim() || '',
-            sobrenome: document.getElementById('pr-sobrenome')?.value.trim() || '',
-            email: (document.getElementById('pr-email')?.value.trim() || '').toLowerCase(),
-            telefone: (document.getElementById('pr-ddi')?.value || '+55') + ' ' + (document.getElementById('pr-telefone')?.value.trim() || ''),
+      try {
+        var senhaVal = document.getElementById('pr-senha')?.value || '';
+        var docLimpo = (document.getElementById('pr-documento')?.value.trim() || '').replace(/[^0-9a-zA-Z]/g, '');
+        var emailNorm = (document.getElementById('pr-email')?.value.trim() || '').toLowerCase();
+        var telCompleto = (document.getElementById('pr-ddi')?.value || '+55') + ' ' + (document.getElementById('pr-telefone')?.value.trim() || '');
+        var nomeNorm = document.getElementById('pr-nome')?.value.trim() || '';
+        var sobrenomeNorm = document.getElementById('pr-sobrenome')?.value.trim() || '';
+        var nomeCompletoNorm = (nomeNorm + ' ' + sobrenomeNorm).trim();
+
+        if (emailNorm) {
+          var payloadHospede = {
+            nome: nomeCompletoNorm,
+            sobrenome: sobrenomeNorm,
+            email: emailNorm,
+            telefone: telCompleto,
             documento: docLimpo,
-            senha_hash: senhaVal,
-            doc_url: docUrl || null
-          }).select('id').single();
+            origem: 'reservar-direto'
+          };
+          // Só envia campos opcionais quando há valor (evita sobrescrever no UPSERT)
+          if (senhaVal && !_hospedeRetorno) payloadHospede.senha_hash = senhaVal;
+          if (docUrl) payloadHospede.doc_url = docUrl;
+
+          var { data: hData, error: hErr } = await db.from('hospedes')
+            .upsert(payloadHospede, { onConflict: 'email' })
+            .select('id')
+            .single();
+
           if (hErr) {
-            console.warn('Erro no cadastro hospede:', hErr.message);
-            // Se ja existe, buscar o ID
-            var { data: hExist } = await db.from('hospedes')
-              .select('id')
-              .or('documento.eq.' + docLimpo + ',email.eq.' + (document.getElementById('pr-email')?.value.trim() || '').toLowerCase())
-              .limit(1)
-              .single();
-            if (hExist) hospedeId = hExist.id;
+            console.warn('Erro no upsert hospede:', hErr.message);
+            // Fallback: buscar por documento ou email
+            if (!hospedeId) {
+              var { data: hExist } = await db.from('hospedes')
+                .select('id')
+                .or('documento.eq.' + docLimpo + ',email.eq.' + emailNorm)
+                .limit(1)
+                .single();
+              if (hExist) hospedeId = hExist.id;
+            }
           } else if (hData && hData.id) {
             hospedeId = hData.id;
           }
-        } catch (hCatchErr) {
-          console.warn('Cadastro de hospede falhou, continuando:', hCatchErr);
         }
+      } catch (hCatchErr) {
+        console.warn('Cadastro de hospede falhou, continuando:', hCatchErr);
       }
 
       // Mapear valor do formulario para nome real da cama (compativel Hospedin)
@@ -2563,16 +2653,57 @@
       var statusReserva = cupomTotalmenteCobre ? 'confirmada' : 'em_espera';
       var formaPagto = cupomTotalmenteCobre ? 'cupom' : pagamento;
 
+      // Monta contato no formato "email | telefone" (Edge Function do voucher extrai email via regex)
+      var _emailReserva = (document.getElementById('pr-email')?.value.trim() || '').toLowerCase();
+      var _telReserva = (document.getElementById('pr-ddi')?.value || '+55') + ' ' + (document.getElementById('pr-telefone')?.value.trim() || '');
+      var _contatoReserva = _emailReserva ? (_emailReserva + ' | ' + _telReserva) : _telReserva;
+
+      // ============================================
+      // ANTI-OVERBOOKING (ultima linha de defesa)
+      // Re-confirma que a cama esta livre IMEDIATAMENTE antes do INSERT
+      // Bloqueia se outra reserva conflitante apareceu nos ultimos segundos
+      // ============================================
+      try {
+        // ANTI-OVERBOOKING — busca TUDO que sobrepõe no período e filtra
+        // por cama normalizada (lowercase + trim) — pega aliases.
+        var { data: conflitos, error: errConflito } = await db
+          .from('reservas')
+          .select('id, hospede_nome, plataforma, cama, quarto, status, nao_contabilizar')
+          .lt('checkin', checkout)
+          .gt('checkout', checkin)
+          .in('status', ['em_espera', 'pre_reserva', 'confirmada', 'check-in', 'check_in']);
+
+        var camaNorm = String(camaFinal||'').toLowerCase().trim();
+        var temConflito = (conflitos||[]).some(function(r){
+          if (r.nao_contabilizar === true) return false;
+          var rCama = String(r.cama || r.quarto || '').toLowerCase().trim();
+          if (!rCama) return false;
+          return rCama === camaNorm || rCama.indexOf(camaNorm) >= 0 || camaNorm.indexOf(rCama) >= 0;
+        });
+
+        if (errConflito) {
+          console.warn('[anti-overbooking] erro na checagem (segue mas registra):', errConflito);
+        } else if (temConflito) {
+          console.error('[anti-overbooking] CONFLITO detectado pra cama:', camaFinal);
+          try { dgToast('Este quarto acabou de ficar indisponivel para essas datas. Por favor escolha outro quarto ou outras datas.', 6000); } catch(e) { alert('Quarto indisponivel - escolha outro.'); }
+          try { verificarDisponibilidadePR(); } catch (e) {}
+          return;
+        }
+      } catch (e) {
+        console.warn('[anti-overbooking] excecao (segue):', e);
+      }
+
       try {
         var { data, error } = await db.from('reservas').insert({
           hospede_id: hospedeId,
           hospede_nome: nome.trim(),
           hospede_documento: document.getElementById('pr-documento')?.value.trim() || '',
-          hospede_contato: (document.getElementById('pr-ddi')?.value || '+55') + ' ' + (document.getElementById('pr-telefone')?.value.trim() || ''),
+          hospede_contato: _contatoReserva,
           cama: camaFinal,
           checkin: checkin,
           checkout: checkout,
           plataforma: 'Direto',
+          canal_codigo: 'direto',
           valor_total: total,
           status: statusReserva,
           forma_pagamento: formaPagto,
@@ -2580,7 +2711,6 @@
           observacoes: [
             grupoTxt,
             cupomTotalmenteCobre ? '✨ CORTESIA 100% via cupom ' + _prCupomAplicado.codigo : null,
-            'Email: ' + (document.getElementById('pr-email')?.value.trim() || ''),
             'Nascimento: N/I',
             'Adultos: ' + (document.getElementById('pr-adultos')?.value || '1'),
             'Crianças: ' + (document.getElementById('pr-criancas')?.value || '0'),
@@ -2609,11 +2739,12 @@
               hospede_id: hospedeId,
               hospede_nome: nome.trim(),
               hospede_documento: document.getElementById('pr-documento')?.value.trim() || '',
-              hospede_contato: (document.getElementById('pr-ddi')?.value || '+55') + ' ' + (document.getElementById('pr-telefone')?.value.trim() || ''),
+              hospede_contato: _contatoReserva,
               cama: camaFinal,
               checkin: checkin,
               checkout: checkout,
               plataforma: 'Direto',
+              canal_codigo: 'direto',
               valor_total: total,
               status: 'confirmada',
               forma_pagamento: formaPagto,
@@ -2621,7 +2752,6 @@
               observacoes: '[PRE-RESERVA] ' + [
                 grupoTxt,
                 cupomTotalmenteCobre ? '✨ CORTESIA 100% via cupom ' + _prCupomAplicado.codigo : null,
-                'Email: ' + (document.getElementById('pr-email')?.value.trim() || ''),
                 'Nascimento: N/I',
                 'Adultos: ' + (document.getElementById('pr-adultos')?.value || '1'),
                 'Crianças: ' + (document.getElementById('pr-criancas')?.value || '0'),
@@ -2673,6 +2803,22 @@
         document.getElementById('pr-confirm-total').textContent = 'Total: R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
         mostrarPrStep(4);
+
+        // Dispara email de confirmacao via Edge Function (Resend)
+        // SO chama se a reserva JA esta confirmada (cupom 100% cobriu o valor).
+        // Reservas que precisam de pagamento: o email sera disparado pelo
+        // webhook do InfinitePay quando o pagamento for confirmado.
+        if (reservaId && cupomTotalmenteCobre) {
+          try {
+            db.functions.invoke('enviar-voucher-email', {
+              body: { reserva_id: reservaId }
+            }).catch(function(e) {
+              console.warn('[email] voucher email nao enviado:', e?.message || e);
+            });
+          } catch (e) {
+            console.warn('[email] erro ao chamar Edge Function:', e?.message || e);
+          }
+        }
 
         // Montar link WhatsApp com dados da reserva
         var msgWhatsApp = 'Oi! Acabei de enviar minha pré-reserva pelo site 😊\n\n'
@@ -2878,4 +3024,45 @@
             // (so se nao houver negociacao ativa nem volta-de-pagamento)
             var _params = new URLSearchParams(window.location.search);
             if (!_params.get('reserva') && typeof mostrarPrStep === 'function') {
-              setTimeout(function(){ mostrarPrStep(2); 
+              setTimeout(function(){ mostrarPrStep(2); }, 50);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Auto-login da sessao falhou (ignorado):', e);
+      }
+
+      // ========== "ADICIONAR MAIS UMA RESERVA" (Etapa 4) ==========
+      var btnAdicionarMais = document.getElementById('pr-btn-adicionar-mais');
+      if (btnAdicionarMais) {
+        btnAdicionarMais.addEventListener('click', function() {
+          var checkin = document.getElementById('pr-checkin'); if (checkin) checkin.value = '';
+          var checkout = document.getElementById('pr-checkout'); if (checkout) checkout.value = '';
+          document.querySelectorAll('input[name="pr-tipo-quarto"]').forEach(function(r){ r.checked = false; });
+          document.querySelectorAll('.pr-quarto-card').forEach(function(c){
+            c.classList.remove('border-domus-azul','bg-domus-azul/5');
+            c.classList.add('border-domus-borda');
+          });
+          var como = document.getElementById('pr-como-conheceu'); if (como) como.value = 'indicacao';
+          var cupom = document.getElementById('pr-cupom'); if (cupom) cupom.value = '';
+          var cupomInfo = document.getElementById('pr-cupom-info'); if (cupomInfo) cupomInfo.classList.add('hidden');
+          if (typeof mostrarPrStep === 'function') mostrarPrStep(2);
+          var banner = document.getElementById('pr-banner-adicional');
+          if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'pr-banner-adicional';
+            banner.className = 'mb-4 p-3 rounded-xl bg-domus-rosa/10 border border-domus-rosa/30 text-center';
+            banner.innerHTML = '<p class="text-sm text-domus-rosa font-semibold">+ Adicionando mais uma reserva</p>' +
+                               '<p class="text-[11px] text-domus-texto-suave mt-1">Voce ja esta logado. Escolha as datas e o quarto desta reserva extra.</p>';
+            var step2El = document.getElementById('pr-step-2');
+            if (step2El) step2El.insertBefore(banner, step2El.firstChild);
+          } else {
+            banner.classList.remove('hidden');
+          }
+          window._reservaAdicional = true;
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
