@@ -1969,6 +1969,96 @@
     </div>
   </div>
 
+  <!-- Modal Editar Reserva -->
+  <div id="editarReservaModal" class="hidden">
+    <div class="modal-overlay" onclick="fecharEditarReservaModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div class="bg-white rounded-lg shadow-lg p-8 max-w-lg w-full pointer-events-auto max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-domus-texto">Editar Reserva</h3>
+          <button onclick="fecharEditarReservaModal()" class="text-domus-texto-suave hover:text-domus-texto text-2xl leading-none">&times;</button>
+        </div>
+        <form id="editarReservaForm" onsubmit="salvarEdicaoReserva(event)" class="space-y-4">
+          <input type="hidden" id="editResId" />
+
+          <div class="relative">
+            <label class="block text-sm font-medium text-domus-texto mb-1">Nome do Hóspede *</label>
+            <div class="relative">
+              <input id="editResNome" type="text" required placeholder="Digite pra buscar no CRM..." autocomplete="off"
+                oninput="buscarHospedesAutocompleteEdit(this.value)"
+                onfocus="if(this.value.length>=2) buscarHospedesAutocompleteEdit(this.value)"
+                class="w-full px-4 py-2 pr-10 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+              <button type="button" onclick="abrirNovoCliente()" title="Cadastrar novo cliente"
+                class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-domus-azul text-white text-lg flex items-center justify-center hover:bg-domus-azul-escuro">+</button>
+            </div>
+            <div id="editResNomeResults" class="hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-domus-borda rounded-lg shadow-lg max-h-64 overflow-y-auto"></div>
+            <input type="hidden" id="editResHospedeId" value="" />
+            <p id="editResNomeStatus" class="text-[10px] mt-1 text-domus-texto-suave hidden"></p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">E-mail ou Telefone</label>
+            <input id="editResTel" type="text" placeholder="E-mail ou telefone"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">Check-in *</label>
+              <input id="editResCheckin" type="date" required
+                onchange="popularQuartosDisponiveis(this.value, document.getElementById('editResCheckout').value, document.getElementById('editResQuarto').value, document.getElementById('editResId').value); atualizarTotalEditarReserva(); verificarAjusteDiaria();"
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-domus-texto mb-1">Check-out *</label>
+              <input id="editResCheckout" type="date" required
+                onchange="popularQuartosDisponiveis(document.getElementById('editResCheckin').value, this.value, document.getElementById('editResQuarto').value, document.getElementById('editResId').value); atualizarTotalEditarReserva(); verificarAjusteDiaria();"
+                class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Quarto *</label>
+            <select id="editResQuarto" required
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul">
+              <option value="">Selecione...</option>
+            </select>
+            <p id="editResQuartoHint" class="text-[11px] text-domus-texto-suave mt-1"></p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Valor da diária (R$) *</label>
+            <input id="editResValor" type="number" required step="0.01" min="0" placeholder="0.00"
+              oninput="atualizarTotalEditarReserva()"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
+            <p id="editResValorPreview" class="text-xs text-domus-texto-suave mt-1"></p>
+            <div id="editResAjusteDiaria" class="hidden mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+              <span id="editResAjusteDiariaTxt" class="text-amber-800"></span>
+              <span id="editResAjusteDiariaOld" class="hidden"></span>
+              <button type="button" id="editResAjusteDiariaUndo" onclick="desfazerAjusteDiaria()" class="ml-2 text-xs text-amber-700 underline hover:text-amber-900">Desfazer</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Observações</label>
+            <textarea id="editResObs" placeholder="Observações (opcional)"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" rows="2"></textarea>
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="submit" class="flex-1 px-4 py-2 bg-domus-azul text-white rounded-lg text-sm hover:bg-domus-azul-escuro font-medium">
+              Salvar Alterações
+            </button>
+            <button type="button" onclick="fecharEditarReservaModal()"
+              class="flex-1 px-4 py-2 bg-gray-200 text-domus-texto rounded-lg text-sm hover:bg-gray-300 font-medium">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Detalhe Hóspede -->
   <div id="detalheHospedeModal" class="hidden">
     <div class="modal-overlay" onclick="closeDetalheHospede()"></div>
