@@ -2529,6 +2529,14 @@
       mostrarFormularioLogin();
     }
 
+    // BOOT: chama restaurar sessão ao carregar a página
+    // (sem isso a tela "Verificando sessão..." fica travada pra sempre)
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', tentarRestaurarSessao);
+    } else {
+      tentarRestaurarSessao();
+    }
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value.trim().toLowerCase();
@@ -6414,10 +6422,4 @@
         const { data: r, error } = await db.from('reservas')
           .select('hospede_nome, hospede_contato, checkin, checkout, valor_total, valor_diaria, cama, quarto, plataforma, id')
           .eq('id', rid).single();
-        if (error || !r) { mostrarToast('Reserva não encontrada', 'error'); return; }
-
-        // Calcula noites + diária (se faltar)
-        const noites = (r.checkin && r.checkout)
-          ? Math.max(1, Math.round((new Date(r.checkout) - new Date(r.checkin)) / 86400000))
-          : 1;
-        const diaria = parseFloat(r.valor_diaria)
+        if (error || !r) { mostrarToa
