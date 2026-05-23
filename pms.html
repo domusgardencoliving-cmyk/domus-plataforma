@@ -5053,20 +5053,62 @@
     async function editarValoresBoleto(boletoId) {
       const b = boletosLista.find(x => x.id === boletoId);
       if (!b) return;
-      const energia = prompt('Valor de energia (R$):', b.valor_energia || 0); if (energia === null) return;
-      const extras  = prompt('Valor de extras (mercadinho, lavanderia, etc):', b.valor_extras || 0); if (extras === null) return;
-      const multas  = prompt('Multas (atraso, etc):', b.valor_multas || 0); if (multas === null) return;
-      const desc    = prompt('Descontos:', b.valor_descontos || 0); if (desc === null) return;
-      const en = Number(energia) || 0, ex = Number(extras) || 0, mu = Number(multas) || 0, de = Number(desc) || 0;
-      const total = (Number(b.valor_coliving) || 0) + en + ex + mu - de;
-      try {
-        const { error } = await db.from('dominhas_boletos').update({
-          valor_energia: en, valor_extras: ex, valor_multas: mu, valor_descontos: de, valor_total: total
-        }).eq('id', boletoId);
-        if (error) throw error;
-        mostrarToast('✅ Valores atualizados', 'success');
-        await loadBoletos();
-      } catch (e) { mostrarToast('❌ ' + (e.message || e), 'error'); }
+      // Modal inline com 4 campos + preview do total
+      const base = Number(b.valor_coliving) || 0;
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+      overlay.innerHTML = `
+        <div style="background:white;border-radius:12px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+          <h3 style="margin:0 0 4px;font-size:18px;font-weight:700;color:#0A3142">Ajustar valores do boleto</h3>
+          <p style="margin:0 0 16px;font-size:12px;color:#5A6B7B">${b.morador_nome || b.morador_id || ''} · ${b.mes_referencia || ''}</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+            <label style="display:block"><span style="color:#5A6B7B;font-size:11px">Coliving (base)</span><input id="bv-base" type="text" value="R$ ${base.toFixed(2)}" disabled style="width:100%;padding:8px;border:1px solid #D5DCE3;border-radius:6px;background:#F4F6F9;color:#5A6B7B;margin-top:2px"/></label>
+            <label style="display:block"><span style="color:#5A6B7B;font-size:11px">Energia (R$)</span><input id="bv-energia" type="number" step="0.01" value="${b.valor_energia||0}" style="width:100%;padding:8px;border:1px solid #D5DCE3;border-radius:6px;margin-top:2px"/></label>
+            <label style="display:block"><span style="color:#5A6B7B;font-size:11px">Extras (R$)</span><input id="bv-extras" type="number" step="0.01" value="${b.valor_extras||0}" style="width:100%;padding:8px;border:1px solid #D5DCE3;border-radius:6px;margin-top:2px"/></label>
+            <label style="display:block"><span style="color:#5A6B7B;font-size:11px">Multas (R$)</span><input id="bv-multas" type="number" step="0.01" value="${b.valor_multas||0}" style="width:100%;padding:8px;border:1px solid #D5DCE3;border-radius:6px;margin-top:2px"/></label>
+            <label style="display:block;grid-column:1/-1"><span style="color:#5A6B7B;font-size:11px">Descontos (R$)</span><input id="bv-desc" type="number" step="0.01" value="${b.valor_descontos||0}" style="width:100%;padding:8px;border:1px solid #D5DCE3;border-radius:6px;margin-top:2px"/></label>
+          </div>
+          <div id="bv-total-preview" style="margin-top:14px;padding:10px;background:#E6F1FB;border-radius:8px;font-size:14px;text-align:center;color:#0A3142">
+            Total: <strong id="bv-total-val">R$ ${(base + (b.valor_energia||0) + (b.valor_extras||0) + (b.valor_multas||0) - (b.valor_descontos||0)).toFixed(2)}</strong>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <button id="bv-cancel" style="flex:1;padding:10px;background:#E5E9EE;color:#0A3142;border:none;border-radius:8px;font-weight:600;cursor:pointer">Cancelar</button>
+            <button id="bv-save" style="flex:2;padding:10px;background:#008B9C;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer">Salvar valores</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const close = () => overlay.remove();
+      overlay.querySelector('#bv-cancel').onclick = close;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+      // Atualiza preview do total ao digitar
+      const recalc = () => {
+        const en = Number(overlay.querySelector('#bv-energia').value) || 0;
+        const ex = Number(overlay.querySelector('#bv-extras').value) || 0;
+        const mu = Number(overlay.querySelector('#bv-multas').value) || 0;
+        const de = Number(overlay.querySelector('#bv-desc').value) || 0;
+        overlay.querySelector('#bv-total-val').textContent = 'R$ ' + (base + en + ex + mu - de).toFixed(2);
+      };
+      ['bv-energia','bv-extras','bv-multas','bv-desc'].forEach(id => overlay.querySelector('#'+id).addEventListener('input', recalc));
+      overlay.querySelector('#bv-save').onclick = async () => {
+        const en = Number(overlay.querySelector('#bv-energia').value) || 0;
+        const ex = Number(overlay.querySelector('#bv-extras').value) || 0;
+        const mu = Number(overlay.querySelector('#bv-multas').value) || 0;
+        const de = Number(overlay.querySelector('#bv-desc').value) || 0;
+        const total = base + en + ex + mu - de;
+        const btn = overlay.querySelector('#bv-save');
+        btn.disabled = true; btn.textContent = 'Salvando...';
+        try {
+          const { error } = await db.from('dominhas_boletos').update({
+            valor_energia: en, valor_extras: ex, valor_multas: mu, valor_descontos: de, valor_total: total
+          }).eq('id', boletoId);
+          if (error) throw error;
+          mostrarToast('Valores atualizados (Total: R$ ' + total.toFixed(2) + ')', 'success');
+          close();
+          await loadBoletos();
+        } catch (e) { mostrarToast('Erro: ' + (e.message || e), 'error'); btn.disabled = false; btn.textContent = 'Salvar valores'; }
+      };
+      // Foco no primeiro campo editável
+      setTimeout(() => overlay.querySelector('#bv-energia').focus(), 80);
     }
 
     async function marcarBoletoPago(boletoId) {
@@ -6377,65 +6419,4 @@
         const diaria = parseFloat(r.valor_diaria) || (parseFloat(r.valor_total || 0) / noites) || 0;
         const total = parseFloat(r.valor_total) || (diaria * noites);
 
-        // Unidade: H6/H7/Studio/Individual → AP; Rib... → Rib (futuro)
-        const camaStr = (r.cama || r.quarto || '').toLowerCase();
-        const isRib = camaStr.includes('rib');
-        const unidadeNome = isRib ? 'Domus Ribeirão Claro' : 'Domus Andrade Pertence';
-        const endereco = isRib
-          ? 'Rua Ribeirão Claro, 547 · Vila Olímpia · São Paulo · SP'
-          : 'Rua Dr. Andrade Pertence, 73 · Vila Olímpia · São Paulo · SP';
-        const mapsUrl = isRib
-          ? 'https://maps.google.com/?q=Rua+Ribeirão+Claro,+547,+Vila+Olímpia,+São+Paulo'
-          : 'https://maps.google.com/?q=Rua+Dr.+Andrade+Pertence,+73,+Vila+Olímpia,+São+Paulo';
-
-        // Nome amigável do quarto
-        const qInfo = QUARTOS.find(q => q.id === (r.cama || r.quarto));
-        const quartoLabel = qInfo ? qInfo.label : (r.cama || r.quarto || '—');
-
-        // Formatadores
-        const fmtData = (s) => {
-          if (!s) return '—';
-          const d = new Date(s + 'T12:00:00');
-          return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-        };
-        const fmtBRL = (n) => 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const codigo = String(r.id).substring(0, 8).toUpperCase();
-        const nome = r.hospede_nome || 'Hóspede';
-        const primeiroNome = nome.split(' ')[0];
-
-        // HTML do voucher (mesma identidade visual do template Brunno)
-        const html = `
-<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color:#2C3E50; background:#F8F5F0; padding:24px 16px; width:600px;">
-  <div style="max-width:560px; margin:0 auto; background:#fff; border-radius:18px; overflow:hidden;">
-    <div style="background:linear-gradient(135deg,#008B9C 0%,#0A3142 100%); padding:30px 28px; color:#fff; text-align:center;">
-      <h1 style="margin:0; font-family:Georgia,serif; font-size:24px; font-weight:normal; color:#fff;">Domus Garden Coliving</h1>
-      <p style="margin:6px 0 0; font-size:12px; opacity:0.9; letter-spacing:1px; text-transform:uppercase;">Voucher de Reserva</p>
-    </div>
-    <div style="text-align:center; padding:22px 28px 6px;">
-      <span style="display:inline-block; background:#D4EDDA; color:#155724; padding:6px 16px; border-radius:999px; font-size:11px; font-weight:bold; letter-spacing:1px;">&#10003; RESERVA CONFIRMADA</span>
-    </div>
-    <div style="padding:8px 28px 22px; text-align:center;">
-      <h2 style="margin:0; font-family:Georgia,serif; font-size:20px; color:#0A3142;">Olá, ${primeiroNome}!</h2>
-      <p style="margin:8px 0 0; color:#5A6B7B; font-size:13px;">Sua estadia está reservada. Aqui está seu voucher para guardar.</p>
-    </div>
-    <div style="margin:0 28px 14px; background:#F8F5F0; border-radius:12px; padding:18px;">
-      <table style="width:100%; border-collapse:collapse;">
-        <tr>
-          <td style="padding:6px 0; font-size:11px; color:#8A9BA9; letter-spacing:1px; text-transform:uppercase;">Código da reserva</td>
-          <td style="padding:6px 0; font-family:'Courier New',monospace; font-size:15px; font-weight:bold; color:#0A3142; text-align:right;">${codigo}</td>
-        </tr>
-        <tr><td colspan="2" style="border-top:1px dashed #D5C9B8; height:1px;"></td></tr>
-        <tr>
-          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Acomodação</td>
-          <td style="padding:9px 0; font-size:13px; font-weight:600; color:#2C3E50; text-align:right;">${quartoLabel}</td>
-        </tr>
-        <tr>
-          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Unidade</td>
-          <td style="padding:9px 0; font-size:13px; font-weight:600; color:#2C3E50; text-align:right;">${unidadeNome}</td>
-        </tr>
-        <tr>
-          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Check-in</td>
-          <td style="padding:9px 0; font-size:13px; color:#2C3E50; text-align:right;">${fmtData(r.checkin)} <span style="color:#8A9BA9; font-size:11px;">(a partir das 16h)</span></td>
-        </tr>
-        <tr>
-          <td style="padding:9px 0; fon
+        // Unidade: H6/H7/St
