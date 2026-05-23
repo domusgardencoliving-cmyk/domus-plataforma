@@ -1776,7 +1776,7 @@
 
           <div>
             <label class="block text-sm font-medium text-domus-texto mb-1">Quarto *</label>
-            <select id="nrQuarto" required disabled
+            <select id="nrQuarto" required disabled onchange="sugerirDiariaPorQuarto()"
               class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul disabled:bg-gray-100 disabled:cursor-not-allowed">
               <option value="">Preencha as datas primeiro...</option>
               <option value="Studio 1">Studio 1</option>
@@ -5062,6 +5062,20 @@
     // ==========================================
     // FORMS
     // ==========================================
+    // Sugere diaria default do quarto selecionado no Nova Reserva
+    function sugerirDiariaPorQuarto() {
+      const sel = document.getElementById('nrQuarto');
+      const inp = document.getElementById('nrValor');
+      if (!sel || !inp) return;
+      // Só sugere se valor estiver vazio (não sobrescreve digitação manual)
+      if (inp.value && parseFloat(inp.value) > 0) { atualizarTotalNovaReserva(); return; }
+      const novoQuarto = QUARTOS.find(q => q.id === sel.value);
+      if (novoQuarto && novoQuarto.preco > 0) {
+        inp.value = Number(novoQuarto.preco).toFixed(2);
+        atualizarTotalNovaReserva();
+      }
+    }
+
     // Atualiza preview "N noites × R$ X = R$ Y" no modal Nova Reserva
     function atualizarTotalNovaReserva() {
       const preview = document.getElementById('nrValorPreview');
@@ -5102,6 +5116,11 @@
       if (checkin >= checkout) { mostrarToast('Check-out precisa ser depois do check-in', 'error'); return; }
       const _valNum = parseFloat(valor);
       if (isNaN(_valNum) || _valNum <= 0) { mostrarToast('Valor da diária precisa ser maior que zero', 'error'); return; }
+      // Aviso (não bloqueante) se contato vazio
+      const _contatoVal = (document.getElementById('nrContato')?.value || '').trim();
+      if (!_contatoVal) {
+        if (!confirm('Sem e-mail/telefone, voce nao consegue mandar check-in/voucher automatico. Continuar mesmo assim?')) return;
+      }
 
       const _btnSubmit = e.target.querySelector('button[type="submit"]');
       if (_btnSubmit) { _btnSubmit.disabled = true; _btnSubmit.dataset.txtOrig = _btnSubmit.textContent; _btnSubmit.textContent = 'Criando...'; }
@@ -5842,6 +5861,10 @@
       if (_ciVal && _coVal && _ciVal >= _coVal) { mostrarToast('Check-out precisa ser depois do check-in', 'error'); return; }
       const _nomeVal = document.getElementById('editResNome').value.trim();
       if (!_nomeVal) { mostrarToast('Nome do hospede e obrigatorio', 'error'); return; }
+      const _telVal = (document.getElementById('editResTel').value || '').trim();
+      if (!_telVal) {
+        if (!confirm('Sem telefone/email, voce nao consegue mandar mensagem automatica. Salvar mesmo assim?')) return;
+      }
       const _btnSalvar = e.target.querySelector('button[type="submit"]');
       if (_btnSalvar) { _btnSalvar.disabled = true; _btnSalvar.dataset.txtOrig = _btnSalvar.textContent; _btnSalvar.textContent = 'Salvando...'; }
       const _editHidVal = (document.getElementById('editResHospedeId').value || '').trim();
@@ -5893,6 +5916,9 @@
 
     function fecharCancelarReservaModal() {
       document.getElementById('cancelarReservaModal').classList.add('hidden');
+      try { document.getElementById('cancMotivo').value = ''; } catch(_) {}
+      try { document.getElementById('cancObs').value = ''; } catch(_) {}
+      try { document.getElementById('cancEnganoAviso').classList.add('hidden'); } catch(_) {}
     }
 
     function onMotivoCancelamentoChange() {
