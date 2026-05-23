@@ -6255,17 +6255,65 @@
           fmtData(r.checkin) + ' → ' + fmtData(r.checkout);
         const total = parseFloat(r.valor_total || 0);
         document.getElementById('pagResumoTotal').textContent = 'R$ ' + total.toFixed(2);
-        // Recebido (soma de pagamentos)
+        // Recebido (soma de pagamentos da tabela correta)
         let recebido = 0;
         try {
-          const { data: pgs } = await db.from('pagamentos').select('valor').eq('reserva_id', _currentReservaId);
+          const { data: pgs } = await db.from('pagamentos_reserva').select('valor,metodo,data_pagamento').eq('reserva_id', _currentReservaId).order('data_pagamento',{ascending:false});
           recebido = (pgs||[]).reduce((s,p) => s + parseFloat(p.valor || 0), 0);
-        } catch(e){}
+          // Popula histórico de pagamentos no modal
+          const histEl = document.getElementById('pagHistoricoLista');
+          if (histEl) {
+            if (!pgs || pgs.length === 0) {
+              histEl.innerHTML = '<p class="text-domus-texto-suave italic">Nenhum pagamento registrado ainda.</p>';
+            } else {
+              histEl.innerHTML = pgs.map(p => '<div class="flex justify-between"><span>' + (p.data_pagamento || '') + ' · ' + (p.metodo || '—') + '</span><span class="font-semibold text-domus-verde">R$ ' + parseFloat(p.valor||0).toFixed(2) + '</span></div>').join('');
+            }
+          }
+        } catch(e){ console.warn('[pagamentos] erro carregando historico:', e); }
         document.getElementById('pagResumoRecebido').textContent = 'R$ ' + recebido.toFixed(2);
         document.getElementById('pagResumoSaldo').textContent = 'R$ ' + (total - recebido).toFixed(2);
         document.getElementById('pagamentoModal').classList.remove('hidden');
       } catch (e) { console.error(e); mostrarToast('Erro ao abrir pagamento', 'error'); }
     }
+
+    // Submit do form Pagamento — chama RPC registrar_pagamento_reserva
+    document.addEventListener('DOMContentLoaded', function() {
+      const f = document.getElementById('pagamentoForm');
+      if (!f) return;
+      f.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!_currentReservaId) { mostrarToast('Nenhuma reserva selecionada', 'error'); return; }
+        const valor = parseFloat(document.getElementById('pagValor').value);
+        const metodoRadio = document.querySelector('input[name="pagMetodo"]:checked');
+        const metodo = metodoRadio ? metodoRadio.value : null;
+        const obs = (document.getElementById('pagObservacao')?.value || '').trim();
+        if (!valor || valor <= 0) { mostrarToast('Valor deve ser maior que zero', 'error'); return; }
+        if (!metodo) { mostrarToast('Escolha um método', 'error'); return; }
+        const btn = document.getElementById('pagBtnSalvar');
+        if (btn) { btn.disabled = true; btn.dataset.txt = btn.textContent; btn.textContent = 'Registrando...'; }
+        try {
+          const { error } = await db.rpc('registrar_pagamento_reserva', {
+            p_reserva_id: _currentReservaId,
+            p_valor: valor,
+            p_metodo: metodo,
+            p_observacao: obs || null
+          });
+          if (error) throw error;
+          mostrarToast('Pagamento registrado: R$ ' + valor.toFixed(2) + ' (' + metodo + ')');
+          closePagamentoModal();
+          closeAcaoModal();
+          if (typeof currentView !== 'undefined') {
+            if (currentView === 'home') loadHome();
+            else if (currentView === 'reservas') loadReservas();
+          }
+        } catch (err) {
+          console.error('[pagamento] erro:', err);
+          mostrarToast('Erro: ' + (err.message || err), 'error');
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.txt || 'Registrar pagamento'; }
+        }
+      });
+    });
 
     function atualizarLabelValor() {
       const tipo = document.getElementById('ncTipo').value;
@@ -6390,44 +6438,4 @@
           <td style="padding:9px 0; font-size:13px; color:#2C3E50; text-align:right;">${fmtData(r.checkin)} <span style="color:#8A9BA9; font-size:11px;">(a partir das 16h)</span></td>
         </tr>
         <tr>
-          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Check-out</td>
-          <td style="padding:9px 0; font-size:13px; color:#2C3E50; text-align:right;">${fmtData(r.checkout)} <span style="color:#8A9BA9; font-size:11px;">(até as 13h)</span></td>
-        </tr>
-        <tr>
-          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Número de noites</td>
-          <td style="padding:9px 0; font-size:13px; font-weight:600; color:#2C3E50; text-align:right;">${noites} noite${noites > 1 ? 's' : ''}</td>
-        </tr>
-        <tr><td colspan="2" style="border-top:1px dashed #D5C9B8; height:1px;"></td></tr>
-        <tr>
-          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Diária</td>
-          <td style="padding:9px 0; font-size:13px; color:#2C3E50; text-align:right;">${fmtBRL(diaria)}</td>
-        </tr>
-        <tr>
-          <td style="padding:9px 0; font-size:13px; color:#5A6B7B;">Valor total</td>
-          <td style="padding:9px 0; font-size:17px; font-weight:bold; color:#008B9C; font-family:Georgia,serif; text-align:right;">${fmtBRL(total)}</td>
-        </tr>
-      </table>
-    </div>
-    <div style="padding:6px 28px 22px;">
-      <p style="margin:0; font-size:10px; color:#8A9BA9; letter-spacing:1px; text-transform:uppercase;">Endereço</p>
-      <p style="margin:6px 0 0; font-size:13px; color:#2C3E50; line-height:1.5;">${endereco}</p>
-      <p style="margin:8px 0 0;"><a href="${mapsUrl}" style="color:#008B9C; text-decoration:none; font-size:12px; font-weight:600;">&#128205; Abrir no Google Maps &rarr;</a></p>
-    </div>
-    <div style="padding:0 28px 22px;">
-      <p style="margin:0; font-size:10px; color:#8A9BA9; letter-spacing:1px; text-transform:uppercase;">Próximos passos</p>
-      <ol style="margin:8px 0 0; padding-left:18px; color:#5A6B7B; font-size:12px; line-height:1.7;">
-        <li><strong>No dia do seu check-in, às 14h</strong> (2h antes da chegada), você recebe automaticamente pelo WhatsApp: endereço, vídeo de como chegar, senha da porta da rua e Wi-Fi</li>
-        <li>Você não precisa fazer nada — é só relaxar e curtir a viagem</li>
-        <li>Qualquer dúvida antes ou durante, é só responder nosso WhatsApp: (11) 94333-0911</li>
-      </ol>
-    </div>
-    <div style="background:#F8F5F0; padding:18px 28px; text-align:center; border-top:1px solid #E8DDD0;">
-      <p style="margin:0; font-family:Georgia,serif; font-style:italic; color:#8A9BA9; font-size:12px;">"Mais leve que hotel, mais humana que aluguel."</p>
-      <p style="margin:10px 0 0; font-size:10px; color:#A8B5C0;">Domus Garden Coliving · Desde 2021 · São Paulo, SP</p>
-    </div>
-  </div>
-</div>`;
-
-        // Wrapper temporário (fora da tela) pra render
-        const wrapper = document.createElement('div');
-     
+          <td style="padding:9px 0; fon
