@@ -339,8 +339,27 @@
   async function carregarConversas() {
     try {
       const { data, error } = await db.from('conversas')
-        .select('*').order('ultima_mensagem_em', { ascending: false }).limit(100);
-      if (error) { console.warn('Tabela conversas nao criada:', error.message); return; }
+        .select('*').order('atualizada_em', { ascending: false }).limit(100);
+      if (error) { console.warn('Erro carregando conversas:', error.message); return; }
+      // Busca última mensagem de cada conversa pra preview (1 query so)
+      const ids = (data || []).map(c => c.id);
+      if (ids.length) {
+        const { data: msgs } = await db.from('mensagens_inbox')
+          .select('conversa_id, conteudo, enviada_em')
+          .in('conversa_id', ids)
+          .order('enviada_em', { ascending: false });
+        const previewByConv = {};
+        (msgs || []).forEach(m => {
+          if (!previewByConv[m.conversa_id]) {
+            previewByConv[m.conversa_id] = { preview: (m.conteudo || '').slice(0, 100), em: m.enviada_em };
+          }
+        });
+        (data || []).forEach(c => {
+          const p = previewByConv[c.id];
+          c.ultima_mensagem_preview = p ? p.preview : '';
+          c.ultima_mensagem_em = p ? p.em : c.atualizada_em;
+        });
+      }
       _conversas = data || [];
       renderLista();
       atualizarContadores();
@@ -425,18 +444,4 @@
         .select('*').eq('conversa_id', id).order('enviada_em', { ascending: true });
       const area = document.getElementById('mensagens-area');
       area.innerHTML = (msgs || []).map(function(m){
-        const cls = 'msg-' + (m.direcao === 'entrada' ? 'entrada' : (m.autor_tipo === 'ia' ? 'ia' : 'saida'));
-        const horaCls = m.direcao === 'entrada' ? 'text-slate-400' : 'text-white/70';
-        const hora = new Date(m.enviada_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        return '<div class="' + cls + ' max-w-[80%] lg:max-w-[70%] px-4 py-2.5"><p class="text-base lg:text-sm whitespace-pre-wrap">' + escapar(m.conteudo || '') + '</p><p class="text-[10px] mt-1 ' + horaCls + '">' + hora + '</p></div>';
-      }).join('');
-      area.scrollTop = area.scrollHeight;
-    } catch(e) { console.warn(e); }
-
-    renderLista();
-  }
-
-  function escapar(s) { return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
-
-  async function enviarMensagem() {
-    const ta = document.getElementById('texto-respos
+        const cls = 'msg-' + (m.direcao === 'entrada' ? 'entrada' : (m.autor_tipo
