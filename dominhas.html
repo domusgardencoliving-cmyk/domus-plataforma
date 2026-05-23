@@ -124,7 +124,11 @@
       <!-- Boas-vindas com info da unidade -->
       <div class="bg-domus-gradient rounded-2xl p-5 text-white mb-4">
         <div class="flex items-center gap-4">
-          <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-2xl flex-shrink-0">👋</div>
+          <button type="button" onclick="abrirEditarPerfil()" id="avatar-header-btn" class="relative w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden border-2 border-white/40 hover:border-white transition group" title="Editar foto e apelido">
+            <span id="avatar-header-emoji" class="block">👋</span>
+            <img id="avatar-header-img" class="hidden absolute inset-0 w-full h-full object-cover" alt="" />
+            <span class="absolute bottom-0 right-0 bg-white text-domus-azul text-[10px] rounded-full w-5 h-5 flex items-center justify-center shadow group-hover:scale-110 transition">✎</span>
+          </button>
           <div>
             <p class="font-serif text-xl">Olá, <span id="painel-nome">—</span>!</p>
             <p class="text-sm text-white/80 mt-1"><span id="painel-unidade">—</span> · <span id="painel-quarto">Quarto —</span></p>
@@ -133,53 +137,156 @@
       </div>
 
       <!-- Tabs -->
-      <div id="tabs-container" class="flex gap-1 mb-4 bg-white rounded-xl p-1 border border-domus-borda/30">
-        <button onclick="trocarTab('inicio')" id="tab-inicio" class="tab-btn flex-1 py-2.5 rounded-lg text-xs font-medium border-2 border-transparent transition tab-active">Início</button>
-        <button onclick="trocarTab('financeiro')" id="tab-financeiro" class="tab-btn flex-1 py-2.5 rounded-lg text-xs font-medium border-2 border-transparent text-domus-texto-suave transition">Financeiro</button>
-        <button onclick="trocarTab('comunicados')" id="tab-comunicados" class="tab-btn flex-1 py-2.5 rounded-lg text-xs font-medium border-2 border-transparent text-domus-texto-suave transition">Comunicados</button>
-        <button onclick="trocarTab('comuna')" id="tab-comuna" class="tab-btn flex-1 py-2.5 rounded-lg text-xs font-medium border-2 border-transparent text-domus-texto-suave transition">Comuna</button>
+      <div id="tabs-container" class="flex gap-0.5 mb-4 bg-white rounded-xl p-1 border border-domus-borda/30">
+        <button onclick="trocarTab('inicio')" id="tab-inicio" class="tab-btn flex-1 py-2 rounded-lg text-[10px] font-medium border-2 border-transparent transition tab-active">Início</button>
+        <button onclick="trocarTab('financeiro')" id="tab-financeiro" class="tab-btn flex-1 py-2 rounded-lg text-[10px] font-medium border-2 border-transparent text-domus-texto-suave transition">Financeiro</button>
+        <button onclick="trocarTab('regulamento')" id="tab-regulamento" class="tab-btn flex-1 py-2 rounded-lg text-[10px] font-medium border-2 border-transparent text-domus-texto-suave transition">Regras</button>
+        <button onclick="trocarTab('comunicados')" id="tab-comunicados" class="tab-btn flex-1 py-2 rounded-lg text-[10px] font-medium border-2 border-transparent text-domus-texto-suave transition">Avisos</button>
+        <button onclick="trocarTab('comuna')" id="tab-comuna" class="tab-btn flex-1 py-2 rounded-lg text-[10px] font-medium border-2 border-transparent text-domus-texto-suave transition">Comuna</button>
+        <button onclick="trocarTab('mercado')" id="tab-mercado" class="tab-btn hidden flex-1 py-2 rounded-lg text-[10px] font-medium border-2 border-transparent text-domus-texto-suave transition">Mercado</button>
+        <button onclick="trocarTab('historia')" id="tab-historia" class="tab-btn flex-1 py-2 rounded-lg text-[10px] font-medium border-2 border-transparent text-domus-texto-suave transition">História</button>
       </div>
 
       <!-- ===== TAB: INÍCIO ===== -->
       <div id="conteudo-inicio" class="space-y-3">
 
-        <!-- Card do contrato -->
+        <!-- Card "Eu na Domus" — quarto + vencimento + status -->
         <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
           <div class="flex items-center gap-2 mb-4">
-            <span class="text-xl">🏠</span>
-            <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold">Seu contrato</p>
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" aria-label="Dominha">
+              <!-- cabelo solto -->
+              <path d="M12 3 C 7 3, 4 7, 4 12 C 4 14, 4.5 16, 5.5 17 L 6 11 C 6.3 8, 9 6, 12 6 C 15 6, 17.7 8, 18 11 L 18.5 17 C 19.5 16, 20 14, 20 12 C 20 7, 17 3, 12 3 Z" fill="#0A3142"/>
+              <!-- rosto -->
+              <circle cx="12" cy="11.5" r="3.5" fill="#F5D4B8"/>
+              <!-- olhos -->
+              <circle cx="10.7" cy="11" r="0.35" fill="#0A3142"/>
+              <circle cx="13.3" cy="11" r="0.35" fill="#0A3142"/>
+              <!-- sorriso -->
+              <path d="M10.8 12.7 Q12 13.5 13.2 12.7" stroke="#0A3142" stroke-width="0.5" fill="none" stroke-linecap="round"/>
+              <!-- florzinha no cabelo -->
+              <circle cx="16.5" cy="7" r="0.9" fill="#C9A961"/>
+              <circle cx="16.5" cy="7" r="0.35" fill="#FFF8F0"/>
+            </svg>
+            <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold">Eu na Domus</p>
           </div>
-          <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold mb-1">Quarto</p>
-              <p class="text-sm font-medium text-domus-azul-escuro" id="contrato-quarto">—</p>
+              <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold mb-1">Meu quarto</p>
+              <p class="text-base font-semibold text-domus-azul-escuro" id="contrato-quarto">—</p>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold mb-1">Valor mensal</p>
-                <p class="text-sm font-bold text-domus-azul" id="contrato-valor">R$ —</p>
-              </div>
-              <div>
-                <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold mb-1">Vencimento</p>
-                <p class="text-sm font-medium text-domus-azul-escuro" id="contrato-vencimento">— de cada mês</p>
+            <div>
+              <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold mb-1">Status</p>
+              <span id="contrato-status" class="status-badge status-ativo">Ativa</span>
+            </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-domus-borda/50 flex items-center gap-2 text-[12px] text-domus-azul-escuro">
+            <span class="text-base">📅</span>
+            <span>Boleto vence todo <strong id="contrato-dia-venc">dia 15</strong> do mês.</span>
+          </div>
+        </div>
+
+        <!-- ===== Card Fichas de Lavanderia (so AP) ===== -->
+        <div id="card-fichas-omo" class="hidden bg-white rounded-2xl border border-domus-borda/30 overflow-hidden">
+          <div class="bg-gradient-to-br from-domus-azul-claro/30 via-white to-white p-5 border-b border-domus-borda/20">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-2xl">🧺</span>
+              <h3 class="font-semibold text-domus-azul-escuro">Fichas de Lavanderia</h3>
+            </div>
+            <p class="text-[12px] text-domus-azul-escuro/70 leading-snug">Toda vez que pegar uma ficha de OMO, registre aqui. O valor já entra automaticamente no seu boleto do mês.</p>
+          </div>
+
+          <div class="p-5 space-y-4">
+            <!-- Resumo do mes corrente -->
+            <div class="bg-domus-azul-claro/10 rounded-xl p-4 text-center">
+              <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold mb-1" id="fichas-mes-label">Este mês</p>
+              <p class="text-2xl font-bold text-domus-azul-escuro" id="fichas-total-mes">0 fichas</p>
+              <p class="text-sm text-domus-texto-suave" id="fichas-valor-mes">R$ 0,00</p>
+              <p class="text-[10px] text-domus-texto-suave mt-1" id="fichas-preco-unit"></p>
+            </div>
+
+            <!-- Botoes 1-5 + outra quantidade -->
+            <div>
+              <p class="text-[12px] text-domus-azul-escuro mb-2 font-semibold">Quantas fichas você pegou?</p>
+              <div class="grid grid-cols-6 gap-2">
+                <button onclick="confirmarFichas(1)" class="ficha-btn">1</button>
+                <button onclick="confirmarFichas(2)" class="ficha-btn">2</button>
+                <button onclick="confirmarFichas(3)" class="ficha-btn">3</button>
+                <button onclick="confirmarFichas(4)" class="ficha-btn">4</button>
+                <button onclick="confirmarFichas(5)" class="ficha-btn">5</button>
+                <button onclick="abrirOutraQtd()" class="ficha-btn text-[10px] leading-tight">Outra<br/>qtd</button>
               </div>
             </div>
-            <div class="border-t border-domus-borda/50 pt-3 grid grid-cols-2 gap-3">
-              <div>
-                <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold mb-1">Início</p>
-                <p class="text-xs text-domus-azul-escuro" id="contrato-inicio">—</p>
+
+            <!-- Extrato do mes -->
+            <div>
+              <p class="text-[12px] text-domus-azul-escuro mb-2 font-semibold">Extrato deste mês</p>
+              <div id="fichas-extrato" class="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                <p class="text-[12px] text-domus-texto-suave italic text-center py-3">Nenhuma ficha registrada ainda.</p>
               </div>
-              <div>
-                <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold mb-1">Fim</p>
-                <p class="text-xs text-domus-azul-escuro" id="contrato-fim">Indeterminado</p>
-              </div>
-            </div>
-            <div class="border-t border-domus-borda/50 pt-3">
-              <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold mb-2">Status</p>
-              <span id="contrato-status" class="status-badge status-ativo">Ativo</span>
             </div>
           </div>
         </div>
+
+        <!-- ===== Popup confirmar fichas ===== -->
+        <div id="popup-fichas-confirmar" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+          <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="bg-gradient-to-br from-domus-azul-claro/20 to-white p-5 text-center">
+              <p class="text-4xl mb-2">🧺</p>
+              <h3 class="font-semibold text-domus-azul-escuro text-base">Confirma o registro?</h3>
+            </div>
+            <div class="p-5 space-y-4 text-center">
+              <p class="text-sm text-domus-azul-escuro">Você pegou <strong id="popup-qtd-num" class="text-domus-azul text-lg">X</strong> <span id="popup-qtd-label">fichas</span> de OMO?</p>
+              <p class="text-[12px] text-domus-texto-suave">Valor a somar: <strong id="popup-valor-add" class="text-domus-azul-escuro">R$ 0,00</strong></p>
+              <div class="flex gap-2 pt-2">
+                <button onclick="fecharPopupFichas()" class="flex-1 py-2.5 rounded-xl border border-domus-borda text-sm text-domus-azul-escuro hover:bg-domus-bg">Cancelar</button>
+                <button id="popup-btn-confirmar" onclick="salvarFichas()" class="flex-1 py-2.5 rounded-xl bg-domus-azul text-white text-sm font-semibold hover:bg-domus-azul-escuro">Sim, registrar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Popup outra quantidade ===== -->
+        <div id="popup-outra-qtd" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+          <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="bg-gradient-to-br from-domus-azul-claro/20 to-white p-5 text-center">
+              <p class="text-4xl mb-2">🧺</p>
+              <h3 class="font-semibold text-domus-azul-escuro text-base">Quantas fichas?</h3>
+              <p class="text-[12px] text-domus-texto-suave mt-1">Digite a quantidade</p>
+            </div>
+            <div class="p-5 space-y-4">
+              <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" max="30" id="input-outra-qtd" class="w-full text-center text-3xl font-bold py-4 rounded-xl border-2 border-domus-borda focus:border-domus-azul focus:outline-none text-domus-azul-escuro" placeholder="0" />
+              <div class="flex gap-2">
+                <button onclick="fecharOutraQtd()" class="flex-1 py-2.5 rounded-xl border border-domus-borda text-sm text-domus-azul-escuro hover:bg-domus-bg">Cancelar</button>
+                <button onclick="confirmarOutraQtd()" class="flex-1 py-2.5 rounded-xl bg-domus-azul text-white text-sm font-semibold hover:bg-domus-azul-escuro">Continuar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <style>
+          .ficha-btn { @apply bg-white border-2 border-domus-borda rounded-xl py-3 text-base font-bold text-domus-azul-escuro hover:border-domus-azul hover:bg-domus-azul-claro/10 transition flex flex-col items-center justify-center; }
+        </style>
+
+
+        <!-- Card próximo reajuste (só aparece em julho e agosto) -->
+        <div id="card-reajuste" class="hidden bg-white rounded-2xl border border-domus-borda/30 p-5 mt-3">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">📈</span>
+            <p id="card-reajuste-titulo" class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold">Próximo reajuste</p>
+          </div>
+          <p id="card-reajuste-subtitulo" class="text-xs text-domus-texto-suave mb-2">Conforme contrato, o reajuste é anual em <strong>Agosto</strong>, pelo <strong>IGP-M acumulado dos últimos 12 meses</strong>.</p>
+          <div id="reajuste-info" class="text-sm text-domus-azul-escuro">Calculando...</div>
+        </div>
+
+        <!-- Atalho rápido pra aba Casa (regulamento completo) -->
+        <button onclick="trocarTab('regulamento')" class="w-full text-left bg-white rounded-2xl border border-domus-borda/30 p-4 mt-3 hover:bg-domus-azul/5 transition flex items-center gap-3">
+          <span class="text-2xl">🤝</span>
+          <div class="flex-1">
+            <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold">Regras da Casa</p>
+            <p class="text-xs text-domus-texto-suave mt-0.5">Toque para ver o regulamento completo</p>
+          </div>
+          <span class="text-domus-texto-suave">›</span>
+        </button>
 
         <!-- Card do próximo boleto -->
         <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
@@ -216,12 +323,11 @@
           <div class="flex items-center gap-2 mb-3">
             <span class="text-xl">📝</span>
             <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold flex-1">Mural da Casa</p>
-            <span class="text-[10px] text-domus-texto-suave bg-gray-100 px-2 py-0.5 rounded-full">Anônimo · 7 dias</span>
           </div>
 
           <!-- Aviso de respeito -->
           <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3">
-            <p class="text-xs text-amber-800 leading-relaxed">🤝 Espaço de convivência respeitosa. Recados sem respeito serão apagados pela gestão.</p>
+            <p class="text-xs text-amber-800 leading-relaxed">🤝 Espaço de convivência respeitosa. Os recados aparecem <strong>com o seu nome</strong> e somem após <strong>7 dias</strong>. Mensagens desrespeitosas serão apagadas pela gestão.</p>
           </div>
 
           <!-- Criar recado -->
@@ -249,6 +355,8 @@
 
       <!-- ===== TAB: FINANCEIRO ===== -->
       <div id="conteudo-financeiro" class="hidden space-y-3">
+
+
 
         <!-- Histórico de boletos -->
         <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
@@ -289,12 +397,149 @@
 
       </div>
 
+      <!-- ===== TAB: REGULAMENTO INTERNO ===== -->
+      <div id="conteudo-regulamento" class="hidden space-y-3">
+
+        <div class="bg-gradient-to-br from-domus-azul-escuro via-domus-azul to-domus-azul-claro rounded-2xl p-5 text-white text-center">
+          <p class="text-3xl mb-2">🏡</p>
+          <h3 class="font-serif text-xl">Regulamento Interno</h3>
+          <p class="text-xs text-white/80 mt-2 leading-relaxed">As regras de uso do imóvel, para boa convivência, preservação da limpeza, segurança e respeito mútuo. Integra o Contrato de Prestação de Serviços e tem força obrigatória durante toda a estadia.</p>
+        </div>
+
+        <!-- 1. SEGURANÇA -->
+        <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">🛡️</span>
+            <p class="text-sm font-semibold text-domus-azul-escuro">1. Regras de Segurança</p>
+          </div>
+          <ol class="space-y-2 text-xs text-domus-azul-escuro list-decimal list-inside marker:text-domus-azul marker:font-semibold">
+            <li>Zelar pela chave, senha ou qualquer meio de acesso fornecido, não os repassando a terceiros não autorizados.</li>
+            <li>Comunicar imediatamente à Domus em caso de perda de chave, falha de acesso ou suspeita de comprometimento da segurança.</li>
+            <li>Conferir sempre se portas, portões e fechaduras digitais estão devidamente fechados e travados ao entrar ou sair do imóvel.</li>
+            <li>Não permitir a entrada ou permanência de terceiros no imóvel sem autorização prévia da Domus.</li>
+            <li>Não permitir que visitantes aguardem no interior do imóvel na ausência da moradora responsável.</li>
+            <li>Evitar comentar com pessoas externas sobre rotina da casa, horários, segurança ou pertences das demais moradoras.</li>
+            <li>Informar à Domus ausências prolongadas ou mudanças relevantes na rotina de entrada e saída.</li>
+            <li>Não deixar equipamentos ligados que possam representar risco de incêndio quando ausente (fogão, forno, ferro de passar, aquecedores, entre outros).</li>
+          </ol>
+        </div>
+
+        <!-- 2. LIMPEZA E ORGANIZAÇÃO -->
+        <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">🧹</span>
+            <p class="text-sm font-semibold text-domus-azul-escuro">2. Limpeza e Organização</p>
+          </div>
+          <ol class="space-y-2 text-xs text-domus-azul-escuro list-decimal list-inside marker:text-domus-azul marker:font-semibold">
+            <li>Manter seu quarto individual limpo e organizado.</li>
+            <li>Lavar, secar e guardar toda a louça utilizada imediatamente após o uso da cozinha.</li>
+            <li>Não deixar restos de comida expostos em bancadas, pia ou mesas.</li>
+            <li>Identificar corretamente seus alimentos armazenados na geladeira ou armários.</li>
+            <li>Manter limpos armários, geladeira, fogão, micro-ondas e demais eletrodomésticos após o uso.</li>
+            <li>Não descartar papel, absorventes, fios de cabelo ou quaisquer objetos nos vasos sanitários ou pias.</li>
+            <li>Manter o banheiro limpo após o uso, incluindo pia, vaso sanitário, box e piso.</li>
+            <li>Substituir os sacos de lixo sempre que estiverem cheios e realizar o descarte nos locais indicados.</li>
+            <li>Comunicar imediatamente à Domus qualquer dano a móveis, equipamentos ou estrutura do imóvel — a omissão poderá resultar em desconto da caução.</li>
+            <li>Seguir as regras específicas de uso da lavanderia da unidade.</li>
+          </ol>
+        </div>
+
+        <!-- 3. CONVIVÊNCIA -->
+        <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">🤝</span>
+            <p class="text-sm font-semibold text-domus-azul-escuro">3. Convivência</p>
+          </div>
+          <ol class="space-y-2 text-xs text-domus-azul-escuro list-decimal list-inside marker:text-domus-azul marker:font-semibold">
+            <li>Respeitar os horários de silêncio, das <strong>23h às 7h</strong>, evitando barulhos excessivos.</li>
+            <li>Evitar música alta, gritos, discussões, arrastar móveis ou uso de chamadas em viva-voz nas áreas comuns.</li>
+            <li>Tratar todas as moradoras, colaboradores e visitantes autorizados com respeito, sendo vedadas atitudes ofensivas, agressivas ou discriminatórias.</li>
+            <li>Utilizar as áreas comuns de forma democrática, deixando os ambientes organizados após o uso.</li>
+            <li>Não consumir alimentos no espaço de coworking.</li>
+            <li>Guardar pertences pessoais após o uso de banheiros e áreas comuns.</li>
+            <li>Ressarcir valores referentes a itens quebrados ou danificados, que poderão ser cobrados no boleto mensal ou descontados da caução.</li>
+          </ol>
+        </div>
+
+        <!-- 4. VISITAS -->
+        <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">👯‍♀️</span>
+            <p class="text-sm font-semibold text-domus-azul-escuro">4. Visitas</p>
+          </div>
+          <ol class="space-y-2 text-xs text-domus-azul-escuro list-decimal list-inside marker:text-domus-azul marker:font-semibold">
+            <li>Toda visita deverá ser previamente comunicada à Domus.</li>
+            <li>Por se tratar de coliving feminino, somente visitas femininas poderão ser autorizadas.</li>
+            <li>Visitas são permitidas exclusivamente em quartos individuais, mediante autorização prévia.</li>
+            <li>Não é permitida a entrada ou permanência de visitantes em módulos compartilhados.</li>
+            <li>A Domus poderá restringir ou vetar visitas que comprometam a segurança, o bem-estar ou a convivência da casa.</li>
+          </ol>
+        </div>
+
+        <!-- 5. PENALIDADES -->
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">⚠️</span>
+            <p class="text-sm font-semibold text-amber-900">5. Penalidades</p>
+          </div>
+          <p class="text-xs text-amber-900 mb-2">O descumprimento de qualquer regra deste Regulamento Interno poderá acarretar, conforme a gravidade ou reincidência:</p>
+          <ul class="space-y-1.5 text-xs text-amber-900">
+            <li class="flex gap-2"><span>•</span><div>Advertência verbal ou escrita.</div></li>
+            <li class="flex gap-2"><span>•</span><div>Multa de até <strong>02 (duas) vezes o valor mensal vigente</strong>.</div></li>
+            <li class="flex gap-2"><span>•</span><div>Rescisão contratual imediata, sem devolução de valores pagos.</div></li>
+            <li class="flex gap-2"><span>•</span><div>Cobrança de indenização por eventuais danos materiais.</div></li>
+          </ul>
+        </div>
+
+        <!-- Documento da estadia (PDF do contrato) -->
+        <div id="contrato-pdf-wrap" class="hidden bg-white rounded-2xl border border-domus-borda/30 p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-lg">📄</span>
+              <div class="min-w-0">
+                <p class="text-[11px] text-domus-azul uppercase tracking-wider font-semibold">Documento da estadia</p>
+                <p class="text-[10px] text-domus-texto-suave">Termos da sua moradia na Domus.</p>
+              </div>
+            </div>
+            <a id="contrato-pdf-link" href="#" target="_blank" rel="noopener" class="flex-shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-domus-borda text-domus-azul text-[11px] font-medium hover:bg-domus-azul/5 transition">
+              Abrir
+            </a>
+          </div>
+        </div>
+
+        <p class="text-[10px] text-domus-texto-suave text-center px-4 leading-relaxed">Regulamento Interno — Domus Garden Coliving<br/>Integra o Contrato de Prestação de Serviços</p>
+
+      </div>
+
       <!-- ===== TAB: COMUNA DAS DOMINHAS ===== -->
       <div id="conteudo-comuna" class="hidden space-y-3">
 
         <!-- Banner da Comuna -->
         <div class="bg-gradient-to-br from-domus-azul-escuro via-domus-azul to-domus-azul-claro rounded-2xl p-5 text-white text-center">
-          <p class="text-3xl mb-2">🏡</p>
+          <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14 mx-auto mb-2" aria-label="Comuna das Dominhas">
+            <!-- circulo tracejado de conexao -->
+            <circle cx="32" cy="32" r="17" stroke="white" stroke-width="0.8" stroke-dasharray="2 3" fill="none" opacity="0.45"/>
+            <!-- 6 dominhas (cabecinhas) em circulo -->
+            <g fill="white">
+              <circle cx="32" cy="14" r="4"/>
+              <circle cx="47.5" cy="22" r="4"/>
+              <circle cx="47.5" cy="42" r="4"/>
+              <circle cx="32" cy="50" r="4"/>
+              <circle cx="16.5" cy="42" r="4"/>
+              <circle cx="16.5" cy="22" r="4"/>
+            </g>
+            <!-- detalhes de cabelo (mecha) -->
+            <g fill="#C9A961" opacity="0.85">
+              <circle cx="32" cy="12" r="1"/>
+              <circle cx="48" cy="20" r="1"/>
+              <circle cx="48" cy="40" r="1"/>
+              <circle cx="32" cy="48" r="1"/>
+              <circle cx="16" cy="40" r="1"/>
+              <circle cx="16" cy="20" r="1"/>
+            </g>
+            <!-- coracao central dourado -->
+            <path d="M32 28 C 30 26, 27 27, 27 30 C 27 33, 32 37, 32 37 C 32 37, 37 33, 37 30 C 37 27, 34 26, 32 28 Z" fill="#C9A961"/>
+          </svg>
           <h3 class="font-serif text-xl">Comuna das Dominhas</h3>
           <p class="text-sm text-white/70 mt-1">Quem passa pela Domus, faz parte pra sempre.</p>
         </div>
@@ -302,108 +547,83 @@
         <!-- Criar post -->
         <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
           <div class="flex items-start gap-3">
-            <div class="w-9 h-9 rounded-full bg-domus-azul/10 flex items-center justify-center text-lg flex-shrink-0" id="comuna-avatar">🌻</div>
+            <div class="w-9 h-9 rounded-full bg-domus-azul/10 flex items-center justify-center text-lg flex-shrink-0 overflow-hidden" id="comuna-avatar"><span id="comuna-avatar-emoji">🌻</span><img id="comuna-avatar-img" class="hidden w-full h-full object-cover" alt="" /></div>
             <div class="flex-1">
               <textarea id="comuna-texto" rows="3" placeholder="Compartilhe algo com a comunidade..." class="w-full px-3 py-2 rounded-xl border border-domus-borda text-sm resize-none focus:border-domus-azul outline-none"></textarea>
-              <div class="flex items-center justify-between mt-2">
-                <div class="flex items-center gap-2">
-                  <select id="comuna-categoria" class="text-xs px-2 py-1 rounded-lg border border-domus-borda bg-gray-50 outline-none">
-                    <option value="geral">Geral</option>
-                    <option value="dica">Dica da Vila</option>
-                    <option value="evento">Evento</option>
-                    <option value="pedido">Pedido</option>
-                    <option value="oferta">Oferta/Troca</option>
-                  </select>
-                </div>
+
+              <!-- Upload de foto (opcional) -->
+              <input type="file" id="comuna-foto-input" accept="image/*" class="hidden" onchange="aoSelecionarFotoComuna(event)" />
+              <div id="comuna-foto-preview-wrap" class="hidden mt-2 relative inline-block">
+                <img id="comuna-foto-preview" class="max-h-40 rounded-lg border border-domus-borda" alt="" />
+                <button type="button" onclick="removerFotoComuna()" class="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80">×</button>
+              </div>
+              <button type="button" onclick="document.getElementById('comuna-foto-input').click()" id="comuna-foto-btn" class="mt-2 text-[12px] text-domus-azul hover:underline flex items-center gap-1">
+                <span>📷</span><span>Adicionar foto (opcional)</span>
+              </button>
+
+              <!-- Categorias como botoes coloridos -->
+              <input type="hidden" id="comuna-categoria" value="geral" />
+              <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold mt-3 mb-2">O que você quer compartilhar?</p>
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" data-cat="geral" onclick="selecionarCategoria('geral', this)" class="cat-btn cat-active px-3 py-1.5 rounded-full text-[11px] font-medium border-2 transition flex items-center gap-1" style="background:#FCE7F3;color:#9D174D;border-color:#9D174D;">🌸 Geral</button>
+                <button type="button" data-cat="dica" onclick="selecionarCategoria('dica', this)" class="cat-btn px-3 py-1.5 rounded-full text-[11px] font-medium border-2 border-transparent transition flex items-center gap-1" style="background:#DCFCE7;color:#166534;">📍 Dica da Vila</button>
+                <button type="button" data-cat="evento" onclick="selecionarCategoria('evento', this)" class="cat-btn px-3 py-1.5 rounded-full text-[11px] font-medium border-2 border-transparent transition flex items-center gap-1" style="background:#FEF3C7;color:#92400E;">🎉 Evento</button>
+                <button type="button" data-cat="pedido" onclick="selecionarCategoria('pedido', this)" class="cat-btn px-3 py-1.5 rounded-full text-[11px] font-medium border-2 border-transparent transition flex items-center gap-1" style="background:#DBEAFE;color:#1E40AF;">🙏 Pedido</button>
+                <button type="button" data-cat="oferta" onclick="selecionarCategoria('oferta', this)" class="cat-btn px-3 py-1.5 rounded-full text-[11px] font-medium border-2 border-transparent transition flex items-center gap-1" style="background:#EDE9FE;color:#5B21B6;">🔁 Oferta/Troca</button>
+              </div>
+
+              <div class="flex items-center justify-between mt-3">
+                <select id="comuna-escopo" class="text-xs px-2 py-1 rounded-lg border border-domus-borda bg-gray-50 outline-none" title="Quem vai ver">
+                  <option value="unidade">Só minha casa</option>
+                  <option value="domus">Toda a Domus</option>
+                </select>
                 <button onclick="publicarPost()" class="px-4 py-1.5 rounded-lg bg-domus-azul text-white text-xs font-medium hover:bg-domus-azul-escuro transition">Publicar</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Guia da Vila Olímpia -->
+        <!-- Guia da Vila Olímpia (sempre expandido) -->
         <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
-          <div class="flex items-center gap-2 mb-3 cursor-pointer select-none" onclick="(()=>{const b=document.getElementById('guia-vila-body');const a=document.getElementById('guia-vila-arrow');b.classList.toggle('hidden');a.textContent=b.classList.contains('hidden')?'▼':'▲';})()">
+          <div class="flex items-center gap-2 mb-4">
             <span class="text-xl">📍</span>
             <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold flex-1">Guia da Vila Olímpia</p>
-            <span id="guia-vila-arrow" class="text-domus-texto-suave text-sm">▲</span>
           </div>
           <div id="guia-vila-body" class="space-y-4">
-
             <!-- Restaurantes -->
-            <div>
-              <p class="text-xs font-semibold text-green-800 mb-2 flex items-center gap-1.5"><span>🥗</span> Restaurantes & cafés</p>
-              <div class="space-y-1.5 text-xs">
-                <div class="p-2 rounded-lg bg-green-50 border border-green-100 flex items-start justify-between gap-2">
-                  <div>
-                    <p class="font-medium text-green-900">Di Fiori</p>
-                    <p class="text-green-700/80 text-[11px]">Italiano clássico · R. Hungria, 1000</p>
+            <div class="p-3 rounded-xl bg-green-50 border border-green-100">
+              <p class="text-sm font-medium text-green-800 mb-2">🥗 Restaurantes</p>
+              <div class="space-y-2">
+                <div class="bg-white/70 rounded-lg p-2.5">
+                  <p class="text-xs font-semibold text-green-900">🍕 Pizzaria Di Fiori</p>
+                  <p class="text-[11px] text-green-700 mt-0.5">R. Alvorada, 1272 — Vila Olímpia</p>
+                  <div class="flex gap-2 mt-1.5">
+                    <a href="tel:+551130451791" class="text-[11px] text-domus-azul font-medium hover:underline">📞 (11) 3045-1791</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Pizzaria+Di+Fiori+Vila+Olimpia" target="_blank" rel="noopener" class="text-[11px] text-domus-azul font-medium hover:underline">🗺️ Mapa</a>
                   </div>
-                  <span class="text-[10px] text-green-700/70 whitespace-nowrap">~8 min</span>
-                </div>
-                <div class="p-2 rounded-lg bg-green-50 border border-green-100 flex items-start justify-between gap-2">
-                  <div>
-                    <p class="font-medium text-green-900">Padaria Bella Paulista (24h)</p>
-                    <p class="text-green-700/80 text-[11px]">Café da manhã, pão fresco, lanches</p>
-                  </div>
-                  <span class="text-[10px] text-green-700/70 whitespace-nowrap">~10 min</span>
-                </div>
-                <div class="p-2 rounded-lg bg-green-50 border border-green-100 flex items-start justify-between gap-2">
-                  <div>
-                    <p class="font-medium text-green-900">Sabor & Companhia</p>
-                    <p class="text-green-700/80 text-[11px]">Self-service por kg · almoço</p>
-                  </div>
-                  <span class="text-[10px] text-green-700/70 whitespace-nowrap">~5 min</span>
                 </div>
               </div>
             </div>
 
-            <!-- Saúde -->
-            <div>
-              <p class="text-xs font-semibold text-blue-800 mb-2 flex items-center gap-1.5"><span>🏥</span> Saúde</p>
-              <div class="space-y-1.5 text-xs">
-                <div class="p-2 rounded-lg bg-blue-50 border border-blue-100">
-                  <p class="font-medium text-blue-900">Droga Raia · Vila Olímpia</p>
-                  <p class="text-blue-700/80 text-[11px]">24h · entrega rápida pelo app</p>
-                </div>
-                <div class="p-2 rounded-lg bg-blue-50 border border-blue-100">
-                  <p class="font-medium text-blue-900">UBS Vila Olímpia</p>
-                  <p class="text-blue-700/80 text-[11px]">Atendimento SUS · agendamento Conecte SUS</p>
-                </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="p-3 rounded-xl bg-blue-50 border border-blue-100">
+                <p class="text-sm font-medium text-blue-800">🏥 Saúde</p>
+                <p class="text-xs text-blue-600 mt-1">Farmácias e UBSs</p>
+              </div>
+              <div class="p-3 rounded-xl bg-purple-50 border border-purple-100">
+                <p class="text-sm font-medium text-purple-800">🚌 Transporte</p>
+                <p class="text-xs text-purple-600 mt-1">Metrô, ônibus, bikes</p>
+              </div>
+              <div class="p-3 rounded-xl bg-amber-50 border border-amber-100">
+                <p class="text-sm font-medium text-amber-800">🛒 Mercados</p>
+                <p class="text-xs text-amber-600 mt-1">Supermercados e feiras</p>
+              </div>
+              <div class="p-3 rounded-xl bg-pink-50 border border-pink-100">
+                <p class="text-sm font-medium text-pink-800">💆 Beleza</p>
+                <p class="text-xs text-pink-600 mt-1">Salões e estética</p>
               </div>
             </div>
-
-            <!-- Transporte -->
-            <div>
-              <p class="text-xs font-semibold text-purple-800 mb-2 flex items-center gap-1.5"><span>🚌</span> Transporte</p>
-              <div class="space-y-1.5 text-xs">
-                <div class="p-2 rounded-lg bg-purple-50 border border-purple-100">
-                  <p class="font-medium text-purple-900">Metrô Vila Olímpia (Linha 17 — em obras)</p>
-                  <p class="text-purple-700/80 text-[11px]">Ônibus: 6291-10, 775R, 805A passam aqui</p>
-                </div>
-                <div class="p-2 rounded-lg bg-purple-50 border border-purple-100">
-                  <p class="font-medium text-purple-900">Estações Bike Itaú</p>
-                  <p class="text-purple-700/80 text-[11px]">Mais perto: Av. Macuco, próximo ao parque</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Mercados -->
-            <div>
-              <p class="text-xs font-semibold text-amber-800 mb-2 flex items-center gap-1.5"><span>🛒</span> Mercados & feiras</p>
-              <div class="space-y-1.5 text-xs">
-                <div class="p-2 rounded-lg bg-amber-50 border border-amber-100">
-                  <p class="font-medium text-amber-900">St Marche Vila Olímpia</p>
-                  <p class="text-amber-700/80 text-[11px]">Hortifruti bom · vinhos · padaria</p>
-                </div>
-                <div class="p-2 rounded-lg bg-amber-50 border border-amber-100">
-                  <p class="font-medium text-amber-900">Feira de quarta · R. Pedroso Alvarenga</p>
-                  <p class="text-amber-700/80 text-[11px]">Manhã, até umas 13h</p>
-                </div>
-              </div>
-            </div>
-
-            <p class="text-[10px] text-domus-texto-suave italic text-center pt-1">Esqueci de algo? Posta na Comuna que a gente atualiza 🌿</p>
+            <p class="text-xs text-domus-texto-suave italic text-center mt-2">Indique seu lugar favorito da Vila lá na Comuna!</p>
           </div>
         </div>
 
@@ -425,6 +645,86 @@
 
       </div>
 
+      <!-- ===== TAB: MERCADO (so AP) ===== -->
+      <div id="conteudo-mercado" class="hidden space-y-3">
+
+        <!-- Em breve (unico card da aba) -->
+        <div class="bg-gradient-to-br from-amber-50 to-domus-azul-claro/10 rounded-2xl border-2 border-dashed border-domus-azul/40 p-6 text-center">
+          <p class="text-4xl mb-3">🛒</p>
+          <span class="inline-block bg-amber-300 text-amber-900 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">Em breve</span>
+          <h3 class="font-serif text-xl text-domus-azul-escuro mb-3">Mercado da Domus aqui no Portal</h3>
+          <p class="text-[13px] text-domus-azul-escuro leading-relaxed">
+            Logo logo você vai conseguir <strong>fotografar o produto que pegou</strong>, confirmar pelo Portal e ver o valor entrar direto no seu próximo boleto — sem caneta, sem precisar lembrar depois.
+          </p>
+          <p class="text-[12px] text-domus-azul-escuro/80 leading-relaxed mt-3 italic">
+            Pra ficar ainda mais fácil se servir do que tiver vontade. 🤍
+          </p>
+        </div>
+
+      </div>
+
+      <!-- ===== TAB: NOSSA HISTÓRIA ===== -->
+      <div id="conteudo-historia" class="hidden space-y-3">
+
+        <!-- ===== Card de boas-vindas / Sobre a Domus ===== -->
+        <div class="bg-white rounded-2xl border border-domus-borda/30 overflow-hidden">
+          <div class="bg-gradient-to-br from-domus-azul-escuro via-domus-azul to-domus-azul-claro p-5 text-white text-center">
+            <img src="logo-icone-branco.png" alt="Domus" class="w-14 h-14 mx-auto mb-3 opacity-95" />
+            <h3 class="font-serif text-xl">Bem-vinda à Domus</h3>
+            <p class="text-xs text-white/80 mt-2 italic">Uma breve história — e um pequeno tour por este novo canto online.</p>
+          </div>
+          <div class="p-5 space-y-4 text-[13px] text-domus-azul-escuro leading-relaxed">
+
+            <p>Antes de virar Domus, foram <strong>nove anos dividindo casa com mais de cem pessoas</strong> — em São Paulo e em Londres. E um pensamento que não saía da cabeça: <strong>dignidade não é luxo</strong>. Dá pra morar dividindo sem que falte o essencial, sem que falte o cuidado, sem que falte o "como você tá hoje?".</p>
+
+            <p>E ainda sobra muita coisa boa — não é à toa que as regiões mais longevas do mundo são justamente as que vivem em comunidade. A gente vê isso de pertinho aqui: um grupo combinando sessão de filme na sala com projetor, alguém que chegou sozinha em São Paulo e encontra companhia sem precisar pedir.</p>
+
+            <p>A ideia ficou em banho-maria por um bom tempo, até que veio o <strong>lockdown de 2020</strong>. Os lugares fecharam, mas as pessoas precisavam continuar morando. Foi quando, com o meu sócio, tiramos a Domus do papel: a primeira casa, <strong>Ribeirão Claro</strong>, abriu em <strong>janeiro de 2021</strong>, no meio da incerteza, com muita confiança e muita fé.</p>
+
+            <p>E olha — a gente conseguiu. Abrimos uma Domus num bairro que vive de estudantes e de gente que trabalha por aqui, e a inauguração aconteceu justamente no meio de um dos lockdowns, quando esses dois públicos sumiram da rua. Driblar isso só foi possível com muita criatividade, com as experiências passadas minha e, especialmente, do meu sócio — a experiência comercial dele somada à vontade compartilhada de fazer uma coisa bacana.</p>
+
+            <p>Em <strong>janeiro de 2024</strong>, veio a <strong>Andrade</strong> — coliving feminino também e, no formato da casa, nasceu o <strong>Hostel Domus</strong>, que não estava no plano e virou parte importante do que somos hoje.</p>
+
+            <div class="bg-domus-azul-claro/10 border-l-4 border-domus-azul rounded-r-lg p-4 italic text-domus-azul-escuro">
+              A Domus se tornou um braço da nossa família. E é exatamente isso que continuamos oferecendo: tudo o que importa funcionando bem, gente que se importa do outro lado, e um lugar seguro pra quem chega.
+            </div>
+
+            <div class="bg-domus-azul-claro/10 border-l-4 border-domus-azul rounded-r-lg p-4">
+              <p class="font-semibold text-domus-azul-escuro mb-1">📱 E este Portal aqui?</p>
+              <p>É o <strong>seu novo canto online da Domus</strong> — feito sob medida para você não precisar mais procurar boleto em e-mail antigo, contrato em pasta perdida, ou regulamento em PDF que ninguém lembra onde foi parar.</p>
+            </div>
+
+            <div>
+              <p class="font-semibold text-domus-azul mb-2 uppercase tracking-wider text-[11px]">O que você encontra por aqui</p>
+              <ul class="space-y-1.5 text-[12px]">
+                <li class="flex gap-2"><span>💸</span><span>O seu próximo boleto, sempre atualizado e sem mistério.</span></li>
+                <li class="flex gap-2"><span>📄</span><span>O seu contrato assinado (caso a memória dê uma escapada).</span></li>
+                <li class="flex gap-2"><span>📜</span><span>O regulamento interno — prometemos que é leve.</span></li>
+                <li class="flex gap-2"><span>📣</span><span>Avisos importantes da casa, antes do grupo lotar de mensagem.</span></li>
+                <li class="flex gap-2"><span>💬</span><span>A <em>Comuna das Dominhas</em>, quando der vontade de trocar uma ideia.</span></li>
+              </ul>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-white border border-domus-borda/40 rounded-xl p-3">
+                <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold mb-1">🔒 Quem entra aqui?</p>
+                <p class="text-[12px]">Só você, com o seu CPF e a senha que combinamos. Nem a vizinha mais curiosa.</p>
+              </div>
+              <div class="bg-white border border-domus-borda/40 rounded-xl p-3">
+                <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold mb-1">🗓️ Quando vir aqui?</p>
+                <p class="text-[12px]">Sempre que quiser. Recomendamos uma passada perto do <strong>dia 10</strong> — é quando o boleto novo costuma chegar.</p>
+              </div>
+            </div>
+
+            <p class="text-center text-[13px] text-domus-azul-escuro/90 italic pt-2">
+              Seja muito bem-vinda. A Domus também é sua. 🤍
+            </p>
+
+          </div>
+        </div>
+
+      </div>
+
     </div>
 
   </main>
@@ -440,11 +740,54 @@
 
   <script>
     // ==========================================
+    // PORTEIRO DE ERROS — moradora nunca ve mensagem tecnica.
+    // Qualquer erro JS catastrofico OU rejeicao de Promise nao tratada
+    // redireciona pra /ops.html (Domussauro).
+    // Erros tratados localmente (com try/catch + redirect proprio) seguem normais.
+    // ==========================================
+    (function instalarPorteiroErros(){
+      function ehErroNaoCritico(msg){
+        if(!msg) return true;
+        var m = String(msg).toLowerCase();
+        // Erros benignos do browser que nao quebram nada:
+        return m.indexOf('resizeobserver') >= 0
+          || m.indexOf('script error') >= 0
+          || m.indexOf('non-error promise rejection') >= 0;
+      }
+      function redirecionarOps(origem, detalhe){
+        try { console.error('[porteiro/' + origem + ']', detalhe); } catch(e){}
+        // Evita loop se ja estamos em ops/voltamos/404
+        var p = (window.location.pathname || '').toLowerCase();
+        if (p.indexOf('/ops') === 0 || p.indexOf('/404') === 0 || p.indexOf('/voltamos') === 0) return;
+        window.location.href = '/ops.html';
+      }
+      window.addEventListener('error', function(ev){
+        if (ehErroNaoCritico(ev && ev.message)) return;
+        redirecionarOps('error', ev && (ev.error || ev.message));
+      });
+      window.addEventListener('unhandledrejection', function(ev){
+        var r = ev && ev.reason;
+        if (ehErroNaoCritico(r && r.message)) return;
+        redirecionarOps('promise', r);
+      });
+    })();
+
+    // ==========================================
     // SUPABASE
     // ==========================================
     const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Cracha da dominha (lido do localStorage do Portal)
+    function getCrachaDominha() {
+      try {
+        var raw = localStorage.getItem('dominha_session');
+        if (!raw) return null;
+        var s = JSON.parse(raw);
+        return s && s.token ? s.token : null;
+      } catch (e) { return null; }
+    }
 
     // ==========================================
     // ESTADO
@@ -548,9 +891,16 @@
           quarto: result.quarto,
           status: result.status,
           pontos: result.pontos,
+          token: result.token,
           logado_em: new Date().toISOString()
         };
         localStorage.setItem('dominha_session', JSON.stringify(sessao));
+
+        // Helper local (caso seja necessario)
+        window.getCrachaDominha = function() {
+          try { var s = JSON.parse(localStorage.getItem('dominha_session') || '{}'); return s && s.token ? s.token : null; }
+          catch(e){ return null; }
+        };
 
         if (lembrar) {
           localStorage.setItem('domus_morador_email', email);
@@ -563,6 +913,7 @@
         // Importante: esconder a tela de login ANTES de carregar os dados,
         // pra qualquer erro de carga não travar o botão "Entrando..."
         if (btnLogin) { btnLogin.disabled = false; btnLogin.textContent = 'Entrar'; }
+        try { sessionStorage.setItem('_dom_sess_origem', 'login'); } catch(e) {}
         await mostrarPainel();
       } catch (err) {
         clearTimeout(timeoutId);
@@ -597,32 +948,46 @@
       document.getElementById('tela-painel').classList.remove('hidden');
       document.getElementById('btn-logout').classList.remove('hidden');
 
-      // Buscar dados completos do contrato via RPC SECURITY DEFINER
-      // (a tabela moradores nao eh acessivel pra anon; RPC pula RLS)
+      // Buscar dados completos via RPC SEGURA (cracha da dominha)
       try {
-        const { data: m, error: mErr } = await db.rpc('obter_dados_morador_por_dominha', {
-          p_dominha_id: _morador.id
-        });
-        if (m && m.success) {
-          _morador.morador_id = m.morador_id;
+        var tokenD = getCrachaDominha();
+        var mErr = null;
+        var m = null;
+        if (tokenD) {
+          const resp = await db.rpc('minha_dominha', { p_token: tokenD });
+          mErr = resp.error;
+          m = resp.data;
+        } else { mErr = { message: 'Sem cracha' }; }
+        if (m) {
+          // A RPC minha_dominha agora devolve 'morador_id' (id real em moradores)
+          // separado de 'id' (dominha_id). Roda com SECURITY DEFINER, entao
+          // contorna RLS sem precisar de fallback no front.
+          _morador.morador_id = m.morador_id || m.morador_origem_id || null;
           _morador.valor = m.valor;
           _morador.dia_vencimento = m.dia_vencimento;
           _morador.inicio_contrato = m.inicio_contrato;
           _morador.fim_contrato = m.fim_contrato;
-          _morador.contato = m.contato || m.telefone;
-          _morador.telefone = m.telefone;
-          _morador.caucao = m.caucao;
-          _morador.caucao_paga = m.caucao_paga;
-          if (m.unidade) _morador.unidade = m.unidade;
-          if (m.quarto) _morador.quarto = m.quarto;
+          _morador.contato = m.contato;
+          _morador.contrato_url = m.contrato_url;
+          _morador.preco_ficha_omo = m.preco_ficha_omo;
         } else {
-          console.warn('[painel] obter_dados_morador_por_dominha falhou:', m, mErr);
+          console.warn('[painel] moradora não encontrada na tabela moradores por email:', _morador.email, mErr);
         }
       } catch (e) { console.warn('[painel] erro ao enriquecer _morador:', e); }
+      // Busca foto + apelido do perfil (tabela dominhas)
+      try {
+        const { data: d } = await db.from('dominhas').select('id, foto_url, apelido').eq('email', _morador.email).maybeSingle();
+        if (d) {
+          _morador.dominha_id = d.id;
+          _morador.foto_url = d.foto_url;
+          _morador.apelido = d.apelido;
+        }
+      } catch(e) { console.warn('[painel] erro perfil dominhas:', e); }
+      try { renderizarAvatarHeader(); } catch(e) {}
 
       // Preencher boas-vindas
-      document.getElementById('painel-nome').textContent = _morador.nome || '—';
-      document.getElementById('painel-unidade').textContent = (_morador.unidade === 'Rib' ? 'Ribeirão Claro' : 'Andrade Pertence');
+      document.getElementById('painel-nome').textContent = (_morador.apelido || (_morador.nome || '').split(' ')[0]) || '—';
+      document.getElementById('painel-unidade').textContent = 'Unidade ' + (_morador.unidade === 'Rib' ? 'Ribeirão Claro' : 'Andrade Pertence');
       document.getElementById('painel-quarto').textContent = 'Quarto ' + (_morador.quarto || '—');
 
       // Verificar se é ex-moradora
@@ -636,9 +1001,60 @@
       // pra que falha em uma não derrube o painel inteiro
       try { carregarContrato(); } catch(e) { console.warn('[painel] erro carregarContrato:', e); }
       try { carregarBoleto(); } catch(e) { console.warn('[painel] erro carregarBoleto:', e); }
+      try { inicializarFichasOmo(); } catch(e) { console.warn('[painel] erro fichas:', e); }
       try { carregarFinanceiro(); } catch(e) { console.warn('[painel] erro carregarFinanceiro:', e); }
       try { carregarComunicados(); } catch(e) { console.warn('[painel] erro carregarComunicados:', e); }
       try { carregarMural(); } catch(e) { console.warn('[painel] erro carregarMural:', e); }
+      try { registrarAcessoDominha(); } catch(e) { console.warn('[painel] erro registrar acesso:', e); }
+    }
+
+    // ===== Histórico de acesso =====
+    function detectarDispositivo() {
+      var ua = (navigator.userAgent || '').toLowerCase();
+      var sistema = 'Desconhecido', dispositivo = 'Desconhecido', navegador = 'Desconhecido';
+      if (/iphone|ipod/.test(ua)) { dispositivo = 'iPhone'; sistema = 'iOS'; }
+      else if (/ipad/.test(ua)) { dispositivo = 'iPad'; sistema = 'iOS'; }
+      else if (/android/.test(ua)) {
+        if (/mobile/.test(ua)) dispositivo = 'Celular Android'; else dispositivo = 'Tablet Android';
+        sistema = 'Android';
+      }
+      else if (/windows/.test(ua)) { dispositivo = 'Computador'; sistema = 'Windows'; }
+      else if (/mac os|macintosh/.test(ua)) { dispositivo = 'Computador'; sistema = 'macOS'; }
+      else if (/linux/.test(ua)) { dispositivo = 'Computador'; sistema = 'Linux'; }
+      if (/edg\//.test(ua)) navegador = 'Edge';
+      else if (/chrome\//.test(ua) && !/edg|opr/.test(ua)) navegador = 'Chrome';
+      else if (/firefox/.test(ua)) navegador = 'Firefox';
+      else if (/safari/.test(ua) && !/chrome|edg/.test(ua)) navegador = 'Safari';
+      else if (/opr\//.test(ua)) navegador = 'Opera';
+      // PWA instalado?
+      var instalado = false;
+      try {
+        instalado = window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
+      } catch(e) {}
+      return { dispositivo: dispositivo, sistema: sistema, navegador: navegador, instalado_app: instalado };
+    }
+
+    async function registrarAcessoDominha() {
+      if (!_morador) return;
+      var info = detectarDispositivo();
+      var origem = (sessionStorage.getItem('_dom_sess_origem') === 'login') ? 'login_ativo' : 'sessao_restaurada';
+      try {
+        await db.from('dominhas_acessos').insert({
+          morador_id: _morador.morador_id || null,
+          nome: _morador.nome || null,
+          email: _morador.email || null,
+          unidade: _morador.unidade || null,
+          quarto: _morador.quarto || null,
+          dispositivo: info.dispositivo,
+          sistema: info.sistema,
+          navegador: info.navegador,
+          instalado_app: info.instalado_app,
+          origem: origem,
+          user_agent: (navigator.userAgent || '').slice(0, 500)
+        });
+      } catch(e) { console.warn('registrarAcessoDominha:', e); }
+      // Limpa flag pra próximos acessos contarem como "sessao_restaurada"
+      try { sessionStorage.removeItem('_dom_sess_origem'); } catch(e) {}
     }
 
     // ==========================================
@@ -647,39 +1063,75 @@
     function carregarContrato() {
       if (!_morador) return;
 
-      document.getElementById('contrato-quarto').textContent = 'Quarto ' + (_morador.quarto || '—');
+      const qEl = document.getElementById('contrato-quarto');
+      if (qEl) qEl.textContent = 'Quarto ' + (_morador.quarto || '—');
 
-      if (_morador.valor) {
-        const valor = parseFloat(_morador.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        document.getElementById('contrato-valor').textContent = valor;
-      } else {
-        document.getElementById('contrato-valor').textContent = 'R$ —';
-      }
-
-      if (_morador.dia_vencimento) {
-        document.getElementById('contrato-vencimento').textContent = _morador.dia_vencimento + ' de cada mês';
-      } else {
-        document.getElementById('contrato-vencimento').textContent = '—';
-      }
-
-      if (_morador.inicio_contrato) {
-        const dt = new Date(_morador.inicio_contrato + 'T12:00:00');
-        document.getElementById('contrato-inicio').textContent = dt.toLocaleDateString('pt-BR');
-      }
-
-      if (_morador.fim_contrato) {
-        const dt = new Date(_morador.fim_contrato + 'T12:00:00');
-        document.getElementById('contrato-fim').textContent = dt.toLocaleDateString('pt-BR');
-      } else {
-        document.getElementById('contrato-fim').textContent = 'Indeterminado';
+      // Dia de vencimento (regra do contrato — sempre dia 15 nao importa quando emite)
+      const diaVencEl = document.getElementById('contrato-dia-venc');
+      if (diaVencEl) {
+        const dia = _morador.dia_vencimento || 15;
+        diaVencEl.textContent = 'dia ' + dia;
       }
 
       const status = (_morador.status || 'ativo').toLowerCase();
       const statusEl = document.getElementById('contrato-status');
       if (statusEl) {
         statusEl.className = 'status-badge status-' + status;
-        const statusTexto = { ativo: 'Ativo', aviso: 'Em aviso', rescisao: 'Em rescisão' };
-        statusEl.textContent = statusTexto[status] || 'Ativo';
+        // Versao feminina (sao todas mulheres)
+        const statusTexto = { ativo: 'Ativa', aviso: 'Em aviso', rescisao: 'Em rescisão' };
+        statusEl.textContent = statusTexto[status] || 'Ativa';
+      }
+      // PDF do contrato agora vive na aba Casa, com mesmo id
+      if (_morador.contrato_url) {
+        const wrap = document.getElementById('contrato-pdf-wrap');
+        const link = document.getElementById('contrato-pdf-link');
+        if (wrap && link) { link.href = _morador.contrato_url; wrap.classList.remove('hidden'); }
+      }
+      carregarReajuste();
+    }
+
+    async function carregarReajuste() {
+      const card = document.getElementById('card-reajuste');
+      const titulo = document.getElementById('card-reajuste-titulo');
+      const subtitulo = document.getElementById('card-reajuste-subtitulo');
+      const el = document.getElementById('reajuste-info');
+      if (!card || !el || !_morador) return;
+      const mes = new Date().getMonth() + 1; // 1-12
+      // Só aparece em julho (lembrete) e agosto (aplicação)
+      if (mes !== 7 && mes !== 8) {
+        card.classList.add('hidden');
+        return;
+      }
+      card.classList.remove('hidden');
+      if (titulo) titulo.textContent = mes === 7 ? 'Lembrete: reajuste em agosto' : 'Reajuste anual';
+      if (subtitulo) {
+        subtitulo.innerHTML = mes === 7
+          ? 'Atenção, dominha: no <strong>próximo mês (Agosto)</strong> seu aluguel será reajustado pelo <strong>IGP-M acumulado dos últimos 12 meses</strong>, conforme contrato.'
+          : 'Conforme contrato, este é o mês do reajuste anual, calculado pelo <strong>IGP-M acumulado dos últimos 12 meses</strong>.';
+      }
+      try {
+        const r = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.189/dados/ultimos/12?formato=json');
+        if (!r.ok) { el.textContent = 'Não foi possível consultar o IGP-M agora.'; return; }
+        const j = await r.json();
+        let acc = 1;
+        j.forEach(m => acc *= (1 + Number(m.valor) / 100));
+        const pct = (acc - 1) * 100;
+        const valorAtual = Number(_morador.valor || 0);
+        const novo = valorAtual * (1 + pct / 100);
+        const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const periodo = (j[0]?.data || '') + ' a ' + (j[j.length - 1]?.data || '');
+        const rotulo = mes === 7 ? 'Estimativa pós-reajuste*' : 'Novo aluguel*';
+        const aviso = mes === 7
+          ? '* Valor preliminar. O reajuste real é calculado em Agosto com a janela final de 12 meses.'
+          : '* Confirmado no boleto deste mês.';
+        el.innerHTML = '<div class="space-y-1">' +
+          '<p>IGP-M acumulado 12m (' + periodo + '): <strong>' + pct.toFixed(2) + '%</strong></p>' +
+          '<p>Aluguel atual: <strong>' + fmt(valorAtual) + '</strong></p>' +
+          '<p>' + rotulo + ': <strong>' + fmt(novo) + '</strong></p>' +
+          '<p class="text-[10px] text-domus-texto-suave mt-2">' + aviso + '</p>' +
+        '</div>';
+      } catch (e) {
+        el.textContent = 'Não foi possível consultar o IGP-M agora.';
       }
     }
 
@@ -688,94 +1140,62 @@
     // ==========================================
     async function carregarBoleto() {
       if (!_morador) return;
-
       const loading = document.getElementById('boleto-loading');
       const conteudo = document.getElementById('boleto-conteudo');
-
       try {
+        const hoje = new Date();
+        const mesISO = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-01';
         const moradorIdReal = _morador.morador_id || _morador.id;
-        const hojeMes = new Date();
-        const limiteISO = hojeMes.getFullYear() + '-' + String(hojeMes.getMonth() + 1).padStart(2, '0') + '-01';
-
-        // Busca o ULTIMO boleto cujo mes_referencia <= mes atual (mais recente real)
-        const { data: boletos } = await db
-          .from('v_boletos_moradora')
-          .select('*')
-          .eq('moradora_id', moradorIdReal)
-          .lte('mes_referencia', limiteISO)
-          .order('mes_referencia', { ascending: false })
-          .limit(1);
-
+        var tkB = getCrachaDominha();
+        var b = null;
+        if (tkB) {
+          const respB = await db.rpc('meus_boletos', { p_token: tkB });
+          if (!respB.error && Array.isArray(respB.data)) {
+            b = respB.data.find(x => x.mes_referencia === mesISO) || null;
+          }
+        }
         if (loading) loading.classList.add('hidden');
         if (conteudo) conteudo.classList.remove('hidden');
-
+        const mesNome = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        document.getElementById('boleto-mes').textContent = mesNome.charAt(0).toUpperCase() + mesNome.slice(1);
         const statusBadge = document.getElementById('boleto-status-badge');
-
-        if (boletos && boletos.length > 0) {
-          const b = boletos[0];
-          // Status badge baseado no situacao_label
-          const pago = (b.status === 'pago' || b.situacao_label === 'Pago');
-          const vencido = b.situacao_label === 'Vencido';
+        if (b) {
+          const total = Number(b.valor_base || 0) + Number(b.valor_energia || 0) + Number(b.valor_extras || 0);
+          document.getElementById('boleto-valor').textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          if (b.data_vencimento) {
+            const dtVenc = new Date(b.data_vencimento + 'T12:00:00');
+            document.getElementById('boleto-vencimento').textContent = dtVenc.toLocaleDateString('pt-BR');
+          }
           if (statusBadge) {
-            if (pago) {
+            if (b.status === 'pago') {
               statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700';
               statusBadge.textContent = '✓ Pago';
-            } else if (vencido) {
-              statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700';
-              statusBadge.textContent = '⚠ Vencido';
+            } else if (b.status === 'cancelado') {
+              statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-gray-200 text-gray-700';
+              statusBadge.textContent = '⊘ Cancelado';
             } else {
-              statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800';
-              statusBadge.textContent = '⚠ Pendente';
+              statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700';
+              statusBadge.textContent = '⏳ A pagar';
             }
           }
-          // Mes (ex: Maio/2026)
-          const meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-          const [y, m] = b.mes_referencia.split('-');
-          document.getElementById('boleto-mes').textContent = meses[parseInt(m, 10) - 1] + ' de ' + y;
-          // Valor total real (com energia + extras)
-          const valor = parseFloat(b.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        } else if (_morador.valor) {
+          const valor = parseFloat(_morador.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
           document.getElementById('boleto-valor').textContent = valor;
-          // Vencimento real do boleto
-          const elV = document.getElementById('boleto-vencimento');
-          if (elV) {
-            if (b.data_vencimento) {
-              const dtVenc = new Date(b.data_vencimento + 'T12:00:00');
-              elV.textContent = dtVenc.toLocaleDateString('pt-BR');
-            } else {
-              elV.textContent = '—';
-            }
-          }
-        } else {
-          // Sem boleto ainda no banco — fallback pro valor mensal do contrato (estimativa)
+          const dia = _morador.dia_vencimento || 15;
+          const dtVenc = new Date(hoje.getFullYear(), hoje.getMonth(), dia);
+          document.getElementById('boleto-vencimento').textContent = dtVenc.toLocaleDateString('pt-BR');
           if (statusBadge) {
-            statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700';
-            statusBadge.textContent = 'Aguardando emissao';
-          }
-          const meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-          document.getElementById('boleto-mes').textContent = meses[hojeMes.getMonth()] + ' de ' + hojeMes.getFullYear();
-          if (_morador.valor) {
-            document.getElementById('boleto-valor').textContent = parseFloat(_morador.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-          } else {
-            document.getElementById('boleto-valor').textContent = 'R$ —';
-          }
-          const elV = document.getElementById('boleto-vencimento');
-          if (elV) {
-            if (_morador.dia_vencimento) {
-              const dt = new Date(hojeMes.getFullYear(), hojeMes.getMonth(), _morador.dia_vencimento);
-              elV.textContent = dt.toLocaleDateString('pt-BR');
-            } else {
-              elV.textContent = '—';
-            }
+            statusBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600';
+            statusBadge.textContent = 'Aguardando emissão';
           }
         }
       } catch (err) {
         console.error('Erro ao carregar boleto:', err);
         if (loading) loading.classList.add('hidden');
-        if (conteudo) conteudo.classList.add('hidden');
       }
     }
 
-    // ==========================================
+        // ==========================================
     // FINANCEIRO (últimos 6 meses)
     // ==========================================
     async function carregarFinanceiro() {
@@ -788,13 +1208,29 @@
       try {
         const moradorIdReal = _morador.morador_id || _morador.id;
 
-        // 1) Sistema novo: busca boletos do dominhas_boletos (via view)
-        let { data: boletos } = await db
-          .from('v_boletos_moradora')
-          .select('*')
-          .eq('moradora_id', moradorIdReal)
-          .order('mes_referencia', { ascending: false })
-          .limit(12);
+        // 1) Boletos via RPC SEGURA (cracha)
+        var tkH = getCrachaDominha();
+        var rawBoletos = [];
+        if (tkH) {
+          const respH = await db.rpc('meus_boletos', { p_token: tkH });
+          if (!respH.error) rawBoletos = (respH.data || []).slice(0, 12);
+        }
+        let boletos = (rawBoletos || []).map(b => {
+          const venc = b.data_vencimento ? new Date(b.data_vencimento + 'T12:00:00') : null;
+          const hoje = new Date(); hoje.setHours(0,0,0,0);
+          let situacao_label = 'Pendente';
+          if (b.status === 'pago') situacao_label = 'Pago';
+          else if (b.status === 'cancelado') situacao_label = 'Cancelado';
+          else if (venc) {
+            const diff = Math.floor((venc - hoje) / (1000*60*60*24));
+            if (diff < 0) situacao_label = 'Vencido';
+            else if (diff === 0) situacao_label = 'Vence hoje';
+            else if (diff <= 5) situacao_label = 'Vence em breve';
+            else situacao_label = 'Em dia';
+          }
+          const mesLabel = b.mes_referencia ? new Date(b.mes_referencia + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '';
+          return { ...b, valor_total: b.valor, valor_coliving: b.valor_base, valor_multas: 0, inter_pix_copia_cola: b.pix_copia_cola, inter_pdf_url: b.url_boleto, mes_label: mesLabel, situacao_label: situacao_label };
+        });
 
         if (loading) loading.classList.add('hidden');
 
@@ -802,13 +1238,16 @@
         if (!boletos || boletos.length === 0) {
           const hoje = new Date();
           const seisAtras = new Date(hoje.getFullYear(), hoje.getMonth() - 6, hoje.getDate());
-          const { data: lances } = await db
-            .from('lancamentos')
-            .select('*')
-            .eq('morador_id', moradorIdReal)
-            .eq('tipo', 'receita')
-            .gte('data', seisAtras.toISOString().split('T')[0])
-            .order('data', { ascending: false });
+          var tkL = getCrachaDominha();
+          var lances = [];
+          if (tkL) {
+            const respL = await db.rpc('meus_lancamentos', { p_token: tkL });
+            if (!respL.error) {
+              lances = (respL.data || []).filter(l =>
+                (l.tipo === 'receita') && l.data >= seisAtras.toISOString().split('T')[0]
+              );
+            }
+          }
 
           if (!lances || lances.length === 0) {
             if (vazio) vazio.classList.remove('hidden');
@@ -832,17 +1271,6 @@
         }
 
         // 3) Sistema novo: cards bonitos com PIX, PDF, vencimento
-        // Filtra boletos futuros (so mostrar mes atual ou anteriores)
-        const hojeMes = new Date();
-        const limiteISO = hojeMes.getFullYear() + '-' + String(hojeMes.getMonth() + 1).padStart(2, '0') + '-01';
-        boletos = boletos.filter(b => !b.mes_referencia || b.mes_referencia <= limiteISO);
-
-        if (boletos.length === 0) {
-          if (vazio) vazio.classList.remove('hidden');
-          if (lista) lista.classList.add('hidden');
-          return;
-        }
-
         if (vazio) vazio.classList.add('hidden');
         if (lista) lista.classList.remove('hidden');
 
@@ -862,14 +1290,17 @@
           const corCard = corSituacao[sit] || 'bg-white border-domus-borda';
 
           const acoes = [];
-          if (b.inter_pix_copia_cola) {
-            acoes.push('<button onclick="copiarPix(\'' + b.id + '\', this)" class="flex-1 py-2 rounded-lg bg-domus-azul text-white text-xs font-medium hover:bg-domus-azul-escuro transition flex items-center justify-center gap-1">📋 Copiar PIX</button>');
+          if (b.status !== 'pago' && b.status !== 'cancelado') {
+            if (b.inter_pix_copia_cola) {
+              acoes.push('<button onclick="copiarPix(\'' + b.id + '\', this)" class="flex-1 min-w-[110px] py-2 rounded-lg bg-domus-azul text-white text-xs font-medium hover:bg-domus-azul-escuro transition flex items-center justify-center gap-1">💚 Pagar via Pix</button>');
+            }
+            if (b.banco_inter_id) {
+              acoes.push('<button onclick="baixarBoletoPdf(\'' + b.banco_inter_id + '\', \'' + (_morador.unidade || 'AP') + '\', this)" class="flex-1 min-w-[110px] py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">📄 Baixar boleto</button>');
+            }
+            if (b.codigo_barras) {
+              acoes.push('<button onclick="copiarCodigoBarras(\'' + b.id + '\', this)" class="flex-1 min-w-[110px] py-2 rounded-lg bg-white border border-domus-borda text-domus-azul-escuro text-xs font-medium hover:bg-gray-50 transition flex items-center justify-center gap-1">🔢 Copiar código</button>');
+            }
           }
-          if (b.inter_codigo_barras || b.inter_linha_digitavel) {
-            acoes.push('<button onclick="copiarCodigoBarras(\'' + b.id + '\', this)" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">📊 Copiar código de barras</button>');
-          }
-          // Botao 'Baixar boleto' SEMPRE presente — se nao tem PDF, abre janela com PIX/codigos
-          acoes.push('<button onclick="abrirBoleto(\'' + b.id + '\')" class="flex-1 py-2 rounded-lg bg-white border border-domus-azul text-domus-azul text-xs font-medium hover:bg-domus-azul/5 transition flex items-center justify-center gap-1">📄 Baixar boleto</button>');
 
           const composicao = [];
           if (Number(b.valor_coliving) > 0) composicao.push('Coliving R$ ' + Number(b.valor_coliving).toFixed(2));
@@ -877,13 +1308,15 @@
           if (Number(b.valor_extras) > 0)   composicao.push('Extras R$ ' + Number(b.valor_extras).toFixed(2));
           if (Number(b.valor_multas) > 0)   composicao.push('Multas R$ ' + Number(b.valor_multas).toFixed(2));
 
+          const descLinhas = (b.descricao_extras || '').split('\n').filter(l => l.trim());
+          const descBox = descLinhas.length ? ('<div class="mt-3 p-3 rounded-lg bg-white/60 border border-current/10"><p class="text-[10px] uppercase tracking-wider font-semibold opacity-60 mb-1">Composição do boleto</p>' + descLinhas.map(l => '<p class="text-xs leading-relaxed">' + l.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</p>').join('') + '</div>') : '';
           return '<div class="rounded-xl border ' + corCard + ' p-4">' +
             '<div class="flex items-start justify-between gap-2 mb-2">' +
-              '<div><p class="text-sm font-semibold capitalize">' + _ptBrMesAno(b.mes_referencia) + '</p><p class="text-xs opacity-75">Vence em ' + venc + '</p></div>' +
+              '<div><p class="text-sm font-semibold capitalize">' + (b.mes_label || '') + '</p><p class="text-xs opacity-75">Vence em ' + venc + '</p></div>' +
               '<div class="text-right"><p class="text-lg font-bold">' + valor + '</p><p class="text-[10px] uppercase tracking-wider font-medium">' + sit + '</p></div>' +
             '</div>' +
-            (composicao.length > 1 ? '<p class="text-[11px] opacity-70 mb-2">' + composicao.join(' + ') + '</p>' : '') +
-            (acoes.length ? '<div class="flex gap-2 mt-3 flex-wrap">' + acoes.join('') + '</div>' : '') +
+            (composicao.length > 1 ? '<p class="text-[11px] opacity-70 mb-2">' + composicao.join(' + ') + '</p>' : '') + descBox +
+            (acoes.length ? '<div class="flex flex-wrap gap-2 mt-3">' + acoes.join('') + '</div>' : '') +
           '</div>';
         }).join('');
 
@@ -895,60 +1328,24 @@
       }
     }
 
-    function _ptBrMesAno(mesIso) {
-      if (!mesIso) return '—';
-      const [y, m] = mesIso.split('-');
-      const meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-      return meses[parseInt(m, 10) - 1] + '/' + y;
-    }
-
-    function abrirBoleto(boletoId) {
-      const b = (window._boletosMoradora || []).find(x => x.id === boletoId);
-      if (!b) return;
-      // Sempre tenta buscar PDF real do Inter via Edge Function (mesmo se já tem inter_pdf_url salvo)
-      const SUPA = 'https://motwhfbpundrhvuwjntw.supabase.co';
-      const ANON = (typeof SUPABASE_ANON !== 'undefined' && SUPABASE_ANON) ? SUPABASE_ANON : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3NDg4NjAsImV4cCI6MjA2MDMyNDg2MH0.dvLqP7BWHzVDNKTNh9RKkB-zX0pX7fG6UA4tRn6zPm0';
-      const w = window.open('about:blank', '_blank');
-      if (!w) { alert('Permita popups pra abrir o boleto.'); return; }
-      w.document.write('<title>Baixando boleto...</title><body style="font-family:sans-serif;padding:40px;text-align:center;color:#444">Buscando boleto no Banco Inter, um instantinho... 💛</body>');
-      fetch(`${SUPA}/functions/v1/baixar-pdf-boleto?boleto_id=${boletoId}&apikey=${ANON}`)
-        .then(r => r.ok ? r.blob() : r.json().then(j => Promise.reject(j.erro || 'falha')))
-        .then(blob => {
-          if (blob.type === 'application/pdf') {
-            const url = URL.createObjectURL(blob);
-            w.location.href = url;
-            try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
-          } else {
-            w.document.body.innerText = 'Boleto nao retornou PDF';
-          }
-        })
-        .catch(err => {
-          w.document.body.innerHTML = '<p>Nao consegui pegar o PDF do banco agora.</p><pre>' + (err.toString ? err.toString() : err) + '</pre><p>Usa o PIX ou o codigo de barras como alternativa.</p>';
-        });
-      return;
-    }
-
-    function copiarCodigoBarras(boletoId, botao) {
-      const b = (window._boletosMoradora || []).find(x => x.id === boletoId);
-      if (!b) return;
-      const txt = b.inter_codigo_barras || b.inter_linha_digitavel;
-      if (!txt) return;
-      navigator.clipboard.writeText(txt).then(() => {
-        const orig = botao.innerHTML;
-        botao.innerHTML = '✅ Copiado!';
-        setTimeout(() => { botao.innerHTML = orig; }, 2000);
-        try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
-      });
-    }
-
     function copiarPix(boletoId, botao) {
       const b = (window._boletosMoradora || []).find(x => x.id === boletoId);
       if (!b || !b.inter_pix_copia_cola) return;
       navigator.clipboard.writeText(b.inter_pix_copia_cola).then(() => {
         const orig = botao.innerHTML;
-        botao.innerHTML = '✅ Copiado!';
+        botao.innerHTML = '✅ Pix copiado!';
         setTimeout(() => { botao.innerHTML = orig; }, 2000);
         try { db.from('dominhas_boletos').update({ baixado_em: new Date().toISOString() }).eq('id', boletoId); } catch(e) {}
+      });
+    }
+
+    function copiarCodigoBarras(boletoId, botao) {
+      const b = (window._boletosMoradora || []).find(x => x.id === boletoId);
+      if (!b || !b.codigo_barras) return;
+      navigator.clipboard.writeText(b.codigo_barras).then(() => {
+        const orig = botao.innerHTML;
+        botao.innerHTML = '✅ Código copiado!';
+        setTimeout(() => { botao.innerHTML = orig; }, 2000);
       });
     }
 
@@ -963,12 +1360,15 @@
       const vazio = document.getElementById('comunicados-vazio');
 
       try {
-        const { data, error } = await db
-          .from('comunicados')
-          .select('*')
-          .or(`destino.eq.Todas,destino.eq.${_morador.unidade}`)
-          .order('data', { ascending: false })
-          .limit(5);
+        var tkC1 = getCrachaDominha();
+        var data = null, error = null;
+        if (tkC1) {
+          const respC1 = await db.rpc('meus_comunicados', { p_token: tkC1 });
+          data = (respC1.data || []).slice(0, 5);
+          error = respC1.error;
+        } else {
+          error = { message: 'Sem cracha' };
+        }
 
         if (loading) loading.classList.add('hidden');
 
@@ -1128,7 +1528,7 @@
         // Buscar recados da mesma unidade, não expirados, sem expor morador_id (anônimo)
         const { data, error } = await db
           .from('mural_recados')
-          .select('id, unidade, texto, criado_em, expira_em')
+          .select('id, unidade, texto, criado_em, expira_em, autor_nome, autor_foto')
           .eq('unidade', _morador.unidade)
           .gt('expira_em', new Date().toISOString())
           .order('criado_em', { ascending: false })
@@ -1149,8 +1549,9 @@
           const tempo = tempoRelativo(r.criado_em);
           html += `
             <div class="bg-gray-50 rounded-xl p-3 flex items-start gap-2">
-              <span class="text-base mt-0.5">💬</span>
+              <div class="w-8 h-8 rounded-full bg-domus-azul/10 flex items-center justify-center text-sm flex-shrink-0 overflow-hidden">${r.autor_foto ? `<img src="${r.autor_foto}" class="w-full h-full object-cover" alt="" />` : `<span>${(r.autor_nome || 'D').charAt(0).toUpperCase()}</span>`}</div>
               <div class="flex-1 min-w-0">
+                <p class="text-[11px] font-semibold text-domus-azul-escuro mb-0.5">${r.autor_nome || 'Dominha'}</p>
                 <p class="text-sm text-domus-texto leading-relaxed">${r.texto.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
                 <p class="text-[10px] text-domus-texto-suave mt-1">${tempo}</p>
               </div>
@@ -1181,7 +1582,9 @@
           .insert({
             morador_id: _morador.id,
             unidade: _morador.unidade,
-            texto: texto
+            texto: texto,
+            autor_nome: (_morador.apelido || (_morador.nome || '').split(' ')[0] || 'Dominha'),
+            autor_foto: _morador.foto_url || null
           });
 
         if (error) {
@@ -1208,9 +1611,9 @@
     // TABS
     // ==========================================
     function trocarTab(tab) {
-      ['inicio', 'financeiro', 'comunicados', 'comuna'].forEach(t => {
-        const conteudo = document.getElementById('conteudo-' + t);
-        const tabBtn = document.getElementById('tab-' + t);
+      ['inicio', 'financeiro', 'regulamento', 'comunicados', 'comuna', 'mercado', 'historia'].forEach(function(t) {
+        var conteudo = document.getElementById('conteudo-' + t);
+        var tabBtn = document.getElementById('tab-' + t);
         if (conteudo) conteudo.classList.toggle('hidden', t !== tab);
         if (tabBtn) {
           if (t === tab) {
@@ -1222,181 +1625,710 @@
           }
         }
       });
-      // Ao entrar na Comuna, carregar feed se ainda não carregou
-      if (tab === 'comuna' && !_comunaCarregada) {
-        carregarComuna();
+      if (tab === 'financeiro') { try { inicializarFichasOmo(); } catch(e){} }
+      if (tab === 'comunicados' && !_comunicadosCarregados) carregarComunicados();
+      if (tab === 'comuna' && !_comunaCarregada) carregarComuna();
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e){}
+    }
+
+    // ==========================================
+    // COMUNICADOS
+    // ==========================================
+    var _comunicadosCarregados = false;
+    async function carregarComunicados() {
+      var loading = document.getElementById('comunicados-loading');
+      var lista = document.getElementById('comunicados-lista');
+      var vazio = document.getElementById('comunicados-vazio');
+      if (!_morador) return;
+      try {
+        var tkC2 = getCrachaDominha();
+        var resp = { data: null, error: null };
+        if (tkC2) {
+          const respC2 = await db.rpc('meus_comunicados', { p_token: tkC2 });
+          resp.data = (respC2.data || []).slice(0, 30);
+          resp.error = respC2.error;
+        } else {
+          resp.error = { message: 'Sem cracha' };
+        }
+        if (loading) loading.classList.add('hidden');
+        _comunicadosCarregados = true;
+        var data = resp.data;
+        if (resp.error || !data || data.length === 0) {
+          if (vazio) vazio.classList.remove('hidden');
+          return;
+        }
+        if (lista) {
+          lista.innerHTML = data.map(function(c) {
+            var d = c.criado_em ? new Date(c.criado_em) : null;
+            var dataStr = d ? d.toLocaleDateString('pt-BR') : '';
+            return '<div class="bg-white rounded-2xl border border-domus-borda/30 p-4">'
+              + '<div class="flex items-center gap-2 mb-2"><span class="text-xs text-domus-texto-suave">' + dataStr + '</span></div>'
+              + '<h3 class="text-sm font-semibold text-domus-azul-escuro mb-1">' + (c.titulo || 'Comunicado') + '</h3>'
+              + '<p class="text-xs text-domus-texto leading-relaxed whitespace-pre-line">' + (c.conteudo || '') + '</p>'
+            + '</div>';
+          }).join('');
+        }
+      } catch (err) {
+        console.error('Erro carregar comunicados:', err);
+        if (loading) loading.classList.add('hidden');
+        if (vazio) vazio.classList.remove('hidden');
       }
     }
 
     // ==========================================
     // COMUNA DAS DOMINHAS
     // ==========================================
-    let _comunaCarregada = false;
-
+    var _comunaCarregada = false;
     async function carregarComuna() {
-      const loading = document.getElementById('comuna-loading');
-      const feed = document.getElementById('comuna-feed');
-      const vazio = document.getElementById('comuna-vazio');
-
+      var loading = document.getElementById('comuna-loading');
+      var feed = document.getElementById('comuna-feed');
+      var vazio = document.getElementById('comuna-vazio');
+      if (!_morador) return;
       try {
-        const { data, error } = await db
+        var resp = await db
           .from('comuna_posts')
-          .select('*, moradores(nome)')
+          .select('*')
+          .or('escopo.eq.domus,and(escopo.eq.unidade,unidade.eq.' + (_morador.unidade || 'NULL') + ')')
           .order('criado_em', { ascending: false })
-          .limit(20);
-
+          .limit(30);
         if (loading) loading.classList.add('hidden');
         _comunaCarregada = true;
-
-        if (error || !data || data.length === 0) {
+        var data = resp.data;
+        if (resp.error || !data || data.length === 0) {
           if (vazio) vazio.classList.remove('hidden');
-          if (feed) feed.innerHTML = '';
           return;
         }
-
-        if (vazio) vazio.classList.add('hidden');
-
-        let html = '';
-        const categoriaEmoji = { geral: '💬', dica: '📍', evento: '🎉', pedido: '🙋', oferta: '🔄' };
-        const categoriaCor = { geral: 'bg-gray-100 text-gray-700', dica: 'bg-green-100 text-green-700', evento: 'bg-purple-100 text-purple-700', pedido: 'bg-amber-100 text-amber-700', oferta: 'bg-blue-100 text-blue-700' };
-
-        data.forEach(post => {
-          const dtFormat = new Date(post.criado_em).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-          const cat = post.categoria || 'geral';
-          const emoji = categoriaEmoji[cat] || '💬';
-          const corClass = categoriaCor[cat] || 'bg-gray-100 text-gray-700';
-          const nome = post.moradores?.nome || 'Dominha';
-          const inicial = nome.charAt(0).toUpperCase();
-
-          html += `
-            <div class="bg-white rounded-2xl border border-domus-borda/30 p-4 mb-3">
-              <div class="flex items-start gap-3">
-                <div class="w-9 h-9 rounded-full bg-domus-azul/10 flex items-center justify-center text-sm font-bold text-domus-azul flex-shrink-0">${inicial}</div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <p class="text-sm font-medium text-domus-azul-escuro">${nome}</p>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full font-medium ${corClass}">${emoji} ${cat}</span>
-                  </div>
-                  <p class="text-xs text-domus-texto-suave mt-0.5">${dtFormat}</p>
-                  <p class="text-sm text-domus-texto mt-2 leading-relaxed">${post.texto || ''}</p>
-                </div>
-              </div>
-            </div>
-          `;
-        });
-
-        if (feed) feed.innerHTML = html;
+        if (feed) {
+          feed.innerHTML = data.map(function(p) {
+            var d = p.criado_em ? new Date(p.criado_em) : null;
+            var quando = d ? d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
+            var cat = p.categoria || 'geral';
+            var cats = {geral:'Geral',dica:'Dica da Vila',evento:'Evento',pedido:'Pedido',oferta:'Oferta/Troca'};
+            var catLabel = cats[cat] || 'Geral';
+            var ehMeu = p.morador_id === (_morador.morador_id || _morador.id);
+            var btnDel = ehMeu ? '<button onclick="excluirPost(\'' + p.id + '\')" class="text-[10px] text-red-500 hover:underline ml-2">Excluir</button>' : '';
+            return '<div class="bg-white rounded-2xl border border-domus-borda/30 p-4">'
+              + '<div class="flex items-start gap-3">'
+                + '<div class="w-9 h-9 rounded-full bg-domus-azul/10 flex items-center justify-center text-lg flex-shrink-0 overflow-hidden">' + (p.autor_foto ? '<img src="' + p.autor_foto + '" class="w-full h-full object-cover" alt="" />' : '<span>' + ((p.autor_nome || 'D').charAt(0).toUpperCase()) + '</span>') + '</div>'
+                + '<div class="flex-1 min-w-0">'
+                  + '<div class="flex items-center gap-2 mb-1 flex-wrap">'
+                    + '<span class="text-xs font-semibold text-domus-azul-escuro">' + (p.autor_nome || 'Dominha') + '</span>'
+                    + '<span class="text-[10px] bg-domus-azul/10 text-domus-azul px-2 py-0.5 rounded-full">' + catLabel + '</span>'
+                    + '<span class="text-[10px] text-domus-texto-suave">' + quando + '</span>'
+                    + btnDel
+                  + '</div>'
+                  + (p.texto ? '<p class="text-sm text-domus-texto leading-relaxed whitespace-pre-line">' + p.texto + '</p>' : '')
+                  + (p.foto_url ? '<img src="' + p.foto_url + '" alt="" class="mt-2 max-h-80 w-full object-cover rounded-lg border border-domus-borda/30" loading="lazy" />' : '')
+                + '</div>'
+              + '</div>'
+            + '</div>';
+          }).join('');
+        }
       } catch (err) {
-        console.error('Erro ao carregar comuna:', err);
+        console.error('Erro carregar comuna:', err);
         if (loading) loading.classList.add('hidden');
         if (vazio) vazio.classList.remove('hidden');
       }
     }
 
-    async function publicarPost() {
-      if (!_morador) return;
+    // ===== Upload de foto na Comuna =====
+    var _comunaFotoDataUrl = null;
 
-      const textoEl = document.getElementById('comuna-texto');
-      const texto = textoEl?.value?.trim();
-      if (!texto) return;
+    function aoSelecionarFotoComuna(ev) {
+      var f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function(e) {
+        // Comprimir antes de enviar
+        var img = new Image();
+        img.onload = function() {
+          var maxW = 1200, maxH = 1200;
+          var w = img.width, h = img.height;
+          if (w > maxW || h > maxH) {
+            var r = Math.min(maxW / w, maxH / h);
+            w = Math.round(w * r); h = Math.round(h * r);
+          }
+          var cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          _comunaFotoDataUrl = cv.toDataURL('image/jpeg', 0.82);
+          var prev = document.getElementById('comuna-foto-preview');
+          var wrap = document.getElementById('comuna-foto-preview-wrap');
+          var btn = document.getElementById('comuna-foto-btn');
+          if (prev) prev.src = _comunaFotoDataUrl;
+          if (wrap) wrap.classList.remove('hidden');
+          if (btn) btn.classList.add('hidden');
+        };
+        img.src = e.target.result;
+      };
+      rd.readAsDataURL(f);
+    }
 
-      const categoria = document.getElementById('comuna-categoria')?.value || 'geral';
+    function removerFotoComuna() {
+      _comunaFotoDataUrl = null;
+      var inp = document.getElementById('comuna-foto-input');
+      var wrap = document.getElementById('comuna-foto-preview-wrap');
+      var btn = document.getElementById('comuna-foto-btn');
+      if (inp) inp.value = '';
+      if (wrap) wrap.classList.add('hidden');
+      if (btn) btn.classList.remove('hidden');
+    }
 
+    async function uploadFotoComuna(dataUrl) {
+      // Converte dataURL pra Blob e sobe pro Supabase Storage (bucket comuna-fotos)
       try {
-        const { error } = await db
-          .from('comuna_posts')
-          .insert({
-            morador_id: _morador.id,
-            texto: texto,
-            categoria: categoria
-          });
+        var r = await fetch(dataUrl);
+        var blob = await r.blob();
+        var nome = 'post_' + Date.now() + '_' + Math.random().toString(36).slice(2,8) + '.jpg';
+        var up = await db.storage.from('comuna-fotos').upload(nome, blob, { contentType: 'image/jpeg', upsert: false });
+        if (up.error) { console.error('upload foto:', up.error); return null; }
+        var pub = db.storage.from('comuna-fotos').getPublicUrl(nome);
+        return pub && pub.data ? pub.data.publicUrl : null;
+      } catch(e) { console.error('uploadFotoComuna:', e); return null; }
+    }
 
-        if (error) {
-          console.error('Erro ao publicar:', error);
+    async function publicarPost() {
+      var ta = document.getElementById('comuna-texto');
+      var cat = document.getElementById('comuna-categoria');
+      var esc = document.getElementById('comuna-escopo');
+      if (!ta || !_morador) return;
+      var texto = (ta.value || '').trim();
+      if (!texto && !_comunaFotoDataUrl) return; // permite post so com foto
+      var catVal = cat ? cat.value : 'geral';
+      // Regra auto: dica de vila e evento sempre vao pra toda a Domus
+      var escopo = (catVal === 'dica' || catVal === 'evento') ? 'domus' : (esc ? esc.value : 'unidade');
+      ta.disabled = true;
+      try {
+        var fotoUrl = null;
+        if (_comunaFotoDataUrl) fotoUrl = await uploadFotoComuna(_comunaFotoDataUrl);
+        var resp = await db.from('comuna_posts').insert({
+          morador_id: _morador.morador_id || _morador.id,
+          autor_nome: (_morador.apelido || (_morador.nome || '').split(' ')[0] || 'Dominha'),
+          autor_foto: _morador.foto_url || null,
+          unidade: _morador.unidade || null,
+          texto: texto,
+          categoria: cat ? cat.value : 'geral',
+          escopo: escopo,
+          foto_url: fotoUrl
+        });
+        if (resp.error) {
           alert('Não foi possível publicar. Tente novamente.');
+          ta.disabled = false;
           return;
         }
-
-        textoEl.value = '';
+        ta.value = '';
+        ta.disabled = false;
+        removerFotoComuna();
         _comunaCarregada = false;
-        carregarComuna();
+        await carregarComuna();
       } catch (err) {
-        console.error('Erro ao publicar:', err);
+        console.error('Erro publicar post:', err);
+        alert('Erro ao publicar.');
+        ta.disabled = false;
       }
     }
 
-    // Configurar interface para ex-moradoras
+    async function excluirPost(id) {
+      if (!confirm('Excluir este post?')) return;
+      try {
+        await db.from('comuna_posts').delete().eq('id', id);
+        _comunaCarregada = false;
+        await carregarComuna();
+      } catch (err) {
+        console.error('Erro excluir post:', err);
+      }
+    }
+
+    // ==========================================
+    // EX-MORADORAS — só veem a Comuna
+    // ==========================================
     function configurarExMoradora() {
-      // Esconder tabs que ex-moradora não pode ver
-      ['tab-inicio', 'tab-financeiro', 'tab-comunicados'].forEach(id => {
-        const el = document.getElementById(id);
+      ['tab-inicio', 'tab-financeiro', 'tab-regulamento', 'tab-comunicados'].forEach(function(id) {
+        var el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
-
-      // Ir direto para a Comuna
       trocarTab('comuna');
+    }
 
-      // Atualizar boas-vindas
-      const bannerEl = document.querySelector('.bg-domus-gradient');
-      if (bannerEl) {
-        bannerEl.innerHTML = `
-          <div class="flex items-center gap-4">
-            <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-2xl flex-shrink-0">🌻</div>
-            <div>
-              <p class="font-serif text-xl">Olá, ${_morador.nome || '—'}!</p>
-              <p class="text-sm text-white/80 mt-1"><span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">Ex-Dominha</span></p>
-            </div>
-          </div>
-        `;
+    // ==========================================
+    // BOOT
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        var lembrar = localStorage.getItem('domus_morador_remember');
+        var savedEmail = localStorage.getItem('domus_morador_email');
+        if (lembrar === '1' && savedEmail) {
+          var inp = document.getElementById('login-email');
+          var chk = document.getElementById('lembrar-mim');
+          if (inp) inp.value = savedEmail;
+          if (chk) chk.checked = true;
+        }
+      } catch(e) { console.warn('boot:', e); }
+    });
+
+    // ==========================================
+    // FICHAS OMO (so AP) — Maio/2026
+    // ==========================================
+    var _fichasPreco = 19.90;
+    var _fichasQtdSelecionada = 0;
+
+    function inicializarRecursosAP() {
+      // Mostra aba Mercado so pra AP
+      var tabMercado = document.getElementById('tab-mercado');
+      if (tabMercado && _morador && (_morador.unidade || '').toUpperCase() === 'AP') {
+        tabMercado.classList.remove('hidden');
+      }
+    }
+
+    function inicializarFichasOmo() {
+      inicializarRecursosAP();
+      var card = document.getElementById('card-fichas-omo');
+      if (!card || !_morador) return;
+      if ((_morador.unidade || '').toUpperCase() !== 'AP') { card.classList.add('hidden'); return; }
+      card.classList.remove('hidden');
+      _fichasPreco = Number(_morador.preco_ficha_omo || 19.90);
+      var labelPreco = document.getElementById('fichas-preco-unit');
+      if (labelPreco) labelPreco.textContent = 'R$ ' + _fichasPreco.toFixed(2).replace('.', ',') + ' por ficha';
+      var labelMes = document.getElementById('fichas-mes-label');
+      if (labelMes) {
+        var d = new Date();
+        var meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        labelMes.textContent = meses[d.getMonth()] + '/' + d.getFullYear();
+      }
+      carregarExtratoFichas();
+    }
+
+    function mesRefAtual() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+    }
+
+    async function carregarExtratoFichas() {
+      var extrato = document.getElementById('fichas-extrato');
+      var totalEl = document.getElementById('fichas-total-mes');
+      var valorEl = document.getElementById('fichas-valor-mes');
+      if (!_morador || !_morador.morador_id) return;
+      try {
+        var resp = await db.from('fichas_omo').select('*').eq('morador_id', _morador.morador_id).eq('mes_referencia', mesRefAtual()).eq('cancelado', false).order('registrado_em', { ascending: false });
+        var data = resp.data || [];
+        var totalQtd = 0, totalValor = 0;
+        data.forEach(function(f) { totalQtd += Number(f.quantidade); totalValor += Number(f.valor_total); });
+        if (totalEl) totalEl.textContent = totalQtd + (totalQtd === 1 ? ' ficha' : ' fichas');
+        if (valorEl) valorEl.textContent = 'R$ ' + totalValor.toFixed(2).replace('.', ',');
+        if (extrato) {
+          if (data.length === 0) {
+            extrato.innerHTML = '<p class="text-[12px] text-domus-texto-suave italic text-center py-3">Nenhuma ficha registrada ainda.</p>';
+          } else {
+            extrato.innerHTML = data.map(function(f) {
+              var dt = new Date(f.registrado_em);
+              var diaMes = String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0');
+              var hora = String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
+              return '<div class="flex items-center justify-between bg-domus-bg/50 rounded-lg px-3 py-2">'
+                + '<div class="flex items-center gap-2">'
+                + '<span class="text-domus-azul">🧺</span>'
+                + '<div>'
+                + '<p class="text-[12px] text-domus-azul-escuro font-semibold">' + f.quantidade + (Number(f.quantidade) === 1 ? ' ficha' : ' fichas') + '</p>'
+                + '<p class="text-[10px] text-domus-texto-suave">' + diaMes + ' as ' + hora + '</p>'
+                + '</div></div>'
+                + '<div class="text-right">'
+                + '<p class="text-[12px] text-domus-azul-escuro font-semibold">R$ ' + Number(f.valor_total).toFixed(2).replace('.', ',') + '</p>'
+                + '<button onclick="cancelarFicha(\'' + f.id + '\')" class="text-[10px] text-red-500 hover:underline">remover</button>'
+                + '</div></div>';
+            }).join('');
+          }
+        }
+      } catch (e) { console.warn('[fichas] erro carregar:', e); }
+    }
+
+    function confirmarFichas(qtd) {
+      _fichasQtdSelecionada = qtd;
+      var num = document.getElementById('popup-qtd-num');
+      var lbl = document.getElementById('popup-qtd-label');
+      var val = document.getElementById('popup-valor-add');
+      if (num) num.textContent = qtd;
+      if (lbl) lbl.textContent = qtd === 1 ? 'ficha' : 'fichas';
+      if (val) val.textContent = 'R$ ' + (qtd * _fichasPreco).toFixed(2).replace('.', ',');
+      var pop = document.getElementById('popup-fichas-confirmar');
+      if (pop) pop.classList.remove('hidden');
+    }
+
+    function fecharPopupFichas() {
+      var pop = document.getElementById('popup-fichas-confirmar');
+      if (pop) pop.classList.add('hidden');
+      _fichasQtdSelecionada = 0;
+    }
+
+    function abrirOutraQtd() {
+      var pop = document.getElementById('popup-outra-qtd');
+      var inp = document.getElementById('input-outra-qtd');
+      if (inp) inp.value = '';
+      if (pop) pop.classList.remove('hidden');
+      setTimeout(function() { if (inp) inp.focus(); }, 100);
+    }
+
+    function fecharOutraQtd() {
+      var pop = document.getElementById('popup-outra-qtd');
+      if (pop) pop.classList.add('hidden');
+    }
+
+    function confirmarOutraQtd() {
+      var inp = document.getElementById('input-outra-qtd');
+      var qtd = parseInt(inp ? inp.value : '0', 10);
+      if (!qtd || qtd < 1 || qtd > 30) { alert('Digite uma quantidade entre 1 e 30.'); return; }
+      fecharOutraQtd();
+      confirmarFichas(qtd);
+    }
+
+    async function salvarFichas() {
+      if (!_fichasQtdSelecionada || !_morador) return;
+      var btn = document.getElementById('popup-btn-confirmar');
+      if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+      // Defesa em profundidade: se nao temos o morador_id real, nao tenta o INSERT —
+      // a FK falharia. Avisa de forma amigavel e logamos pra Gabi olhar.
+      if (!_morador.morador_id) {
+        console.error('[fichas] morador_id ausente — cadastro de moradoras inconsistente. dominha_id=', _morador.id, 'email=', _morador.email);
+        if (btn) { btn.disabled = false; btn.textContent = 'Sim, registrar'; }
+        fecharPopupFichas();
+        try { dgToast && dgToast('Não consegui registrar agora. Avisa a Gabi no WhatsApp que a gente arruma rapidinho 💙'); }
+        catch(e) { alert('Não consegui registrar agora. Avisa a Gabi no WhatsApp que a gente arruma rapidinho.'); }
+        return;
+      }
+      try {
+        var qtdSalva = _fichasQtdSelecionada;
+        var ins = await db.from('fichas_omo').insert({
+          morador_id: _morador.morador_id,
+          mes_referencia: mesRefAtual(),
+          quantidade: qtdSalva,
+          preco_unitario: _fichasPreco
+        });
+        if (ins.error) throw ins.error;
+        fecharPopupFichas();
+        await carregarExtratoFichas();
+        try { carregarBoleto(); } catch(e) {}
+        // POPUP DE CONFIRMACAO — moradora precisa ver feedback claro
+        try {
+          var hoje = new Date();
+          var dd = String(hoje.getDate()).padStart(2,'0');
+          var mm = String(hoje.getMonth()+1).padStart(2,'0');
+          var aaaa = hoje.getFullYear();
+          var msgTxt = qtdSalva === 1
+            ? 'Registrada a retirada de 1 ficha em ' + dd + '/' + mm + '/' + aaaa + ' ✅'
+            : 'Registrada a retirada de ' + qtdSalva + ' fichas em ' + dd + '/' + mm + '/' + aaaa + ' ✅';
+          if (typeof dgToast === 'function') {
+            dgToast(msgTxt, 'success');
+          } else {
+            alert(msgTxt);
+          }
+        } catch(e) { /* nao trava o fluxo se toast quebrar */ }
+      } catch (e) {
+        // Loga erro detalhado pra debug — NAO redireciona /ops.html (moradora perde contexto)
+        console.error('[fichas] falha ao registrar ficha OMO:', e, 'morador_id=', _morador.morador_id, 'qtd=', _fichasQtdSelecionada);
+        if (btn) { btn.disabled = false; btn.textContent = 'Sim, registrar'; }
+        fecharPopupFichas();
+        try {
+          var msgErr = 'Ops, não conseguimos registrar agora. Manda print pra Gabi no WhatsApp e ela arruma rapidinho 💙';
+          if (typeof dgToast === 'function') {
+            dgToast(msgErr, 'error');
+          } else {
+            alert(msgErr);
+          }
+        } catch(_) { alert('Não conseguimos registrar agora. Avisa a Gabi no WhatsApp.'); }
+        return;
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Sim, registrar'; }
+      }
+    }
+
+    async function cancelarFicha(id) {
+      if (!confirm('Remover este registro?')) return;
+      try {
+        var del = await db.from('fichas_omo').delete().eq('id', id);
+        if (del.error) throw del.error;
+        await carregarExtratoFichas();
+        try { carregarBoleto(); } catch(e) {}
+      } catch (e) {
+        console.error('[fichas] falha ao remover ficha OMO id=', id, e);
+        window.location.href = '/ops.html';
       }
     }
 
     // ==========================================
-    // INICIALIZAÇÃO
+    // PERFIL EDITAVEL (foto + apelido)
     // ==========================================
-    (async function() {
-      try {
-        // Restaurar sessão salva (sistema próprio, não Supabase Auth)
-        const sessaoStr = localStorage.getItem('dominha_session');
-        if (sessaoStr) {
-          try {
-            const sessao = JSON.parse(sessaoStr);
-            if (sessao && sessao.dominha_id) {
-              _usuario = {
-                id: sessao.dominha_id,
-                email: sessao.email,
-                nome: sessao.nome,
-                perfil: 'morador'
-              };
-              _morador = {
-                id: sessao.dominha_id,
-                nome: sessao.nome,
-                email: sessao.email,
-                unidade: sessao.unidade || 'AP',
-                quarto: sessao.quarto || '—',
-                status: sessao.status || 'ativa',
-                pontos_fidelidade: sessao.pontos || 0
-              };
-              mostrarPainel();
-              return;
-            }
-          } catch(e) { console.warn('sessão inválida', e); }
-        }
+    var _editPerfilDataUrl = null; // armazena foto pendente
 
-        // Pré-preencher email se "lembrar de mim" foi marcado
-        const remember = localStorage.getItem('domus_morador_remember');
-        const savedEmail = localStorage.getItem('domus_morador_email');
-        if (remember && savedEmail) {
-          var emailEl = document.getElementById('login-email');
-          var lembrarEl = document.getElementById('lembrar-mim');
-          if (emailEl) emailEl.value = savedEmail;
-          if (lembrarEl) lembrarEl.checked = true;
-        }
-      } catch (err) {
-        console.error('Erro na inicialização:', err);
+    function renderizarAvatarHeader() {
+      if (!_morador) return;
+      var img = document.getElementById('avatar-header-img');
+      var emo = document.getElementById('avatar-header-emoji');
+      if (_morador.foto_url) {
+        if (img) { img.src = _morador.foto_url; img.classList.remove('hidden'); }
+        if (emo) emo.classList.add('hidden');
+      } else {
+        if (img) img.classList.add('hidden');
+        if (emo) { emo.textContent = (_morador.nome || 'D').charAt(0).toUpperCase(); emo.classList.remove('hidden'); }
       }
-    })();
-  </script>
+      // Avatar do campo de criar post na comuna
+      var cImg = document.getElementById('comuna-avatar-img');
+      var cEmo = document.getElementById('comuna-avatar-emoji');
+      if (cImg && cEmo) {
+        if (_morador.foto_url) {
+          cImg.src = _morador.foto_url; cImg.classList.remove('hidden'); cEmo.classList.add('hidden');
+        } else {
+          cImg.classList.add('hidden'); cEmo.textContent = (_morador.nome || 'D').charAt(0).toUpperCase(); cEmo.classList.remove('hidden');
+        }
+      }
+    }
 
-</body>
+    function abrirEditarPerfil() {
+      if (!_morador) return;
+      _editPerfilDataUrl = _morador.foto_url || null;
+      var apelidoInp = document.getElementById('edit-perfil-apelido');
+      if (apelidoInp) apelidoInp.value = _morador.apelido || '';
+      atualizarPreviewPerfil();
+      var pop = document.getElementById('popup-editar-perfil');
+      if (pop) pop.classList.remove('hidden');
+    }
+
+    function fecharEditarPerfil() {
+      var pop = document.getElementById('popup-editar-perfil');
+      if (pop) pop.classList.add('hidden');
+      _editPerfilDataUrl = null;
+    }
+
+    function atualizarPreviewPerfil() {
+      var img = document.getElementById('edit-perfil-img');
+      var emo = document.getElementById('edit-perfil-emoji');
+      var rem = document.getElementById('edit-perfil-remover');
+      if (_editPerfilDataUrl) {
+        if (img) { img.src = _editPerfilDataUrl; img.classList.remove('hidden'); }
+        if (emo) emo.classList.add('hidden');
+        if (rem) rem.classList.remove('hidden');
+      } else {
+        if (img) img.classList.add('hidden');
+        if (emo) { emo.textContent = (_morador && _morador.nome ? _morador.nome.charAt(0).toUpperCase() : '👋'); emo.classList.remove('hidden'); }
+        if (rem) rem.classList.add('hidden');
+      }
+    }
+
+    function removerFotoPerfil() {
+      _editPerfilDataUrl = null;
+      atualizarPreviewPerfil();
+    }
+
+    function aoSelecionarFotoPerfil(event) {
+      var file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { alert('Foto muito grande (max 5MB).'); return; }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+          // Comprime client-side pra ~300x300 jpeg 0.85
+          var canvas = document.createElement('canvas');
+          var size = 300;
+          var ratio = Math.min(size / img.width, size / img.height, 1);
+          canvas.width = Math.round(img.width * ratio);
+          canvas.height = Math.round(img.height * ratio);
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          _editPerfilDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          atualizarPreviewPerfil();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function salvarEditarPerfil() {
+      if (!_morador) return;
+      var apelidoInp = document.getElementById('edit-perfil-apelido');
+      var apelido = (apelidoInp ? apelidoInp.value : '').trim() || null;
+      var btn = document.getElementById('edit-perfil-salvar');
+      if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+      try {
+        var upd = await db.from('dominhas').update({
+          foto_url: _editPerfilDataUrl,
+          apelido: apelido
+        }).eq('email', _morador.email);
+        if (upd.error) throw upd.error;
+        _morador.foto_url = _editPerfilDataUrl;
+        _morador.apelido = apelido;
+        // Atualiza nome do header
+        var nomeEl = document.getElementById('painel-nome');
+        if (nomeEl) nomeEl.textContent = (apelido || (_morador.nome || '').split(' ')[0]) || '—';
+        renderizarAvatarHeader();
+        fecharEditarPerfil();
+      } catch (e) {
+        alert('Erro ao salvar: ' + (e.message || e));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
+      }
+    }
+
+    function selecionarCategoria(cat, btn) {
+      var hidden = document.getElementById('comuna-categoria');
+      if (hidden) hidden.value = cat;
+      // Visual: tira destaque de todos, aplica no clicado
+      document.querySelectorAll('.cat-btn').forEach(function(b) {
+        b.classList.remove('cat-active');
+        b.style.borderColor = 'transparent';
+      });
+      if (btn) {
+        btn.classList.add('cat-active');
+        // Borda forte = cor do texto
+        var corTexto = btn.style.color;
+        if (corTexto) btn.style.borderColor = corTexto;
+      }
+      atualizarEscopoAutomatico();
+    }
+
+    function atualizarEscopoAutomatico() {
+      var cat = document.getElementById('comuna-categoria');
+      var esc = document.getElementById('comuna-escopo');
+      if (!cat || !esc) return;
+      // Dica da Vila e Evento sempre vao pra toda a Domus (informativo)
+      if (cat.value === 'dica' || cat.value === 'evento') {
+        esc.value = 'domus';
+        esc.disabled = true;
+        esc.title = 'Esta categoria sempre vai pra toda a Domus';
+      } else {
+        esc.disabled = false;
+        esc.title = 'Quem vai ver';
+      }
+    }
+
+
+    async function baixarBoletoPdf(codigoSolicitacao, unidade, btn) {
+      if (!codigoSolicitacao) return;
+      var textoOriginal = btn ? btn.innerHTML : null;
+      if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Baixando...'; }
+      try {
+        var r = await fetch('https://motwhfbpundrhvuwjntw.supabase.co/functions/v1/inter-emit-boleto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acao: 'baixar_pdf', codigo_solicitacao: codigoSolicitacao, unidade: unidade })
+        });
+        var j = await r.json();
+        if (!j.ok || !j.pdf_base64) throw new Error(j.erro || 'PDF nao recebido');
+        // Converte base64 pra blob e abre/baixa
+        var bin = atob(j.pdf_base64);
+        var len = bin.length;
+        var bytes = new Uint8Array(len);
+        for (var i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+        var blob = new Blob([bytes], { type: 'application/pdf' });
+        var url = URL.createObjectURL(blob);
+        // No mobile abre em nova aba, no desktop dispara download
+        var ehMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+        if (ehMobile) {
+          window.open(url, '_blank');
+        } else {
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'boleto-domus-' + (codigoSolicitacao.slice(0, 8)) + '.pdf';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+        setTimeout(function() { URL.revokeObjectURL(url); }, 30000);
+      } catch (e) {
+        alert('Erro ao baixar boleto: ' + (e.message || e));
+      } finally {
+        if (btn) { btn.disabled = false; if (textoOriginal) btn.innerHTML = textoOriginal; }
+      }
+    }
+
+    function abrirTrocarSenha() {
+      var box = document.getElementById('trocar-senha-box');
+      if (box) box.classList.toggle('hidden');
+    }
+
+    async function trocarSenhaMoradora() {
+      if (!_morador) return;
+      var atual = document.getElementById('senha-atual').value;
+      var nova = document.getElementById('senha-nova').value;
+      var nova2 = document.getElementById('senha-nova-2').value;
+      if (!atual || !nova || !nova2) { alert('Preencha todos os campos.'); return; }
+      if (nova.length < 6) { alert('A senha nova precisa ter pelo menos 6 caracteres.'); return; }
+      if (nova !== nova2) { alert('As senhas novas não conferem.'); return; }
+      var btn = document.getElementById('btn-trocar-senha');
+      if (btn) { btn.disabled = true; btn.textContent = 'Trocando...'; }
+      try {
+        // 1) Confirma senha atual
+        var conf = await db.rpc('verificar_dominha_login', { p_email: _morador.email, p_senha: atual });
+        if (conf.error || !conf.data || !conf.data.success) {
+          alert('Senha atual incorreta.');
+          return;
+        }
+        // 2) Atualiza pra nova (usa pg crypt via RPC ou update direto na tabela)
+        var upd = await db.rpc('trocar_senha_dominha', { p_email: _morador.email, p_senha_nova: nova });
+        if (upd.error) {
+          // Fallback: update direto na tabela usando crypt (se RPC nao existir)
+          var upd2 = await db.from('dominhas').update({ senha_hash: null }).eq('email', _morador.email);
+          // Como nao podemos calcular bcrypt no client, avisar:
+          alert('Não foi possível trocar a senha agora. Avise a Gabi pelo WhatsApp.');
+          return;
+        }
+        alert('Senha trocada com sucesso!');
+        document.getElementById('senha-atual').value = '';
+        document.getElementById('senha-nova').value = '';
+        document.getElementById('senha-nova-2').value = '';
+        var box = document.getElementById('trocar-senha-box');
+        if (box) box.classList.add('hidden');
+      } catch (e) {
+        alert('Erro: ' + (e.message || e));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Confirmar nova senha'; }
+      }
+    }
+</script>
+
+      <!-- ===== Modal Editar Perfil ===== -->
+      <div id="popup-editar-perfil" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+          <div class="bg-gradient-to-br from-domus-azul-claro/20 to-white p-5 text-center">
+            <h3 class="font-serif text-lg text-domus-azul-escuro">Editar perfil</h3>
+            <p class="text-[12px] text-domus-texto-suave mt-1">Sua foto e apelido aparecem no Mural e na Comuna.</p>
+          </div>
+          <div class="p-5 space-y-4">
+            <div class="flex flex-col items-center gap-2">
+              <div class="relative w-24 h-24 rounded-full bg-domus-azul/10 flex items-center justify-center overflow-hidden border-2 border-domus-borda">
+                <span id="edit-perfil-emoji" class="text-3xl">👋</span>
+                <img id="edit-perfil-img" class="hidden absolute inset-0 w-full h-full object-cover" alt="" />
+              </div>
+              <label class="cursor-pointer text-[12px] text-domus-azul hover:underline">
+                <input type="file" accept="image/*" id="edit-perfil-file" onchange="aoSelecionarFotoPerfil(event)" class="hidden" />
+                📷 Escolher foto
+              </label>
+              <button type="button" onclick="removerFotoPerfil()" id="edit-perfil-remover" class="hidden text-[11px] text-red-500 hover:underline">Remover foto</button>
+            </div>
+            <div>
+              <label class="block text-[11px] text-domus-azul uppercase tracking-wider font-semibold mb-1">Apelido (como quer ser chamada)</label>
+              <input type="text" id="edit-perfil-apelido" maxlength="20" placeholder="Ex: Gabi" class="w-full px-3 py-2.5 rounded-xl border border-domus-borda text-sm focus:border-domus-azul outline-none" />
+              <p class="text-[10px] text-domus-texto-suave mt-1">Deixe em branco para usar o seu primeiro nome.</p>
+            </div>
+
+            <!-- Trocar senha -->
+            <div class="border-t border-domus-borda/40 pt-3">
+              <button type="button" onclick="abrirTrocarSenha()" class="w-full text-left flex items-center justify-between text-[12px] text-domus-azul-escuro hover:text-domus-azul transition">
+                <span class="flex items-center gap-2"><span>🔑</span><span>Trocar minha senha</span></span>
+                <span class="text-domus-texto-suave">›</span>
+              </button>
+              <div id="trocar-senha-box" class="hidden mt-3 space-y-2">
+                <input type="password" id="senha-atual" placeholder="Senha atual" class="w-full px-3 py-2 rounded-lg border border-domus-borda text-sm focus:border-domus-azul outline-none" />
+                <input type="password" id="senha-nova" placeholder="Senha nova (min. 6 caracteres)" class="w-full px-3 py-2 rounded-lg border border-domus-borda text-sm focus:border-domus-azul outline-none" />
+                <input type="password" id="senha-nova-2" placeholder="Confirme a senha nova" class="w-full px-3 py-2 rounded-lg border border-domus-borda text-sm focus:border-domus-azul outline-none" />
+                <button id="btn-trocar-senha" onclick="trocarSenhaMoradora()" class="w-full py-2 rounded-lg bg-domus-azul-claro/20 text-domus-azul-escuro text-[12px] font-semibold hover:bg-domus-azul-claro/30">Confirmar nova senha</button>
+              </div>
+            </div>
+
+            <div class="flex gap-2 pt-1">
+              <button onclick="fecharEditarPerfil()" class="flex-1 py-2.5 rounded-xl border border-domus-borda text-sm text-domus-azul-escuro hover:bg-domus-bg transition">Cancelar</button>
+              <button id="edit-perfil-salvar" onclick="salvarEditarPerfil()" class="flex-1 py-2.5 rounded-xl bg-domus-azul text-white text-sm font-semibold hover:bg-domus-azul-escuro transition">Salvar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+  </body>
 </html>
