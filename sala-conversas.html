@@ -284,8 +284,8 @@
 
         <div class="flex gap-2 items-end">
           <button class="btn-iconico text-slate-500" title="Anexar"><svg><use href="#ico-attach"/></svg></button>
-          <textarea id="texto-resposta" placeholder="Mensagem…" class="flex-1 px-3 py-2.5 rounded-2xl border border-slate-200 focus:border-domus-azul focus:outline-none resize-none" rows="1" style="min-height:44px;max-height:120px"></textarea>
-          <button class="w-11 h-11 rounded-full text-white flex items-center justify-center flex-shrink-0" style="background:var(--azul-domus)" aria-label="Enviar"><svg width="20" height="20"><use href="#ico-send"/></svg></button>
+          <textarea id="texto-resposta" placeholder="Mensagem…" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); enviarMensagem();}" class="flex-1 px-3 py-2.5 rounded-2xl border border-slate-200 focus:border-domus-azul focus:outline-none resize-none" rows="1" style="min-height:44px;max-height:120px"></textarea>
+          <button id="btn-enviar" onclick="enviarMensagem()" class="w-11 h-11 rounded-full text-white flex items-center justify-center flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed" style="background:var(--azul-domus)" aria-label="Enviar"><svg width="20" height="20"><use href="#ico-send"/></svg></button>
         </div>
         <div class="hidden lg:flex gap-3 mt-2 text-[11px] text-slate-400">
           <button class="hover:text-slate-600">⚡ Modelos</button>
@@ -438,14 +438,5 @@
 
   function escapar(s) { return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
 
-  carregarConversas();
-  setInterval(carregarConversas, 30000);
-
-  document.getElementById('texto-resposta').addEventListener('input', function(){
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-  });
-</script>
-
-</body>
-</html>
+  async function enviarMensagem() {
+    const ta = document.getElementById('texto-respos
