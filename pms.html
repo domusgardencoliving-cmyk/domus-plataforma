@@ -2480,18 +2480,18 @@
       var nome = prompt('Digite o nome do hóspede:');
       if (nome === null) return; // cancelou
       nome = (nome || '').trim();
-      if (!nome) { alert('Nome em branco — nada foi alterado.'); return; }
-      if (nome.length < 3) { alert('Nome muito curto. Mínimo 3 letras.'); return; }
+      if (!nome) { mostrarToast('Nome em branco', 'warning'); return; }
+      if (nome.length < 3) { mostrarToast('Nome muito curto. Mínimo 3 letras.', 'warning'); return; }
       try {
         var { error } = await db.from('reservas').update({ hospede_nome: nome }).eq('id', reservaId);
-        if (error) { console.error(error); alert('Erro ao salvar: ' + error.message); return; }
-        alert('Nome atualizado para: ' + nome + ' ✓');
+        if (error) { console.error(error); mostrarToast('Erro ao salvar: ' + error.message, 'error'); return; }
+        mostrarToast('Nome atualizado: ' + nome);
         // Recarregar a tela atual
         if (typeof carregarReservas === 'function') carregarReservas();
         if (typeof carregarMapa === 'function') carregarMapa();
         if (typeof carregarHome === 'function') carregarHome();
       } catch (e) {
-        console.error(e); alert('Erro: ' + e.message);
+        console.error(e); mostrarToast('Erro: ' + e.message, 'error');
       }
     }
 
@@ -5095,6 +5095,16 @@
       const plataforma = document.getElementById('nrPlataforma').value;
       const valor = document.getElementById('nrValor').value;
 
+      // Validações de UX antes do INSERT
+      if (!nome || nome.length < 2) { mostrarToast('Nome do hospede e obrigatorio (mín. 2 letras)', 'error'); return; }
+      if (!quarto) { mostrarToast('Selecione um quarto', 'error'); return; }
+      if (!checkin || !checkout) { mostrarToast('Preencha check-in e check-out', 'error'); return; }
+      if (checkin >= checkout) { mostrarToast('Check-out precisa ser depois do check-in', 'error'); return; }
+      const _valNum = parseFloat(valor);
+      if (isNaN(_valNum) || _valNum <= 0) { mostrarToast('Valor da diária precisa ser maior que zero', 'error'); return; }
+
+      const _btnSubmit = e.target.querySelector('button[type="submit"]');
+      if (_btnSubmit) { _btnSubmit.disabled = true; _btnSubmit.dataset.txtOrig = _btnSubmit.textContent; _btnSubmit.textContent = 'Criando...'; }
       try {
         // CHECAGEM PREVIA — antes do INSERT, verifica se cama ja tem reserva
         // sobrepondo (usando matchQuarto pra cobrir aliases).
@@ -5131,7 +5141,8 @@
         mostrarToast('Reserva criada com sucesso!');
         if (currentView === 'home') loadHome();
         else if (currentView === 'reservas') loadReservas();
-      } catch (err) { console.error('Erro:', err); mostrarToast('Erro ao criar reserva'); }
+      } catch (err) { console.error('Erro:', err); mostrarToast('Erro ao criar reserva: ' + (err.message || err), 'error'); }
+      finally { if (_btnSubmit) { _btnSubmit.disabled = false; _btnSubmit.textContent = _btnSubmit.dataset.txtOrig || 'Criar Reserva'; } }
     });
 
     // BLOQUEAR QUARTO — cria uma reserva especial com plataforma='Bloqueio'.
@@ -5153,6 +5164,9 @@
           mostrarToast('Data "Até" precisa ser depois de "De"', 'error');
           return;
         }
+        // Avisa se datas estao no passado
+        const hoje = new Date().toISOString().slice(0,10);
+        if (de < hoje && !confirm('A data de início está no passado (' + de + '). Continuar mesmo assim?')) return;
         const { error } = await db.from('reservas').insert({
           hospede_nome: '[BLOQUEIO] ' + (motivo || 'Sem motivo'),
           plataforma: 'Bloqueio',
@@ -5195,6 +5209,10 @@
       const validade = document.getElementById('ncValidade').value;
       const observacao = document.getElementById('ncObservacao')?.value || '';
 
+      // Validacoes UX
+      if (!codigo || codigo.length < 3) { mostrarToast('Codigo do cupom muito curto', 'error'); return; }
+      const _hoje = new Date().toISOString().slice(0,10);
+      if (validade < _hoje) { mostrarToast('Validade nao pode ser no passado', 'error'); return; }
       try {
         const insertData = {
           codigo, tipo, valor: parseFloat(valor), validade,
@@ -5245,19 +5263,67 @@
     // ==========================================
     let _currentReservaId = null;
 
-    function mostrarToast(msg, tipo) {
-      tipo = tipo || 'success';
+    // ============ UX global ============
+    // ESC fecha qualquer modal aberto
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        const modais = [
+          { id: 'novaReservaModal', closer: closeNovaReservaModal },
+          { id: 'novoCupomModal', closer: typeof closeNovoCupomModal === 'function' ? closeNovoCupomModal : null },
+          { id: 'acaoModal', closer: closeAcaoModal },
+          { id: 'detalheHospedeModal', closer: typeof closeDetalheHospede === 'function' ? closeDetalheHospede : null },
+          { id: 'bloqueioModal', closer: typeof closeBloqueioModal === 'function' ? closeBloqueioModal : null },
+          { id: 'pagamentoModal', closer: typeof closePagamentoModal === 'function' ? closePagamentoModal : null },
+          { id: 'editarReservaModal', closer: typeof fecharEditarReservaModal === 'function' ? fecharEditarReservaModal : null },
+          { id: 'cancelarReservaModal', closer: typeof fecharCancelarReservaModal === 'function' ? fecharCancelarReservaModal : null }
+        ];
+        for (const m of modais) {
+          const el = document.getElementById(m.id);
+          if (el && !el.classList.contains('hidden')) {
+            try { if (m.closer) m.closer(); else el.classList.add('hidden'); } catch(_) { el.classList.add('hidden'); }
+            return;
+          }
+        }
+      }
+    });
+
+    // Auto-foco no primeiro input visível ao abrir um modal
+    // Observa mudancas de class nos modais e foca quando ficam visiveis
+    const _modalObserver = new MutationObserver(function(muts) {
+      muts.forEach(function(m) {
+        if (m.attributeName === 'class' && m.target.id && m.target.id.endsWith('Modal')) {
+          if (!m.target.classList.contains('hidden')) {
+            setTimeout(function() {
+              const inp = m.target.querySelector('input:not([type="hidden"]):not([readonly]):not([disabled]), textarea:not([readonly]):not([disabled]), select:not([disabled])');
+              if (inp) try { inp.focus(); } catch(_) {}
+            }, 100);
+          }
+        }
+      });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('[id$="Modal"]').forEach(function(el) {
+        try { _modalObserver.observe(el, { attributes: true, attributeFilter: ['class'] }); } catch(_) {}
+      });
+    });
+
+    function mostrarToast(msg, tipo) {      tipo = tipo || 'success';
       const cores = {
         success: 'linear-gradient(135deg, #27AE60, #219a52)',
         error:   'linear-gradient(135deg, #E74C3C, #c0392b)',
+        warning: 'linear-gradient(135deg, #F39C12, #d68910)',
         info:    'linear-gradient(135deg, #5B9BD5, #4a8ac4)'
       };
+      const icones = { success:'✓', error:'✕', warning:'⚠', info:'ℹ' };
       const t = document.createElement('div');
       t.className = 'toast';
-      t.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:${cores[tipo]||cores.success};color:white;padding:12px 24px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:9999;font-size:14px;font-weight:500;animation:slideDown 0.3s ease;`;
-      t.textContent = msg;
+      t.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:${cores[tipo]||cores.success};color:white;padding:12px 24px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:9999;font-size:14px;font-weight:500;animation:slideDown 0.3s ease;display:flex;align-items:center;gap:8px;max-width:90vw;cursor:pointer;`;
+      t.innerHTML = '<span style="font-size:16px;font-weight:bold">' + (icones[tipo]||'') + '</span><span>' + String(msg).replace(/</g,'&lt;') + '</span>';
+      t.onclick = () => t.remove();
       document.body.appendChild(t);
-      setTimeout(() => t.remove(), 3000);
+      // Duracao por tipo: success 3s, error 6s, warning 5s, info 4s
+      const dur = tipo === 'error' ? 6000 : (tipo === 'warning' ? 5000 : (tipo === 'info' ? 4000 : 3000));
+      setTimeout(() => t.remove(), dur);
     }
 
     // ============================================================
@@ -5771,6 +5837,13 @@
       e.preventDefault();
       const id = document.getElementById('editResId').value;
       if (!id) { mostrarToast('ID da reserva ausente', 'error'); return; }
+      const _ciVal = document.getElementById('editResCheckin').value;
+      const _coVal = document.getElementById('editResCheckout').value;
+      if (_ciVal && _coVal && _ciVal >= _coVal) { mostrarToast('Check-out precisa ser depois do check-in', 'error'); return; }
+      const _nomeVal = document.getElementById('editResNome').value.trim();
+      if (!_nomeVal) { mostrarToast('Nome do hospede e obrigatorio', 'error'); return; }
+      const _btnSalvar = e.target.querySelector('button[type="submit"]');
+      if (_btnSalvar) { _btnSalvar.disabled = true; _btnSalvar.dataset.txtOrig = _btnSalvar.textContent; _btnSalvar.textContent = 'Salvando...'; }
       const _editHidVal = (document.getElementById('editResHospedeId').value || '').trim();
       const updates = {
         hospede_nome:    document.getElementById('editResNome').value.trim(),
@@ -5798,14 +5871,15 @@
         const { data, error } = await db.from('reservas').update(updates).eq('id', id).select('id');
         if (error) throw error;
         if (!data || !data.length) { mostrarToast('Mudança bloqueada (RLS)', 'error'); return; }
-        mostrarToast('✅ Reserva atualizada');
+        mostrarToast('Reserva atualizada');
         fecharEditarReservaModal();
         if (typeof currentView !== 'undefined') {
           if (currentView === 'home') loadHome();
           else if (currentView === 'mapa') loadMapa();
           else if (currentView === 'reservas') loadReservas();
         }
-      } catch (e) { mostrarToast('Erro: ' + e.message, 'error'); }
+      } catch (err) { mostrarToast('Erro: ' + err.message, 'error'); }
+      finally { if (_btnSalvar) { _btnSalvar.disabled = false; _btnSalvar.textContent = _btnSalvar.dataset.txtOrig || 'Salvar mudanças'; } }
     }
 
     async function cancelarReserva() {
