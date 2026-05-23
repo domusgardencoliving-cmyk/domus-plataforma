@@ -4999,11 +4999,11 @@
       try {
         const { data, error } = await db.rpc('criar_lote_boletos_mes', { p_mes_referencia: mesISO });
         if (error) throw error;
-        mostrarToast('✅ Lote criado: ' + (data?.total_boletos || 0) + ' boletos, total ' + fmtMoedaBRL(data?.total_valor || 0), 'sucesso');
+        mostrarToast('✅ Lote criado: ' + (data?.total_boletos || 0) + ' boletos, total ' + fmtMoedaBRL(data?.total_valor || 0), 'success');
         await loadBoletos();
       } catch (e) {
         console.error('criarLoteBoletos:', e);
-        mostrarToast('❌ Erro ao criar lote: ' + (e.message || e), 'erro');
+        mostrarToast('❌ Erro ao criar lote: ' + (e.message || e), 'error');
       } finally {
         btn.disabled = false; btn.textContent = '+ Criar lote do mês';
       }
@@ -5015,11 +5015,11 @@
       try {
         const { data, error } = await db.rpc('gerar_boletos_mock', { p_lote_id: boletosLoteAtual.id });
         if (error) throw error;
-        mostrarToast('✅ ' + (data?.gerados || 0) + ' boletos gerados (modo de teste — sem Inter ainda)', 'sucesso');
+        mostrarToast('✅ ' + (data?.gerados || 0) + ' boletos gerados (modo de teste — sem Inter ainda)', 'success');
         await loadBoletos();
       } catch (e) {
         console.error('enviarMaloteInter:', e);
-        mostrarToast('❌ Erro: ' + (e.message || e), 'erro');
+        mostrarToast('❌ Erro: ' + (e.message || e), 'error');
       }
     }
 
@@ -5037,9 +5037,9 @@
           valor_energia: en, valor_extras: ex, valor_multas: mu, valor_descontos: de, valor_total: total
         }).eq('id', boletoId);
         if (error) throw error;
-        mostrarToast('✅ Valores atualizados', 'sucesso');
+        mostrarToast('✅ Valores atualizados', 'success');
         await loadBoletos();
-      } catch (e) { mostrarToast('❌ ' + (e.message || e), 'erro'); }
+      } catch (e) { mostrarToast('❌ ' + (e.message || e), 'error'); }
     }
 
     async function marcarBoletoPago(boletoId) {
@@ -5048,9 +5048,9 @@
       try {
         const { error } = await db.from('dominhas_boletos').update({ status: 'pago', data_pagamento: hoje }).eq('id', boletoId);
         if (error) throw error;
-        mostrarToast('✅ Marcado como pago', 'sucesso');
+        mostrarToast('✅ Marcado como pago', 'success');
         await loadBoletos();
-      } catch (e) { mostrarToast('❌ ' + (e.message || e), 'erro'); }
+      } catch (e) { mostrarToast('❌ ' + (e.message || e), 'error'); }
     }
 
     async function notificarDominhasCarteiro() {
@@ -5370,7 +5370,7 @@
           .gt('checkout', novoCheckin);
 
         if (conflitos && conflitos.length > 0) {
-          mostrarToast('❌ Conflito! ' + (conflitos[0].hospede_nome || 'Outra reserva') + ' já ocupa esse quarto nesse período.', 'erro');
+          mostrarToast('❌ Conflito! ' + (conflitos[0].hospede_nome || 'Outra reserva') + ' já ocupa esse quarto nesse período.', 'error');
           return;
         }
 
@@ -5383,13 +5383,13 @@
           checkout: novoCheckout
         }).eq('id', reservaId);
 
-        if (error) { mostrarToast('Erro ao mover: ' + error.message, 'erro'); return; }
+        if (error) { mostrarToast('Erro ao mover: ' + error.message, 'error'); return; }
         mostrarToast('✅ Reserva movida pra ' + novoQuarto);
         if (typeof currentView !== 'undefined') {
           if (currentView === 'mapa') loadMapa();
           else if (currentView === 'home') loadHome();
         }
-      } catch (e) { mostrarToast('Erro: ' + e.message, 'erro'); }
+      } catch (e) { mostrarToast('Erro: ' + e.message, 'error'); }
     }
 
     async function abrirAcaoModal(reservaId) {
@@ -6429,13 +6429,13 @@
     async function enviarVoucherWhatsApp() {
       try {
         var rid = _currentReservaId || (typeof reservaAtualId !== 'undefined' && reservaAtualId) || (window.reservaAtualId || null);
-        if (!rid) { mostrarToast('Reserva não selecionada', 'erro'); return; }
+        if (!rid) { mostrarToast('Reserva não selecionada', 'error'); return; }
         var { data: r, error } = await db.from('reservas')
           .select('hospede_nome, hospede_contato, checkin, checkout, valor_total, canal_codigo, quarto')
           .eq('id', rid).single();
-        if (error || !r) { mostrarToast('Erro ao carregar reserva', 'erro'); return; }
+        if (error || !r) { mostrarToast('Erro ao carregar reserva', 'error'); return; }
         var tel = (r.hospede_contato || '').replace(/\D/g, '');
-        if (!tel || tel.length < 10) { mostrarToast('Hóspede sem telefone válido', 'erro'); return; }
+        if (!tel || tel.length < 10) { mostrarToast('Hóspede sem telefone válido', 'error'); return; }
         if (tel.length === 10 || tel.length === 11) tel = '55' + tel;
         var fmtData = function(d){ if(!d) return ''; var p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
         var nome = (r.hospede_nome || '').split(' ')[0] || 'Hóspede';
