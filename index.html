@@ -9339,6 +9339,25 @@ html { scroll-behavior: smooth; }
       document.querySelector('#mod-fila .bg-white')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+
+    // Toast bonito pro site público (substitui alerts feios)
+    function toastSite(msg, tipo) {
+      tipo = tipo || 'info';
+      const cores = {
+        sucesso: 'linear-gradient(135deg,#27AE60,#219a52)',
+        info:    'linear-gradient(135deg,#008B9C,#0A6B75)',
+        erro:    'linear-gradient(135deg,#E74C3C,#c0392b)',
+        aviso:   'linear-gradient(135deg,#F39C12,#d68910)'
+      };
+      const t = document.createElement('div');
+      t.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:'+(cores[tipo]||cores.info)+';color:white;padding:14px 24px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,0.18);z-index:99999;font-size:15px;font-weight:500;max-width:90vw;cursor:pointer;transition:transform .2s';
+      t.textContent = msg;
+      t.onclick = () => t.remove();
+      document.body.appendChild(t);
+      const dur = tipo === 'erro' ? 6000 : (tipo === 'aviso' ? 5000 : 4000);
+      setTimeout(() => t.remove(), dur);
+    }
+
     async function finalizarFila() {
       // Coletar dados do formulario
       const nome = document.getElementById('fila-nome')?.value.trim();
@@ -9357,17 +9376,17 @@ html { scroll-behavior: smooth; }
 
       // Validacoes
       if (!nome || !idade || !telefone || !email) {
-        alert('Por favor, preencha todos os campos obrigatorios da etapa 1 (nome, idade, telefone e e-mail).');
+        toastSite('Preencha todos os campos da etapa 1: nome, idade, telefone e e-mail.', 'aviso');
         mostrarFilaStep(1);
         return;
       }
       if (!tipoQuarto || !faixaValor || !dataMudanca) {
-        alert('Por favor, preencha todos os campos obrigatorios da etapa 2 (tipo de quarto, faixa de valor e data de mudanca).');
+        toastSite('Preencha todos os campos da etapa 2: tipo de quarto, faixa de valor e data de mudança.', 'aviso');
         mostrarFilaStep(2);
         return;
       }
       if (!aceite) {
-        alert('Voce precisa aceitar as condicoes para entrar na lista de espera.');
+        toastSite('Você precisa aceitar as condições para entrar na lista de espera.', 'aviso');
         return;
       }
 
@@ -9392,7 +9411,7 @@ html { scroll-behavior: smooth; }
 
         if (error) {
           console.error('Erro ao salvar na lista de espera:', error);
-          alert('Ops, houve um erro ao salvar. Tente novamente!');
+          toastSite('Erro ao salvar. Tenta de novo!', 'erro');
           return;
         }
 
@@ -9438,7 +9457,7 @@ html { scroll-behavior: smooth; }
         mostrarFilaStep(4);
       } catch (err) {
         console.error('Erro inesperado:', err);
-        alert('Ops, houve um erro de conexão. Tente novamente!');
+        toastSite('Erro de conexão. Tenta de novo!', 'erro');
       }
     }
 
@@ -9457,12 +9476,12 @@ html { scroll-behavior: smooth; }
         var tel = document.getElementById('pr-telefone')?.value.trim();
         var doc = document.getElementById('pr-documento')?.value.trim();
         if (!nome || !sobrenome || !email || !tel || !doc) {
-          alert('Por favor, preencha todos os campos obrigatórios (nome, sobrenome, e-mail, WhatsApp e documento).');
+          toastSite('Preencha todos os campos: nome, sobrenome, e-mail, WhatsApp e documento.', 'aviso');
           return;
         }
         var docUpload = document.getElementById('pr-doc-upload');
         if (!docUpload?.files?.length) {
-          alert('Por favor, envie a foto do seu documento de identidade (RG, CNH ou passaporte).');
+          toastSite('Envie a foto do seu documento (RG, CNH ou passaporte).', 'aviso');
           return;
         }
       }
@@ -9820,11 +9839,11 @@ html { scroll-behavior: smooth; }
               ].join(' | ')
             });
             if (e2) {
-              alert('Ops, houve um erro ao salvar. Tente novamente!');
+              toastSite('Erro ao salvar. Tenta de novo!', 'erro');
               return;
             }
           } else {
-            alert('Ops, houve um erro ao salvar. Tente novamente!');
+            toastSite('Erro ao salvar. Tenta de novo!', 'erro');
             return;
           }
         }
@@ -9896,7 +9915,7 @@ html { scroll-behavior: smooth; }
         }
       } catch (err) {
         console.error('Erro inesperado:', err);
-        alert('Ops, houve um erro de conexão. Tente novamente!');
+        toastSite('Erro de conexão. Tenta de novo!', 'erro');
       }
     }
 
@@ -10447,7 +10466,7 @@ html { scroll-behavior: smooth; }
 
       // Valida se as datas foram preenchidas
       if (!ci || !co) {
-        alert('Por favor, selecione as datas de check-in e check-out antes de continuar.');
+        toastSite('Selecione as datas de check-in e check-out antes de continuar.', 'aviso');
         document.getElementById('hostel-checkin')?.focus();
         return;
       }
