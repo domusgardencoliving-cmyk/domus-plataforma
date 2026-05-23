@@ -94,6 +94,10 @@
     }
 
     /* Modal Blur */
+    @keyframes slideDown {
+      from { transform: translate(-50%, -30px); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
+    }
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -6416,7 +6420,4 @@
         const noites = (r.checkin && r.checkout)
           ? Math.max(1, Math.round((new Date(r.checkout) - new Date(r.checkin)) / 86400000))
           : 1;
-        const diaria = parseFloat(r.valor_diaria) || (parseFloat(r.valor_total || 0) / noites) || 0;
-        const total = parseFloat(r.valor_total) || (diaria * noites);
-
-        // Unidade: H6/H7/St
+        const diaria = parseFloat(r.valor_diaria)
