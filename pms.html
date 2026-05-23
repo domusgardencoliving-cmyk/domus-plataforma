@@ -4684,12 +4684,14 @@
       document.getElementById('detalheHospedeModal').classList.add('hidden');
     }
 
-    document.getElementById('searchHospedes').addEventListener('input', (e) => {
-      const search = e.target.value.toLowerCase();
-      document.querySelectorAll('#hospedesTable tr').forEach(tr => {
-        const nome = tr.querySelector('td').textContent.toLowerCase();
-        tr.style.display = nome.includes(search) ? '' : 'none';
-      });
+    // Listener duplicado removido (a função filtrarHospedes do oninput=
+    // já faz busca completa em nome+email+telefone). Mantido só pra atalho de
+    // teclado: tecla "/" foca na busca de hóspedes quando estiver na aba.
+    document.addEventListener('keydown', function(e) {
+      if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        const sh = document.getElementById('searchHospedes');
+        if (sh && sh.offsetParent !== null) { e.preventDefault(); sh.focus(); sh.select(); }
+      }
     });
 
     // ==========================================
@@ -6438,7 +6440,4 @@
         var fmtData = function(d){ if(!d) return ''; var p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
         var nome = (r.hospede_nome || '').split(' ')[0] || 'Hóspede';
         var msg = 'Oi, ' + nome + '! 💛\n\n' +
-          'Sua reserva na Domus Garden está confirmada:\n\n' +
-          '🏡 ' + (r.quarto || 'Acomodação a definir') + '\n' +
-          '📅 Check-in: ' + fmtData(r.checkin) + ' às 16h\n' +
-          '📅 Check-out: ' + fmtData(r.checkout) + ' até 1
+          'Sua reserva na Domus G
