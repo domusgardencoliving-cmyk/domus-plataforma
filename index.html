@@ -1119,9 +1119,16 @@ html { scroll-behavior: smooth; }
   </div>
 
   <!-- ==========================================
-       MÓDULO 2 — PORTAL DOMINHAS
+       MÓDULO 2 — PORTAL DOMINHAS (DEPRECADO)
+       --------------------------------------------
+       ⚠️ Este módulo é o PROTÓTIPO ANTIGO com dados fake ("Maria Oliveira").
+       O Portal Dominhas real está em dominhas.html (página separada).
+       Todas as chamadas a mostrarModulo('portal') foram substituídas por
+       window.location.href = 'dominhas.html'.
+       Este bloco fica aqui só pra não quebrar IDs/seletores referenciados
+       em outros pontos do código. NÃO USAR.
        ========================================== -->
-  <div id="mod-portal" class="modulo hidden-mod pt-10 min-h-screen bg-white">
+  <div id="mod-portal" class="modulo hidden-mod pt-10 min-h-screen bg-white" style="display:none !important;">
 
     <!-- Tela de login do Portal -->
     <div id="portal-login" class="portal-view">
@@ -3992,21 +3999,21 @@ html { scroll-behavior: smooth; }
               </div>
             </div>
 
-            <!-- Sub-navegação: AP | Rib | Lista de Espera -->
+            <!-- Sub-navegação: Moradoras (default) | Boletos | Fila | Futuros | Contratos | Visitas -->
+            <!-- col-ap e col-rib (protótipo antigo com "Moradora exemplo") foram escondidos.
+                 Os dados reais estão em col-moradoras e col-boletos-cbr. -->
             <div class="flex flex-wrap gap-2 mb-4 sm:mb-6 border-b border-domus-borda pb-3">
-              <button onclick="mostrarSubColiving('col-ap', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-domus-azul text-white transition">Andrade Pertence</button>
-              <button onclick="mostrarSubColiving('col-rib', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Ribeirão Claro</button>
+              <button onclick="mostrarSubColiving('col-moradoras', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-domus-azul text-white transition">👥 Moradoras</button>
+              <button onclick="mostrarSubColiving('col-boletos-cbr', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">💰 Boletos Dominhas</button>
               <button onclick="mostrarSubColiving('col-fila', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Lista de Espera</button>
               <button onclick="mostrarSubColiving('col-futuros', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Futuros Moradores</button>
               <button onclick="mostrarSubColiving('col-contratos', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">📋 Contratos Pendentes</button>
-              <button onclick="mostrarSubColiving('col-moradoras', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">👥 Moradoras</button>
-              <button onclick="mostrarSubColiving('col-boletos-cbr', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">💰 Boletos Dominhas</button>
               <button onclick="mostrarSubColiving('col-visitas', this)" class="col-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition relative">📅 Visitas<span id="badge-visitas-pendentes" class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] bg-amber-500 text-white px-1 rounded-full hidden align-middle">0</span></button>
             </div>
 
 
             <!-- ======= MORADORAS — dados reais do banco ======= -->
-            <div id="col-moradoras" class="col-sub-section hidden fade-in">
+            <div id="col-moradoras" class="col-sub-section fade-in">
               <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div>
                   <h2 class="font-serif text-xl sm:text-2xl text-domus-azul-escuro">Moradoras</h2>
@@ -4158,7 +4165,7 @@ html { scroll-behavior: smooth; }
             </div>
 
             <!-- ======= ANDRADE PERTENCE ======= -->
-            <div id="col-ap" class="col-sub-section fade-in">
+            <div id="col-ap" class="col-sub-section hidden fade-in">
               <!-- Resumo AP -->
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
                 <div class="bg-domus-azul/10 rounded-xl p-4">
@@ -8777,9 +8784,10 @@ html { scroll-behavior: smooth; }
         if (p.get('reserva') === 'hostel') {
           setTimeout(function(){ mostrarModulo('prereserva'); }, 200);
         } else if (p.get('cadastro') === 'domus') {
-          setTimeout(function(){ mostrarModulo('portal'); mostrarPortalView('portal-cadastro'); }, 200);
+          // Portal Dominhas real é dominhas.html (com login próprio + cadastro)
+          window.location.href = 'dominhas.html?cadastro=1';
         } else if (p.get('portal') === 'domus') {
-          setTimeout(function(){ mostrarModulo('portal'); }, 200);
+          window.location.href = 'dominhas.html';
         }
       } catch(e) {}
     })();
@@ -9418,13 +9426,46 @@ html { scroll-behavior: smooth; }
         }
 
         // ==========================================
-        // CRUZAMENTO COM VAGAS DISPONÍVEIS (match)
+        // CRUZAMENTO COM VAGAS DISPONÍVEIS (match) — dinâmico
+        // Calcula vagas reais subtraindo moradoras ativas da capacidade total.
         // ==========================================
-        // Vagas reais hoje (atualizar manualmente conforme abrem/fecham)
-        var VAGAS_DISPONIVEIS = [
-          { tipo: 'compartilhado', unidade: 'ap',  valor: 1250 },
-          { tipo: 'compartilhado', unidade: 'rib', valor: 1198 }
+        // Capacidade nominal de cada (tipo, unidade, valor base):
+        var CAPACIDADE_COLIVING = [
+          { tipo: 'compartilhado', unidade: 'ap',  valor: 1250, total: 6 },  // 2 quartos × 3 vagas
+          { tipo: 'individual',    unidade: 'ap',  valor: 1450, total: 4 },  // 4 individuais
+          { tipo: 'compartilhado', unidade: 'rib', valor: 1198, total: 8 },  // ~3 compart × 2-3 vagas
+          { tipo: 'individual',    unidade: 'rib', valor: 1749, total: 4 }   // ~4 individuais
         ];
+
+        // Conta moradoras ativas por (tipo, unidade) — quarto começa com "C" pra compartilhado, "I" pra individual
+        // OBS: como o schema tem só campo `quarto` (texto livre) e não `tipo_quarto`, inferimos do nome.
+        var VAGAS_DISPONIVEIS = [];
+        try {
+          var { data: ativas } = await db.from('moradores')
+            .select('unidade, quarto, valor')
+            .eq('status', 'ativo');
+
+          (ativas || []).forEach(function(m) {
+            // Identificar tipo pelo nome do quarto: "Compart 2.1" -> compartilhado; "Q1", "Studio 1" -> individual
+            var qNome = (m.quarto || '').toLowerCase();
+            var tipoInferido = (qNome.indexOf('compart') >= 0 || /\.\d/.test(qNome)) ? 'compartilhado' : 'individual';
+            var uniInferida = (m.unidade || '').toLowerCase() === 'rib' ? 'rib' : 'ap';
+            // Diminui contador
+            var cap = CAPACIDADE_COLIVING.find(c => c.tipo === tipoInferido && c.unidade === uniInferida);
+            if (cap) cap.total = Math.max(0, cap.total - 1);
+          });
+
+          // O que sobrou de total > 0 vira vaga disponível
+          VAGAS_DISPONIVEIS = CAPACIDADE_COLIVING
+            .filter(c => c.total > 0)
+            .map(c => ({ tipo: c.tipo, unidade: c.unidade, valor: c.valor }));
+        } catch (vErr) {
+          console.warn('Não foi possível calcular vagas dinâmicas, usando fallback:', vErr);
+          VAGAS_DISPONIVEIS = [
+            { tipo: 'compartilhado', unidade: 'ap',  valor: 1250 },
+            { tipo: 'compartilhado', unidade: 'rib', valor: 1198 }
+          ];
+        }
 
         function _valorNaFaixa(valor, faixa, aceitaFlex) {
           var min = 0, max = 99999;
@@ -9881,7 +9922,7 @@ html { scroll-behavior: smooth; }
               }
             ], {
               order_nsu: 'domus-reserva-' + Date.now(),
-              redirect_url: 'https://dg-gestao.vercel.app/?reserva=sucesso',
+              redirect_url: 'https://domusgardencoliving.com/?reserva=sucesso',
               customer: {
                 name: nomeCompleto,
                 email: emailCliente,
@@ -12489,6 +12530,10 @@ html { scroll-behavior: smooth; }
       if (id === 'dg-fidelidade') fidelidadeInicializar();
       if (id === 'dg-limpeza-admin') carregarLimpezaAdmin();
       if (id === 'dg-pms') carregarPMS();
+      if (id === 'dg-coliving') {
+        // Aba default agora é Moradoras (dados reais) — força o load
+        try { if (typeof loadMoradoras === 'function') loadMoradoras(); } catch(e) { console.warn('loadMoradoras:', e); }
+      }
       if (id === 'dg-financeiro') {
         var sel = document.getElementById('fin-unidade-select');
         carregarFinanceiro(sel ? sel.value : 'AP');

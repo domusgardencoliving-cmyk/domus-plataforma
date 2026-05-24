@@ -314,7 +314,45 @@
     let visitasOcupadasPorDia = {}; // { '2026-05-08': ['11:00', '11:30'], ... }
 
     // ============================================================
-    // GERAR DIAS DISPONÍVEIS (próximos 14 dias úteis exceto dom/seg)
+    // CONFIG DINÂMICA — vem de visitas_config + visitas_bloqueios
+    // (alimentada pelo admin-visitas.html)
+    // ============================================================
+    let _visitasConfig = null;     // { 0: {ativo,hora_inicio,hora_fim,intervalo_min}, ..., 6: {...} }
+    let _visitasBloqueios = [];    // [{ data_inicio, data_fim }, ...]
+    // Fallback caso as RPCs falhem: terça a sábado, 11h-18h30, slots 30min
+    const _FALLBACK_CONFIG = {
+      0: { ativo: false, hora_inicio: '11:00', hora_fim: '18:30', intervalo_min: 30 },
+      1: { ativo: false, hora_inicio: '11:00', hora_fim: '18:30', intervalo_min: 30 },
+      2: { ativo: true,  hora_inicio: '11:00', hora_fim: '18:30', intervalo_min: 30 },
+      3: { ativo: true,  hora_inicio: '11:00', hora_fim: '18:30', intervalo_min: 30 },
+      4: { ativo: true,  hora_inicio: '11:00', hora_fim: '18:30', intervalo_min: 30 },
+      5: { ativo: true,  hora_inicio: '11:00', hora_fim: '18:30', intervalo_min: 30 },
+      6: { ativo: true,  hora_inicio: '11:00', hora_fim: '18:30', intervalo_min: 30 }
+    };
+
+    function _diaEstaBloqueado(isoDate) {
+      return _visitasBloqueios.some(b => isoDate >= b.data_inicio && isoDate <= b.data_fim);
+    }
+
+    function _gerarSlotsParaDia(isoDate) {
+      const cfg = (_visitasConfig || _FALLBACK_CONFIG)[new Date(isoDate + 'T12:00:00').getDay()];
+      if (!cfg || !cfg.ativo) return [];
+      const slots = [];
+      const [h1, m1] = cfg.hora_inicio.split(':').map(n => parseInt(n));
+      const [h2, m2] = cfg.hora_fim.split(':').map(n => parseInt(n));
+      const inicio = h1 * 60 + m1;
+      const fim = h2 * 60 + m2;
+      const step = cfg.intervalo_min || 30;
+      for (let t = inicio; t <= fim; t += step) {
+        const hh = String(Math.floor(t / 60)).padStart(2, '0');
+        const mm = String(t % 60).padStart(2, '0');
+        slots.push(hh + ':' + mm);
+      }
+      return slots;
+    }
+
+    // ============================================================
+    // GERAR DIAS DISPONÍVEIS (próximos 14 dias respeitando config admin)
     // ============================================================
     function gerarDias() {
       const dias = [];
@@ -323,15 +361,18 @@
       const NOMES_DIA = ['dom','seg','ter','qua','qui','sex','sáb'];
       const NOMES_MES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
+      const cfg = _visitasConfig || _FALLBACK_CONFIG;
+
       let d = new Date(hoje);
       let count = 0;
       while (dias.length < 10 && count < 30) {
         d.setDate(d.getDate() + 1); // começa amanhã
         const dow = d.getDay();
-        // Aceita: terça(2), quarta(3), quinta(4), sexta(5), sábado(6)
-        if (dow >= 2 && dow <= 6) {
+        const iso = d.toISOString().split('T')[0];
+        // Aceita: dias ativos no admin E não bloqueados
+        if (cfg[dow] && cfg[dow].ativo && !_diaEstaBloqueado(iso)) {
           dias.push({
-            iso: d.toISOString().split('T')[0],
+            iso: iso,
             dia: d.getDate(),
             mes: NOMES_MES[d.getMonth()],
             semana: NOMES_DIA[dow]
@@ -342,20 +383,45 @@
       return dias;
     }
 
-    function gerarHorarios() {
-      // 11h às 18h30 (último slot 18:30, dura até 19h)
-      const slots = [];
-      for (let h = 11; h <= 18; h++) {
-        slots.push(String(h).padStart(2,'0') + ':00');
-        slots.push(String(h).padStart(2,'0') + ':30');
-      }
-      return slots;
-    }
-
     // ============================================================
-    // BUSCAR VISITAS JÁ AGENDADAS NOS PRÓXIMOS DIAS (pra marcar slots ocupados)
+    // BUSCAR CONFIG + BLOQUEIOS + VISITAS JÁ AGENDADAS
+    // (config + bloqueios vêm do admin-visitas.html)
     // ============================================================
     async function carregarOcupadas() {
+      // 1) Config de horários por dia da semana
+      try {
+        const { data: cfgRows, error: cfgErr } = await db.rpc('admin_listar_config_horarios');
+        if (!cfgErr && Array.isArray(cfgRows) && cfgRows.length > 0) {
+          _visitasConfig = {};
+          cfgRows.forEach(r => {
+            _visitasConfig[r.dia_semana] = {
+              ativo: !!r.ativo,
+              hora_inicio: (r.hora_inicio || '11:00:00').substring(0, 5),
+              hora_fim: (r.hora_fim || '18:30:00').substring(0, 5),
+              intervalo_min: r.intervalo_min || 30
+            };
+          });
+        } else if (cfgErr) {
+          console.warn('[config] usando fallback:', cfgErr);
+        }
+      } catch (e) {
+        console.warn('[config] catch:', e);
+      }
+
+      // 2) Bloqueios futuros (viagens, feriados)
+      try {
+        const { data: blqRows, error: blqErr } = await db.rpc('admin_listar_bloqueios');
+        if (!blqErr && Array.isArray(blqRows)) {
+          _visitasBloqueios = blqRows.map(b => ({
+            data_inicio: b.data_inicio,
+            data_fim: b.data_fim
+          }));
+        }
+      } catch (e) {
+        console.warn('[bloqueios] catch:', e);
+      }
+
+      // 3) Slots já ocupados (visitas agendadas)
       try {
         const hoje = new Date().toISOString().split('T')[0];
         const dataLimite = new Date();
@@ -391,11 +457,11 @@
     function renderDias() {
       const grid = document.getElementById('grid-dias');
       const dias = gerarDias();
-      const todosSlots = gerarHorarios();
 
       grid.innerHTML = dias.map(d => {
         const ocupadas = (visitasOcupadasPorDia[d.iso] || []).length;
-        const lotada = ocupadas >= todosSlots.length;
+        const todosSlotsDoDia = _gerarSlotsParaDia(d.iso);
+        const lotada = todosSlotsDoDia.length > 0 && ocupadas >= todosSlotsDoDia.length;
         return `
           <div class="day-card ${lotada ? 'lotada' : ''}" data-iso="${d.iso}" ${lotada ? 'data-lotada="1"' : ''}>
             <p class="dia-semana text-[11px] uppercase tracking-wider text-domus-texto-suave">${d.semana}</p>
@@ -432,11 +498,13 @@
 
     function renderHorarios() {
       const grid = document.getElementById('grid-horarios');
-      const slots = gerarHorarios();
+      const slots = _gerarSlotsParaDia(diaEscolhido);
       const ocupadasReais = visitasOcupadasPorDia[diaEscolhido] || [];
       const dow = new Date(diaEscolhido + 'T12:00:00').getDay();
       const fakes = SLOTS_FAKE_POR_DIA_SEMANA[dow] || [];
-      const ocupadas = [...new Set([...ocupadasReais, ...fakes])];
+      // Filtra slots fake: só conta se de fato está dentro dos slots gerados pelo config
+      const fakesValidos = fakes.filter(s => slots.includes(s));
+      const ocupadas = [...new Set([...ocupadasReais, ...fakesValidos])];
 
       grid.innerHTML = slots.map(s => {
         const ocupado = ocupadas.includes(s);
