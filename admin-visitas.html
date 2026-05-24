@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Disponibilidade de Visitas — Domus Garden</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: {
+      'domus-azul': '#008B9C', 'domus-azul-escuro': '#0A3142', 'domus-dourado': '#C9A961',
+      'domus-rosa': '#FF385C', 'domus-texto': '#222222', 'domus-texto-suave': '#717171',
+      'domus-borda': '#EBEBEB', 'domus-creme': '#FFF8F0'
+    }, fontFamily: {
+      sans: ['Inter','system-ui','sans-serif'], serif: ['Instrument Serif','Georgia','serif']
+    } } } };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; background: #FFF8F0; color: #222; }
+    .font-serif { font-family: 'Instrument Serif', Georgia, serif; }
+    .card { background: white; border: 1px solid #EBEBEB; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .btn { transition: all .2s ease; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .toast { position: fixed; bottom: 20px; right: 20px; padding: 14px 18px; border-radius: 12px; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 1000; animation: slideUp .3s ease; }
+    .toast.success { background: #16a34a; color: white; }
+    .toast.error { background: #dc2626; color: white; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-domus-borda sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/" class="text-2xl">📅</a>
+        <div>
+          <h1 class="font-serif text-xl text-domus-azul-escuro">Disponibilidade de Visitas</h1>
+          <p class="text-xs text-domus-texto-suave">Admin · Configura horários, bloqueia datas, vê visitas agendadas</p>
+        </div>
+      </div>
+      <a href="/" class="text-sm text-domus-azul hover:underline">← Início</a>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+
+    <!-- HORÁRIOS POR DIA DA SEMANA -->
+    <section class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-serif text-xl text-domus-azul-escuro">⏰ Horários por dia da semana</h2>
+        <button onclick="salvarHorarios()" class="btn px-4 py-2 bg-domus-azul text-white rounded-xl text-sm font-medium hover:bg-domus-azul-escuro">Salvar alterações</button>
+      </div>
+      <p class="text-xs text-domus-texto-suave mb-4">Desmarque dias que você NÃO atende. Defina horário de início/fim e intervalo entre slots.</p>
+      <div id="grid-horarios" class="space-y-2"></div>
+    </section>
+
+    <!-- BLOQUEIO DE DATAS -->
+    <section class="card">
+      <h2 class="font-serif text-xl text-domus-azul-escuro mb-4">🚫 Bloquear datas específicas</h2>
+      <p class="text-xs text-domus-texto-suave mb-4">Quando você for viajar, tiver compromisso pessoal, feriado, etc.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
+        <input id="bloq-inicio" type="date" class="px-3 py-2 rounded-xl border border-domus-borda outline-none focus:border-domus-azul" />
+        <input id="bloq-fim" type="date" class="px-3 py-2 rounded-xl border border-domus-borda outline-none focus:border-domus-azul" />
+        <input id="bloq-motivo" type="text" placeholder="Motivo (opcional)" class="px-3 py-2 rounded-xl border border-domus-borda outline-none focus:border-domus-azul" />
+        <button onclick="adicionarBloqueio()" class="btn px-4 py-2 bg-domus-azul text-white rounded-xl text-sm font-medium">+ Bloquear</button>
+      </div>
+      <div id="lista-bloqueios" class="space-y-2 mt-4"></div>
+    </section>
+
+    <!-- VISITAS AGENDADAS -->
+    <section class="card">
+      <h2 class="font-serif text-xl text-domus-azul-escuro mb-4">👥 Próximas visitas agendadas</h2>
+      <div id="lista-visitas" class="space-y-2"></div>
+    </section>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+    function toast(msg, tipo='success') {
+      const el = document.createElement('div');
+      el.className = 'toast ' + tipo;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    async function carregarTudo() {
+      await Promise.all([carregarHorarios(), carregarBloqueios(), carregarVisitas()]);
+    }
+
+    async function carregarHorarios() {
+      const { data, error } = await db.rpc('admin_listar_config_horarios');
+      if (error) { toast('Erro ao carregar horários', 'error'); console.error(error); return; }
+      const grid = document.getElementById('grid-horarios');
+      grid.innerHTML = '';
+      for (const cfg of data) {
+        const row = document.createElement('div');
+        row.className = 'flex flex-wrap items-center gap-3 p-3 rounded-xl border border-domus-borda';
+        row.innerHTML = `
+          <label class="flex items-center gap-2 min-w-[140px]">
+            <input type="checkbox" data-dia="${cfg.dia_semana}" data-campo="ativo" ${cfg.ativo ? 'checked' : ''} class="w-4 h-4">
+            <span class="font-medium text-sm">${DIAS[cfg.dia_semana]}</span>
+          </label>
+          <label class="text-xs text-domus-texto-suave">
+            de <input type="time" data-dia="${cfg.dia_semana}" data-campo="hora_inicio" value="${cfg.hora_inicio.slice(0,5)}" class="ml-1 px-2 py-1 rounded border border-domus-borda text-sm">
+          </label>
+          <label class="text-xs text-domus-texto-suave">
+            até <input type="time" data-dia="${cfg.dia_semana}" data-campo="hora_fim" value="${cfg.hora_fim.slice(0,5)}" class="ml-1 px-2 py-1 rounded border border-domus-borda text-sm">
+          </label>
+          <label class="text-xs text-domus-texto-suave">
+            intervalo
+            <select data-dia="${cfg.dia_semana}" data-campo="intervalo_min" class="ml-1 px-2 py-1 rounded border border-domus-borda text-sm">
+              <option value="15" ${cfg.intervalo_min===15?'selected':''}>15min</option>
+              <option value="30" ${cfg.intervalo_min===30?'selected':''}>30min</option>
+              <option value="60" ${cfg.intervalo_min===60?'selected':''}>1h</option>
+            </select>
+          </label>
+        `;
+        grid.appendChild(row);
+      }
+    }
+
+    async function salvarHorarios() {
+      const grid = document.getElementById('grid-horarios');
+      const dias = {};
+      grid.querySelectorAll('[data-dia]').forEach(el => {
+        const d = parseInt(el.dataset.dia);
+        const c = el.dataset.campo;
+        if (!dias[d]) dias[d] = {};
+        dias[d][c] = (c === 'ativo') ? el.checked
+                    : (c === 'intervalo_min') ? parseInt(el.value)
+                    : el.value;
+      });
+      let erro = false;
+      for (const d in dias) {
+        const cfg = dias[d];
+        const { error } = await db.rpc('admin_atualizar_horarios', {
+          p_dia_semana: parseInt(d),
+          p_ativo: cfg.ativo,
+          p_hora_inicio: cfg.hora_inicio + ':00',
+          p_hora_fim: cfg.hora_fim + ':00',
+          p_intervalo_min: cfg.intervalo_min
+        });
+        if (error) { console.error(error); erro = true; }
+      }
+      if (erro) toast('Erro ao salvar alguns dias', 'error');
+      else toast('Horários salvos ✓');
+    }
+
+    async function carregarBloqueios() {
+      const { data, error } = await db.rpc('admin_listar_bloqueios');
+      if (error) { console.error(error); return; }
+      const lista = document.getElementById('lista-bloqueios');
+      lista.innerHTML = '';
+      if (!data.length) {
+        lista.innerHTML = '<p class="text-sm text-domus-texto-suave">Nenhuma data bloqueada nos próximos dias.</p>';
+        return;
+      }
+      for (const b of data) {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-3 rounded-xl bg-domus-creme border border-domus-borda';
+        const inicio = new Date(b.data_inicio + 'T12:00:00').toLocaleDateString('pt-BR');
+        const fim = new Date(b.data_fim + 'T12:00:00').toLocaleDateString('pt-BR');
+        const periodo = inicio === fim ? inicio : `${inicio} → ${fim}`;
+        row.innerHTML = `
+          <div>
+            <p class="text-sm font-medium">${periodo}</p>
+            ${b.motivo ? `<p class="text-xs text-domus-texto-suave">${b.motivo}</p>` : ''}
+          </div>
+          <button onclick="removerBloqueio('${b.id}')" class="text-xs text-domus-rosa hover:underline">Remover</button>
+        `;
+        lista.appendChild(row);
+      }
+    }
+
+    async function adicionarBloqueio() {
+      const ini = document.getElementById('bloq-inicio').value;
+      const fim = document.getElementById('bloq-fim').value || ini;
+      const mot = document.getElementById('bloq-motivo').value || null;
+      if (!ini) return toast('Selecione a data de início', 'error');
+      const { error } = await db.rpc('admin_bloquear_data', { p_data_inicio: ini, p_data_fim: fim, p_motivo: mot });
+      if (error) { toast('Erro ao bloquear', 'error'); console.error(error); return; }
+      document.getElementById('bloq-inicio').value = '';
+      document.getElementById('bloq-fim').value = '';
+      document.getElementById('bloq-motivo').value = '';
+      toast('Data bloqueada ✓');
+      carregarBloqueios();
+    }
+
+    async function removerBloqueio(id) {
+      if (!confirm('Remover esse bloqueio?')) return;
+      const { error } = await db.rpc('admin_desbloquear_data', { p_id: id });
+      if (error) { toast('Erro', 'error'); console.error(error); return; }
+      toast('Bloqueio removido ✓');
+      carregarBloqueios();
+    }
+
+    async function carregarVisitas() {
+      const hoje = new Date().toISOString().slice(0,10);
+      const { data, error } = await db.from('visitas_agendadas').select('*').gte('data', hoje).order('data').order('horario').limit(50);
+      if (error) { console.error(error); return; }
+      const lista = document.getElementById('lista-visitas');
+      lista.innerHTML = '';
+      if (!data.length) {
+        lista.innerHTML = '<p class="text-sm text-domus-texto-suave">Nenhuma visita agendada nos próximos dias.</p>';
+        return;
+      }
+      for (const v of data) {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-3 rounded-xl border border-domus-borda';
+        const data_fmt = new Date(v.data + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+        const cor_status = {
+          'agendado': 'bg-domus-azul/10 text-domus-azul',
+          'compareceu': 'bg-green-100 text-green-700',
+          'no_show': 'bg-red-100 text-red-700',
+          'cancelado': 'bg-gray-100 text-gray-700'
+        }[v.status] || 'bg-gray-100';
+        row.innerHTML = `
+          <div>
+            <p class="text-sm font-medium">${v.nome} <span class="text-xs text-domus-texto-suave">· ${v.whatsapp || ''}</span></p>
+            <p class="text-xs text-domus-texto-suave">${data_fmt} às ${(v.horario||'').slice(0,5)} · ${v.unidade || '?'}</p>
+          </div>
+          <span class="px-2 py-1 rounded-full text-[10px] font-semibold ${cor_status}">${v.status}</span>
+        `;
+        lista.appendChild(row);
+      }
+    }
+
+    carregarTudo();
+  </script>
+</body>
+</html>
