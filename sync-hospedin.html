@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Sync Hospedin → Supabase (Browser)</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 800px; margin: 30px auto; padding: 0 20px; background: #0a3142; color: #fff; }
+  h1 { color: #c9a961; }
+  .card { background: #1a4357; border-radius: 12px; padding: 20px; margin: 15px 0; }
+  button { background: #c9a961; color: #0a3142; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .stat { display: inline-block; margin-right: 20px; }
+  .stat strong { font-size: 24px; color: #c9a961; }
+  .log { background: #051824; border-radius: 8px; padding: 12px; margin-top: 15px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+  .log .ok { color: #4ade80; }
+  .log .erro { color: #f87171; }
+  .log .info { color: #93c5fd; }
+  .progress-bar { background: #051824; border-radius: 8px; height: 24px; margin-top: 15px; overflow: hidden; }
+  .progress-fill { background: linear-gradient(90deg, #c9a961, #4ade80); height: 100%; transition: width 0.3s; }
+</style>
+</head>
+<body>
+<h1>🔄 Sync Hospedin → Supabase</h1>
+<p>Página rodando no seu navegador (que funciona com Hospedin). Vai pegar nomes/telefones das reservas Booking restantes.</p>
+
+<div class="card">
+  <div>
+    <span class="stat">Faltam: <strong id="faltam">--</strong></span>
+    <span class="stat">Atualizadas: <strong id="atualizadas">0</strong></span>
+    <span class="stat">Falhas: <strong id="falhas">0</strong></span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress" style="width: 0%"></div></div>
+  <div style="margin-top:15px;">
+    <button id="btnIniciar" onclick="iniciar()">▶️ Iniciar sync</button>
+    <button id="btnPausar" onclick="pausar()" disabled>⏸️ Pausar</button>
+  </div>
+</div>
+
+<div class="card">
+  <strong>Log:</strong>
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+// As credenciais Hospedin NÃO ficam mais hardcoded — vêm do Vault via Edge Function
+// (foi vazada no GitHub público até 24/05/2026; senha foi rotacionada e movida pro Vault).
+let HOSP_EMAIL = null;
+let HOSP_PASS = null;
+let HOSP_ACCOUNT = null;
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let token = null;
+let rodando = false;
+let stats = { atualizadas: 0, falhas: 0 };
+
+const $log = document.getElementById('log');
+const $faltam = document.getElementById('faltam');
+const $atualizadas = document.getElementById('atualizadas');
+const $falhas = document.getElementById('falhas');
+const $progress = document.getElementById('progress');
+const $btnIniciar = document.getElementById('btnIniciar');
+const $btnPausar = document.getElementById('btnPausar');
+
+let totalInicial = 0;
+
+function log(msg, tipo='info') {
+  const div = document.createElement('div');
+  div.className = tipo;
+  div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  $log.appendChild(div);
+  $log.scrollTop = $log.scrollHeight;
+}
+
+async function carregarCredsHospedin() {
+  // Busca credenciais do Vault via Edge Function
+  // (credenciais NUNCA aparecem no source-code do front)
+  const r = await fetch(SUPABASE_URL + '/functions/v1/get-hospedin-creds', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + SUPABASE_ANON,
+      'Content-Type': 'application/json'
+    }
+  });
+  if (!r.ok) throw new Error('Não consegui buscar credenciais do Vault (HTTP ' + r.status + ')');
+  const d = await r.json();
+  if (!d.ok) throw new Error(d.erro || 'Resposta do Vault inválida');
+  HOSP_EMAIL = d.email;
+  HOSP_PASS = d.password;
+  HOSP_ACCOUNT = d.account;
+}
+
+async function authHospedin() {
+  // Garante que carregou creds do Vault antes de chamar Hospedin
+  if (!HOSP_PASS) await carregarCredsHospedin();
+  const r = await fetch('https://app.hospedin.com/api/v2/authentication/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: HOSP_EMAIL, password: HOSP_PASS })
+  });
+  if (!r.ok) throw new Error('Auth falhou: ' + r.status);
+  const d = await r.json();
+  return d?.data?.token;
+}
+
+async function atualizarFaltam() {
+  const { count } = await sb.from('reservas').select('id', { count: 'exact', head: true })
+    .eq('hospede_nome', '').not('hospedin_id', 'is', null).is('hospedin_guest_id', null);
+  $faltam.textContent = count;
+  if (totalInicial === 0) totalInicial = count;
+  const pct = totalInicial > 0 ? ((totalInicial - count) / totalInicial * 100).toFixed(1) : 0;
+  $progress.style.width = pct + '%';
+  return count;
+}
+
+async function processarUma(reserva) {
+  try {
+    const respR = await fetch('https://app.hospedin.com/api/v2/' + HOSP_ACCOUNT + '/reservations/' + reserva.hospedin_id, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!respR.ok) {
+      stats.falhas++;
+      log('  ✗ ' + reserva.canal_codigo + ' — reserva HTTP ' + respR.status, 'erro');
+      return;
+    }
+    const r = await respR.json();
+    const guestId = r.guest_id;
+    if (!guestId) {
+      stats.falhas++;
+      log('  ✗ ' + reserva.canal_codigo + ' — sem guest_id', 'erro');
+      return;
+    }
+    const respG = await fetch('https://app.hospedin.com/api/v2/' + HOSP_ACCOUNT + '/guests/' + guestId, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!respG.ok) {
+      stats.falhas++;
+      log('  ✗ ' + reserva.canal_codigo + ' — guest HTTP ' + respG.status, 'erro');
+      return;
+    }
+    const g = await respG.json();
+    const nome = g?.name;
+    const phone = g?.phone;
+    const email = g?.email;
+    if (!nome) {
+      stats.falhas++;
+      log('  ✗ ' + reserva.canal_codigo + ' — guest sem nome', 'erro');
+      return;
+    }
+    const updates = { hospede_nome: nome, hospedin_guest_id: guestId };
+    if (phone) updates.hospede_contato = phone;
+    else if (email) updates.hospede_contato = email;
+    const { error } = await sb.from('reservas').update(updates).eq('id', reserva.id);
+    if (error) {
+      stats.falhas++;
+      log('  ✗ ' + reserva.canal_codigo + ' — UPDATE falhou: ' + error.message, 'erro');
+      return;
+    }
+    stats.atualizadas++;
+    log('  ✓ ' + reserva.canal_codigo + ' → ' + nome, 'ok');
+  } catch (e) {
+    stats.falhas++;
+    log('  ✗ ' + reserva.canal_codigo + ' — exceção: ' + e.message, 'erro');
+  }
+  $atualizadas.textContent = stats.atualizadas;
+  $falhas.textContent = stats.falhas;
+}
+
+async function iniciar() {
+  rodando = true;
+  $btnIniciar.disabled = true;
+  $btnPausar.disabled = false;
+  log('Iniciando sync...', 'info');
+  try {
+    log('Autenticando na Hospedin...', 'info');
+    token = await authHospedin();
+    log('Token obtido!', 'ok');
+  } catch(e) {
+    log('Falha auth: ' + e.message, 'erro');
+    pausar();
+    return;
+  }
+
+  while (rodando) {
+    const faltam = await atualizarFaltam();
+    if (faltam === 0) {
+      log('🎉 ZERADO! Todas as reservas têm nome.', 'ok');
+      pausar();
+      return;
+    }
+    log('Buscando próximo lote (10 reservas, faltam ' + faltam + ')...', 'info');
+    const { data: reservas } = await sb.from('reservas')
+      .select('id, hospedin_id, canal_codigo')
+      .eq('hospede_nome', '').not('hospedin_id', 'is', null).is('hospedin_guest_id', null)
+      .order('hospedin_id', { ascending: false })
+      .limit(10);
+    if (!reservas || reservas.length === 0) { log('Sem reservas pendentes', 'info'); break; }
+    for (const r of reservas) {
+      if (!rodando) break;
+      await processarUma(r);
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+}
+
+function pausar() {
+  rodando = false;
+  $btnIniciar.disabled = false;
+  $btnPausar.disabled = true;
+  log('Pausado', 'info');
+}
+
+atualizarFaltam();
+</script>
+</body>
+</html>

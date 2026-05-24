@@ -2006,13 +2006,13 @@
             <div>
               <label class="block text-sm font-medium text-domus-texto mb-1">Check-in *</label>
               <input id="editResCheckin" type="date" required
-                onchange="popularQuartosDisponiveis(this.value, document.getElementById('editResCheckout').value, document.getElementById('editResQuarto').value, document.getElementById('editResId').value); atualizarTotalEditarReserva(); verificarAjusteDiaria();"
+                onchange="popularQuartosDisponiveis(this.value, document.getElementById('editResCheckout').value, document.getElementById('editResQuarto').value, document.getElementById('editResId').value); atualizarTotalEditarReserva();"
                 class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
             </div>
             <div>
               <label class="block text-sm font-medium text-domus-texto mb-1">Check-out *</label>
               <input id="editResCheckout" type="date" required
-                onchange="popularQuartosDisponiveis(document.getElementById('editResCheckin').value, this.value, document.getElementById('editResQuarto').value, document.getElementById('editResId').value); atualizarTotalEditarReserva(); verificarAjusteDiaria();"
+                onchange="popularQuartosDisponiveis(document.getElementById('editResCheckin').value, this.value, document.getElementById('editResQuarto').value, document.getElementById('editResId').value); atualizarTotalEditarReserva();"
                 class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul" />
             </div>
           </div>
@@ -2020,6 +2020,7 @@
           <div>
             <label class="block text-sm font-medium text-domus-texto mb-1">Quarto *</label>
             <select id="editResQuarto" required
+              onchange="aoMudarQuartoEditarReserva()"
               class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-azul">
               <option value="">Selecione...</option>
             </select>
@@ -2035,7 +2036,7 @@
             <div id="editResAjusteDiaria" class="hidden mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
               <span id="editResAjusteDiariaTxt" class="text-amber-800"></span>
               <span id="editResAjusteDiariaOld" class="hidden"></span>
-              <button type="button" id="editResAjusteDiariaUndo" onclick="desfazerAjusteDiaria()" class="ml-2 text-xs text-amber-700 underline hover:text-amber-900">Desfazer</button>
+              <button type="button" id="editResAjusteDiariaUndo" onclick="reverterDiariaEditarReserva()" class="ml-2 text-xs text-amber-700 underline hover:text-amber-900">Desfazer</button>
             </div>
           </div>
 
@@ -2242,6 +2243,68 @@
             <button type="button" onclick="closePagamentoModal()"
               class="flex-1 px-4 py-2 bg-gray-200 text-domus-texto rounded-lg text-sm hover:bg-gray-300 font-medium">
               Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL — CANCELAR RESERVA
+       Referenciado em 7 lugares no JS. HTML adicionado em 24/05/2026
+       após auditoria detectar que botão "Cancelar Reserva" travava
+       silenciosamente porque o modal nunca tinha sido criado.
+       ========================================== -->
+  <div id="cancelarReservaModal" class="hidden">
+    <div class="modal-overlay" onclick="fecharCancelarReservaModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none p-4">
+      <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full pointer-events-auto max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-semibold text-domus-texto">🚫 Cancelar reserva</h3>
+          <button type="button" onclick="fecharCancelarReservaModal()" class="text-domus-texto-suave hover:text-domus-texto text-2xl">&times;</button>
+        </div>
+
+        <p class="text-sm text-domus-texto-suave mb-5">
+          Esta ação muda o status da reserva pra <strong>cancelada</strong>. Se for um cancelamento por engano
+          (reserva criada errada), marca a opção pra não contabilizar no relatório.
+        </p>
+
+        <form id="cancelarReservaForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Motivo *</label>
+            <select id="cancMotivo" required onchange="onMotivoCancelamentoChange()"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-rosa">
+              <option value="">Selecione...</option>
+              <option value="hospede_desistiu">Hóspede desistiu</option>
+              <option value="hospede_nao_apareceu">Hóspede não apareceu (no-show)</option>
+              <option value="superbooking">Superbooking / sem disponibilidade</option>
+              <option value="problema_pagamento">Problema no pagamento</option>
+              <option value="cancelado_por_nos">Cancelado pela Domus</option>
+              <option value="por_engano">Foi por engano (não contabilizar)</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+
+          <div id="cancEnganoAviso" class="hidden p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+            ⚠️ Reservas marcadas como "por engano" ficam ocultas dos relatórios financeiros e do mapa de ocupação.
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-domus-texto mb-1">Observação (opcional)</label>
+            <textarea id="cancObs" rows="2"
+              placeholder="Ex: hóspede ligou avisando que perdeu o voo"
+              class="w-full px-4 py-2 border border-domus-borda rounded-lg focus:outline-none focus:ring-2 focus:ring-domus-rosa"></textarea>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button type="button" onclick="fecharCancelarReservaModal()"
+              class="flex-1 px-4 py-2 border border-domus-borda rounded-lg text-domus-texto hover:bg-gray-50">
+              Voltar
+            </button>
+            <button type="submit"
+              class="flex-1 px-4 py-2 bg-domus-rosa text-white rounded-lg hover:bg-domus-rosa-escuro font-medium">
+              Confirmar cancelamento
             </button>
           </div>
         </form>
@@ -3882,7 +3945,13 @@
             <td>${fmtData(r.checkin)}</td>
             <td>${fmtData(r.checkout)}</td>
             <td>${r.plataforma}</td>
-            <td style="text-align: right;">R$ ${parseFloat(r.valor_total).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</td>
+            <td style="text-align: right;">${(function(){
+              var v = parseFloat(r.valor_total);
+              if (!Number.isFinite(v) || v <= 0) {
+                return '<span style="color:#dc2626; font-weight:600;" title="Reserva sem valor — edite e preencha o total antes de cobrar.">⚠️ R$ 0,00</span>';
+              }
+              return 'R$ ' + v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+            })()}</td>
             <td><span class="badge ${statusClass}">${r.status}</span></td>
             <td style="text-align: center;">
               <button onclick="abrirAcaoModal('${r.id}')" style="cursor: pointer; background: none; border: none; font-weight: bold;">⋮</button>
@@ -5384,7 +5453,7 @@
         mostrarToast('Quarto bloqueado com sucesso ✅', 'success');
         closeBloqueioModal();
         if (currentView === 'home') loadHome();
-        else if (currentView === 'mapa') { try { renderMapa(); } catch(err){} }
+        else if (currentView === 'mapa') { try { loadMapa(); } catch(err){} }
       } catch (err) {
         console.error('[bloquear] excecao:', err);
         mostrarToast('Erro inesperado. Tente de novo.', 'error');
@@ -5834,7 +5903,7 @@
         mostrarToast('Check-in feito! Mas hóspede sem telefone — copie a msg do console.', 'info');
         console.log('===== MENSAGEM CHECK-IN =====\n' + msg.replace(/\\n/g,'\n'));
       } else {
-        const url = 'https://wa.me/' + String(tel).replace(/\\D/g,'') + '?text=' + encodeURIComponent(msg.replace(/\\n/g,'\n'));
+        const url = 'https://wa.me/' + String(tel).replace(/\D/g,'') + '?text=' + encodeURIComponent(msg.replace(/\\n/g,'\n'));
         window.open(url, '_blank');
         mostrarToast('Check-in feito! WhatsApp aberto com a mensagem.');
       }
@@ -6394,10 +6463,31 @@
       try {
         const { data: r } = await db.from('reservas').select('*').eq('id', _currentReservaId).maybeSingle();
         if (!r) return;
+
+        // ============================================================
+        // GUARDA: Reserva sem valor não pode receber pagamento.
+        // Causa: bug do sync Hospedin (já corrigido) ou criação manual
+        // sem preencher valor. Pede pra editar reserva primeiro.
+        // ============================================================
+        const total = parseFloat(r.valor_total || 0);
+        if (!Number.isFinite(total) || total <= 0) {
+          if (typeof mostrarToast === 'function') {
+            mostrarToast('⚠️ Esta reserva está com valor R$ 0,00. Edite a reserva e preencha o valor total antes de registrar pagamento.', 'warning');
+          } else {
+            alert('Esta reserva está com valor R$ 0,00. Edite e preencha o valor total antes de registrar pagamento.');
+          }
+          // Já abre o modal de editar (se a função existir)
+          try {
+            if (typeof abrirEditarReservaModal === 'function') {
+              abrirEditarReservaModal(_currentReservaId);
+            }
+          } catch (eEdit) { /* segue */ }
+          return;
+        }
+
         document.getElementById('pagResumoNome').textContent = r.hospede_nome || '—';
         document.getElementById('pagResumoDatas').textContent =
           fmtData(r.checkin) + ' → ' + fmtData(r.checkout);
-        const total = parseFloat(r.valor_total || 0);
         document.getElementById('pagResumoTotal').textContent = 'R$ ' + total.toFixed(2);
         // Recebido (soma de pagamentos da tabela correta)
         let recebido = 0;
@@ -6431,8 +6521,10 @@
         const metodoRadio = document.querySelector('input[name="pagMetodo"]:checked');
         const metodo = metodoRadio ? metodoRadio.value : null;
         const obs = (document.getElementById('pagObservacao')?.value || '').trim();
+        const dataPag = (document.getElementById('pagData')?.value || '').trim();
         if (!valor || valor <= 0) { mostrarToast('Valor deve ser maior que zero', 'error'); return; }
         if (!metodo) { mostrarToast('Escolha um método', 'error'); return; }
+        if (!dataPag) { mostrarToast('Informe a data do pagamento', 'error'); return; }
         const btn = document.getElementById('pagBtnSalvar');
         if (btn) { btn.disabled = true; btn.dataset.txt = btn.textContent; btn.textContent = 'Registrando...'; }
         try {
@@ -6440,7 +6532,8 @@
             p_reserva_id: _currentReservaId,
             p_valor: valor,
             p_metodo: metodo,
-            p_observacao: obs || null
+            p_observacao: obs || null,
+            p_data_pagamento: dataPag  // Fix 24/05/2026: agora respeita a data digitada
           });
           if (error) throw error;
           mostrarToast('Pagamento registrado: R$ ' + valor.toFixed(2) + ' (' + metodo + ')');
