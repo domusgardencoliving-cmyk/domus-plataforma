@@ -612,13 +612,20 @@
     } catch(e) { console.warn(e); }
   }
 
+  // Verifica se conversa está arquivada (status novo OU prioridade='resolvida' legado OU flag em metadados)
+  function ehArquivada(c) {
+    return c.status === 'arquivada'
+        || c.prioridade === 'resolvida'
+        || c.prioridade === 'arquivada'
+        || (c.metadados && c.metadados.arquivada === true);
+  }
+
   function conversasFiltradas(){
     let lista = _conversas;
-    // Arquivadas: filtro dedicado. Em todos os outros filtros, esconde arquivadas.
     if (_filtro === 'arquivadas') {
-      return lista.filter(c => c.status === 'arquivada' || (c.metadados && c.metadados.arquivada === true));
+      return lista.filter(ehArquivada);
     }
-    lista = lista.filter(c => c.status !== 'arquivada' && !(c.metadados && c.metadados.arquivada === true));
+    lista = lista.filter(c => !ehArquivada(c));
     if (_canal) lista = lista.filter(c => c.canal === _canal);
     else if (_filtro === 'aguardando_gabi') lista = lista.filter(c => c.status === 'aguardando_gabi');
     else if (_filtro === 'vip') lista = lista.filter(c => c.prioridade === 'vip');
@@ -660,8 +667,8 @@
   }
 
   function atualizarContadores() {
-    const arquivadas = _conversas.filter(c => c.status === 'arquivada' || (c.metadados && c.metadados.arquivada === true));
-    const nao_arquivadas = _conversas.filter(c => c.status !== 'arquivada' && !(c.metadados && c.metadados.arquivada === true));
+    const arquivadas = _conversas.filter(ehArquivada);
+    const nao_arquivadas = _conversas.filter(c => !ehArquivada(c));
     document.getElementById('cnt-todas').textContent = nao_arquivadas.length;
     document.getElementById('cnt-aguardando').textContent = nao_arquivadas.filter(c => c.status === 'aguardando_gabi').length;
     document.getElementById('cnt-vip').textContent = nao_arquivadas.filter(c => c.prioridade === 'vip').length;
@@ -728,8 +735,7 @@
       // Atualiza texto do botão no painel hóspede
       const elTxt = document.getElementById('btn-arquivar-painel-txt');
       if (elTxt) {
-        const arquivada = conv.status === 'arquivada' || (conv.metadados && conv.metadados.arquivada === true);
-        elTxt.textContent = arquivada ? 'Desarquivar conversa' : 'Arquivar conversa';
+        elTxt.textContent = ehArquivada(conv) ? 'Desarquivar conversa' : 'Arquivar conversa';
       }
     } catch(e) { console.warn(e); }
 
@@ -788,12 +794,13 @@
     if (!_ativa) return;
     const conv = _conversas.find(c => c.id === _ativa);
     if (!conv) return;
-    const taArquivada = conv.status === 'arquivada' || (conv.metadados && conv.metadados.arquivada === true);
+    const taArquivada = ehArquivada(conv);
     try {
       if (taArquivada) {
         // Desarquiva: volta pro fluxo normal
         await db.from('conversas').update({
           status: 'aguardando_gabi',
+          prioridade: conv.prioridade === 'resolvida' || conv.prioridade === 'arquivada' ? 'normal' : conv.prioridade,
           metadados: { ...(conv.metadados || {}), arquivada: false, desarquivada_em: new Date().toISOString() }
         }).eq('id', _ativa);
       } else {
@@ -819,7 +826,7 @@
     if (!btn) return;
     const conv = _conversas.find(c => c.id === _ativa);
     if (!conv) return;
-    const taArquivada = conv.status === 'arquivada' || (conv.metadados && conv.metadados.arquivada === true);
+    const taArquivada = ehArquivada(conv);
     btn.title = taArquivada ? 'Desarquivar' : 'Arquivar';
     btn.innerHTML = taArquivada
       ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 3 21 21 21 21 8"/><polyline points="9 12 12 9 15 12"/><line x1="12" y1="9" x2="12" y2="17"/></svg>'
@@ -1146,29 +1153,20 @@
   };
 
   async function onMensagemNova(m) {
-    if (m.direcao === 'entrada') {
-      // Se a conversa estava arquivada, desarquiva automaticamente (igual WhatsApp)
-      try {
-        const { data: conv } = await db.from('conversas')
-          .select('status, metadados').eq('id', m.conversa_id).single();
-        const taArquivada = conv && (conv.status === 'arquivada' || (conv.metadados && conv.metadados.arquivada === true));
-        if (taArquivada) {
-          await db.from('conversas').update({
-            status: 'aguardando_gabi',
-            metadados: { ...(conv.metadados || {}), arquivada: false, desarquivada_em: new Date().toISOString(), desarquivada_por: 'mensagem_nova' }
-          }).eq('id', m.conversa_id);
-        }
-      } catch(_) {}
-    }
     await carregarConversas();
     if (m.direcao === 'entrada') {
       const conv = _conversas.find(c => c.id === m.conversa_id) || {};
-      const nome = conv.hospede_nome_cache || 'Mensagem nova';
-      const somId = SOM_POR_CANAL[conv.canal] !== undefined ? SOM_POR_CANAL[conv.canal] : 'domus';
-      if (somId && typeof window.tocarSomDomus === 'function') {
-        try { window.tocarSomDomus(somId); } catch(_) {}
+      // Conversa arquivada continua arquivada — sem som, sem popup, sem destaque (igual WhatsApp).
+      // A mensagem fica salva e você vê quando abrir a tab Arquivadas.
+      const taArquivada = conv.status === 'arquivada' || (conv.metadados && conv.metadados.arquivada === true);
+      if (!taArquivada) {
+        const nome = conv.hospede_nome_cache || 'Mensagem nova';
+        const somId = SOM_POR_CANAL[conv.canal] !== undefined ? SOM_POR_CANAL[conv.canal] : 'domus';
+        if (somId && typeof window.tocarSomDomus === 'function') {
+          try { window.tocarSomDomus(somId); } catch(_) {}
+        }
+        mostrarPopup(nome, (m.conteudo || '').slice(0, 120), m.conversa_id);
       }
-      mostrarPopup(nome, (m.conteudo || '').slice(0, 120), m.conversa_id);
     }
     if (_ativa === m.conversa_id) await abrirConversa(m.conversa_id);
     atualizarTituloBadge();
