@@ -3552,16 +3552,26 @@
           bar.ondragend = () => { bar.style.opacity = '1'; };
 
           // Posicionar EXATAMENTE igual Hospedin:
-          //   - Comeca no MEIO da coluna do checkin (chegou a tarde)
-          //   - Termina no MEIO da coluna do checkout (saiu de manha)
-          // Quando uma reserva sai e outra entra no mesmo dia, formam o V diagonal natural
+          //   - Começa no MEIO da coluna do check-in (chegou à tarde)
+          //   - Termina no MEIO da coluna do check-out (saiu pela manhã)
+          //   Quando uma reserva sai e outra entra no mesmo dia, formam o V diagonal.
+          //
+          // Exceções (FIX 25/05/2026):
+          //   - Check-in antes da janela visível → barra começa colada na borda esquerda
+          //     (sem o "V" diagonal apontando pra fora da tela).
+          //   - Check-out depois da janela visível → barra vai até a borda direita.
           const colWidth = 100 / mapaDias;
-          // Caso especial: reserva termina no PRIMEIRO dia da janela (checkin antes, checkout=hoje).
-          //   barStart=0, barEnd=0 → mostra so a METADE esquerda da coluna (0 ate 0.5).
-          let leftCol = barStart + 0.5;
-          let widthCols = barEnd - barStart;
+          const checkinForaEsq = reserva.checkin < startStr;
+          const checkoutForaDir = reserva.checkout > endStr;
+
+          let leftCol = checkinForaEsq ? barStart : (barStart + 0.5);
+          let rightCol = checkoutForaDir ? mapaDias : (barEnd + 0.5);
+          let widthCols = rightCol - leftCol;
+
+          // Caso especial: reserva termina no PRIMEIRO dia da janela
+          //   (check-in antes, check-out = primeiro dia visível). barStart = barEnd = 0.
+          //   Mostra só a metade esquerda da coluna (de 0 a 0.5) pra indicar reserva que acabou.
           if (barEnd === barStart) {
-            // reserva acabou hoje (ou antes) — mostra metade esquerda da coluna hoje
             leftCol = barStart;
             widthCols = 0.5;
           }
