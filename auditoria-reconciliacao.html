@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auditoria PMS ↔ Hospedin · Domus Garden</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: {
+      'domus-azul': '#1BA8B8',
+      'domus-azul-escuro': '#0A6B75',
+      'domus-rosa': '#FF385C',
+      'domus-texto': '#222222',
+      'domus-texto-suave': '#717171',
+      'domus-borda': '#EBEBEB',
+      'domus-creme': '#FFF8F0'
+    }}}};
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; background: #FAFAF8; }
+    .card { background: white; border: 1px solid #EBEBEB; border-radius: 16px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .badge-ok { background: #DCFCE7; color: #166534; }
+    .badge-div { background: #FEF3C7; color: #92400E; }
+    .badge-soh { background: #FEE2E2; color: #991B1B; }
+    .badge-sop { background: #DBEAFE; color: #1E40AF; }
+    .badge-noid { background: #F3F4F6; color: #6B7280; }
+  </style>
+</head>
+<body class="text-domus-texto">
+
+<div class="max-w-7xl mx-auto p-6">
+
+  <!-- Header -->
+  <div class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="font-serif text-3xl text-domus-azul-escuro">🔍 Auditoria PMS ↔ Hospedin</h1>
+      <p class="text-sm text-domus-texto-suave mt-1">Reconciliação em tempo real entre seu PMS e o Hospedin · Roda automaticamente a cada 15 min</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="dispararAuditoria('dry_run')"
+        class="px-4 py-2 rounded-xl border border-domus-borda text-sm hover:bg-gray-50">
+        🔍 Auditar agora (só ler)
+      </button>
+      <button onclick="dispararAuditoria('apply')"
+        class="px-4 py-2 rounded-xl bg-domus-azul text-white text-sm font-medium hover:bg-domus-azul-escuro">
+        ⚡ Auditar e corrigir agora
+      </button>
+    </div>
+  </div>
+
+  <!-- Status do disparo -->
+  <div id="status-banner" class="hidden card p-4 mb-6 text-sm"></div>
+
+  <!-- Card resumo -->
+  <div class="card p-5 mb-6">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-serif text-lg text-domus-azul-escuro">Última execução</h2>
+      <span id="ultima-execucao" class="text-xs text-domus-texto-suave">—</span>
+    </div>
+    <div id="resumo-grid" class="grid grid-cols-2 md:grid-cols-7 gap-3">
+      <div class="text-center"><div class="text-[10px] uppercase tracking-wider text-domus-texto-suave">Total Hospedin</div><div id="r-hosp" class="text-2xl font-semibold">—</div></div>
+      <div class="text-center"><div class="text-[10px] uppercase tracking-wider text-domus-texto-suave">Total PMS</div><div id="r-pms" class="text-2xl font-semibold">—</div></div>
+      <div class="text-center"><div class="text-[10px] uppercase tracking-wider text-domus-texto-suave">OK</div><div id="r-ok" class="text-2xl font-semibold text-green-600">—</div></div>
+      <div class="text-center"><div class="text-[10px] uppercase tracking-wider text-domus-texto-suave">Divergentes</div><div id="r-div" class="text-2xl font-semibold text-amber-600">—</div></div>
+      <div class="text-center"><div class="text-[10px] uppercase tracking-wider text-domus-texto-suave">Só Hospedin</div><div id="r-soh" class="text-2xl font-semibold text-red-600">—</div></div>
+      <div class="text-center"><div class="text-[10px] uppercase tracking-wider text-domus-texto-suave">Só PMS</div><div id="r-sop" class="text-2xl font-semibold text-blue-600">—</div></div>
+      <div class="text-center"><div class="text-[10px] uppercase tracking-wider text-domus-texto-suave">Direto/Manual (PMS-only)</div><div id="r-noid" class="text-2xl font-semibold text-gray-500">—</div></div>
+    </div>
+    <div id="resumo-acoes" class="mt-4 pt-4 border-t border-domus-borda text-sm text-domus-texto-suave hidden">
+      <strong class="text-green-700">Ações aplicadas:</strong>
+      <span id="r-corr">0</span> corrigidas ·
+      <span id="r-cri">0</span> criadas no PMS ·
+      <span id="r-canc">0</span> marcadas canceladas
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card p-3 mb-3 flex flex-wrap gap-2 items-center">
+    <span class="text-xs text-domus-texto-suave mr-2">Filtrar:</span>
+    <button onclick="filtrar('todos')" id="f-todos" class="filtro px-3 py-1 rounded-full text-xs font-medium bg-domus-azul text-white">Todos</button>
+    <button onclick="filtrar('divergente')" id="f-div" class="filtro px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 hover:bg-amber-200">Divergentes</button>
+    <button onclick="filtrar('somente_hospedin')" id="f-soh" class="filtro px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200">Só no Hospedin</button>
+    <button onclick="filtrar('somente_pms')" id="f-sop" class="filtro px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200">Só no PMS</button>
+  </div>
+
+  <!-- Lista de divergências -->
+  <div id="lista-divergencias" class="space-y-3">
+    <div class="card p-8 text-center text-domus-texto-suave">
+      Clique em <strong>"Auditar agora"</strong> pra rodar a primeira auditoria.<br>
+      Ou veja a última execução automática que ficou marcada acima.
+    </div>
+  </div>
+
+  <!-- Histórico de runs -->
+  <div class="card p-5 mt-6">
+    <h2 class="font-serif text-lg text-domus-azul-escuro mb-3">Histórico de execuções</h2>
+    <div id="historico" class="space-y-2 text-sm">—</div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://motwhfbpundrhvuwjntw.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let _reservasAtuais = [];
+let _filtroAtivo = 'todos';
+
+function showBanner(msg, tipo) {
+  const b = document.getElementById('status-banner');
+  const cores = {
+    info: 'bg-blue-50 border-blue-200 text-blue-800',
+    sucesso: 'bg-green-50 border-green-200 text-green-800',
+    erro: 'bg-red-50 border-red-200 text-red-800',
+    aviso: 'bg-amber-50 border-amber-200 text-amber-800'
+  };
+  b.className = 'card p-4 mb-6 text-sm ' + (cores[tipo] || cores.info);
+  b.textContent = msg;
+  b.classList.remove('hidden');
+  if (tipo === 'sucesso') setTimeout(() => b.classList.add('hidden'), 6000);
+}
+
+async function dispararAuditoria(modo) {
+  showBanner(`Disparando auditoria em modo ${modo}... (pode levar até 1 minuto)`, 'info');
+  try {
+    const r = await fetch(SUPABASE_URL + '/functions/v1/auditoria-reconciliacao', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + SUPABASE_ANON,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ modo })
+    });
+    const data = await r.json();
+    if (!data.ok) {
+      showBanner('Erro: ' + (data.erro || 'desconhecido'), 'erro');
+      return;
+    }
+    showBanner(`✅ Auditoria concluída em ${(data.duracao_ms/1000).toFixed(1)}s`, 'sucesso');
+    renderResultado(data);
+    carregarHistorico();
+  } catch(e) {
+    showBanner('Erro: ' + e.message, 'erro');
+  }
+}
+
+function renderResultado(data) {
+  const r = data.resumo;
+  document.getElementById('ultima-execucao').textContent = `${data.modo} · ${(data.duracao_ms/1000).toFixed(1)}s · ${new Date().toLocaleString('pt-BR')}`;
+  document.getElementById('r-hosp').textContent = r.hospedin_total ?? '—';
+  document.getElementById('r-pms').textContent = r.pms_total ?? '—';
+  document.getElementById('r-ok').textContent = r.ok ?? '—';
+  document.getElementById('r-div').textContent = r.divergentes ?? '—';
+  document.getElementById('r-soh').textContent = r.somente_hospedin ?? '—';
+  document.getElementById('r-sop').textContent = r.somente_pms ?? '—';
+  document.getElementById('r-noid').textContent = r.sem_hospedin_id ?? '—';
+
+  if (data.modo === 'apply') {
+    document.getElementById('resumo-acoes').classList.remove('hidden');
+    document.getElementById('r-corr').textContent = r.corrigidas || 0;
+    document.getElementById('r-cri').textContent = r.criadas || 0;
+    document.getElementById('r-canc').textContent = r.marcadas_canceladas || 0;
+  }
+
+  _reservasAtuais = data.reservas || [];
+  renderLista();
+}
+
+function renderLista() {
+  const lista = document.getElementById('lista-divergencias');
+  let r = _reservasAtuais;
+  if (_filtroAtivo !== 'todos') r = r.filter(x => x.tipo === _filtroAtivo);
+
+  if (r.length === 0) {
+    lista.innerHTML = '<div class="card p-8 text-center text-domus-texto-suave">Nenhuma divergência ou órfã neste filtro 🎉</div>';
+    return;
+  }
+
+  lista.innerHTML = r.map(item => {
+    const cor = item.tipo === 'divergente' ? 'badge-div'
+              : item.tipo === 'somente_hospedin' ? 'badge-soh'
+              : item.tipo === 'somente_pms' ? 'badge-sop'
+              : 'badge-ok';
+    const label = item.tipo === 'divergente' ? '🟡 Divergente'
+                : item.tipo === 'somente_hospedin' ? '🔴 Só Hospedin'
+                : item.tipo === 'somente_pms' ? '🔵 Só PMS'
+                : '✅ OK';
+    let detalhes = '';
+
+    if (item.tipo === 'divergente' && item.divergencias?.length) {
+      detalhes = `<div class="mt-3 pt-3 border-t border-domus-borda">
+        <p class="text-xs font-semibold text-domus-texto mb-2">Campos divergentes:</p>
+        <div class="space-y-1 text-xs">
+          ${item.divergencias.map(d => `
+            <div class="grid grid-cols-3 gap-2">
+              <span class="font-medium text-domus-azul-escuro">${d.campo}</span>
+              <span class="text-red-700">PMS: ${formatarVal(d.valor_pms)}</span>
+              <span class="text-green-700">Hospedin: ${formatarVal(d.valor_hospedin)}</span>
+            </div>
+          `).join('')}
+        </div>
+        ${item.acao_aplicada === 'corrigida' ? '<p class="text-xs text-green-700 mt-2">✅ Corrigida automaticamente</p>' : ''}
+        ${item.acao_aplicada === 'erro' ? '<p class="text-xs text-red-700 mt-2">❌ Erro: ' + (item.erro||'') + '</p>' : ''}
+      </div>`;
+    }
+
+    if (item.tipo === 'somente_hospedin') {
+      detalhes = `<div class="mt-2 text-xs grid grid-cols-2 gap-1 text-domus-texto-suave">
+        <div>📅 ${item.checkin || '?'} → ${item.checkout || '?'}</div>
+        <div>💰 R$ ${item.valor != null ? Number(item.valor).toFixed(2) : '—'}</div>
+        <div>📞 ${item.guest_phone || '—'}</div>
+        <div>🏷️ ${item.status_hospedin || '—'}</div>
+      </div>
+      ${item.acao_aplicada === 'criada_no_pms' ? '<p class="text-xs text-green-700 mt-2">✅ Criada no PMS automaticamente</p>' : ''}
+      ${item.acao_aplicada === 'erro' ? '<p class="text-xs text-red-700 mt-2">❌ Erro: ' + (item.erro||'') + '</p>' : ''}`;
+    }
+
+    if (item.tipo === 'somente_pms') {
+      detalhes = `<div class="mt-2 text-xs text-domus-texto-suave">
+        📅 ${item.checkin || '?'} → ${item.checkout || '?'} · ${item.plataforma || '—'}<br>
+        <span class="text-amber-700 italic">${item.motivo_possivel || ''}</span>
+      </div>
+      ${item.acao_aplicada === 'marcada_cancelada' ? '<p class="text-xs text-green-700 mt-2">✅ Marcada como cancelada automaticamente</p>' : ''}`;
+    }
+
+    return `<div class="card p-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <span class="badge ${cor}">${label}</span>
+          <span class="font-semibold ml-2">${item.hospede_nome || '—'}</span>
+          ${item.cama ? `<span class="text-sm text-domus-texto-suave ml-2">· ${item.cama}</span>` : ''}
+        </div>
+        <span class="text-[10px] text-domus-texto-suave">${item.hospedin_id ? 'HID '+item.hospedin_id : (item.dg_id ? 'DG '+item.dg_id.slice(0,8) : '')}</span>
+      </div>
+      ${detalhes}
+    </div>`;
+  }).join('');
+}
+
+function formatarVal(v) {
+  if (v == null) return '∅ vazio';
+  if (typeof v === 'number') return v.toFixed(2);
+  if (String(v).length > 40) return String(v).slice(0, 40) + '…';
+  return String(v);
+}
+
+function filtrar(tipo) {
+  _filtroAtivo = tipo;
+  document.querySelectorAll('.filtro').forEach(b => b.classList.remove('ring-2', 'ring-domus-azul-escuro'));
+  const map = { todos: 'f-todos', divergente: 'f-div', somente_hospedin: 'f-soh', somente_pms: 'f-sop' };
+  document.getElementById(map[tipo])?.classList.add('ring-2', 'ring-domus-azul-escuro');
+  renderLista();
+}
+
+async function carregarHistorico() {
+  const { data } = await db.from('auditoria_reconciliacao_runs')
+    .select('id, rodou_em, duracao_ms, modo, resumo')
+    .order('rodou_em', { ascending: false })
+    .limit(10);
+  const hist = document.getElementById('historico');
+  if (!data || data.length === 0) { hist.innerHTML = '<p class="text-domus-texto-suave italic">Nenhuma execução ainda.</p>'; return; }
+  hist.innerHTML = data.map(r => {
+    const d = new Date(r.rodou_em).toLocaleString('pt-BR');
+    const s = r.resumo || {};
+    return `<div class="flex justify-between items-center p-2 border border-domus-borda rounded-lg cursor-pointer hover:bg-gray-50" onclick="abrirRun('${r.id}')">
+      <div>
+        <span class="font-medium">${d}</span>
+        <span class="text-xs text-domus-texto-suave ml-2">${r.modo}</span>
+      </div>
+      <div class="text-xs flex gap-3">
+        <span class="text-green-700">${s.ok||0} ok</span>
+        <span class="text-amber-700">${s.divergentes||0} div</span>
+        <span class="text-red-700">${s.somente_hospedin||0} só-h</span>
+        <span class="text-blue-700">${s.somente_pms||0} só-p</span>
+        ${r.modo === 'apply' ? `<span class="text-green-800 font-semibold">${(s.corrigidas||0)+(s.criadas||0)+(s.marcadas_canceladas||0)} aplicadas</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function abrirRun(id) {
+  const { data } = await db.from('auditoria_reconciliacao_runs').select('*').eq('id', id).single();
+  if (!data) return;
+  renderResultado({ ok: true, modo: data.modo, duracao_ms: data.duracao_ms, resumo: data.resumo, reservas: data.reservas });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function carregarUltima() {
+  const { data } = await db.from('auditoria_reconciliacao_runs')
+    .select('*').order('rodou_em', { ascending: false }).limit(1);
+  if (data && data.length) {
+    renderResultado({ ok: true, modo: data[0].modo, duracao_ms: data[0].duracao_ms, resumo: data[0].resumo, reservas: data[0].reservas });
+  }
+}
+
+// Init
+carregarUltima();
+carregarHistorico();
+setInterval(carregarHistorico, 60000);
+</script>
+
+</body>
+</html>
