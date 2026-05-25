@@ -208,52 +208,6 @@
 
   <div class="backdrop" id="backdrop" onclick="fecharSidebar()"></div>
 
-  <!-- ===== MODAL: Modo Teste (simular hóspede mandando mensagem) ===== -->
-  <div id="modal-simular" class="fixed inset-0 z-40 hidden items-center justify-center p-4" style="background:rgba(15,23,42,.5)">
-    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="font-serif text-xl" style="color:var(--azul-escuro)">🧪 Simular mensagem de hóspede</h3>
-        <button onclick="fecharSimular()" class="text-2xl text-slate-400 hover:text-slate-700">&times;</button>
-      </div>
-      <p class="text-xs text-slate-500 mb-4">Esse modo cria uma conversa fake no canal "manual" pra testar o fluxo completo (som, notificação, sugestão da IA) — sem mexer no WhatsApp real.</p>
-
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Nome do hóspede</label>
-          <input id="sim-nome" type="text" placeholder="Ex: Maria Teste" value="Hóspede Teste" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-domus-azul outline-none text-sm" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Telefone (opcional)</label>
-          <input id="sim-tel" type="text" placeholder="11999998888" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-domus-azul outline-none text-sm" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Mensagem do hóspede</label>
-          <textarea id="sim-msg" rows="3" placeholder="Oi, tem vaga pra essa quinta?" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-domus-azul outline-none text-sm resize-none"></textarea>
-        </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900">
-          <p class="font-semibold mb-1">💡 Exemplos pra testar:</p>
-          <ul class="space-y-1">
-            <li>· "Tem vaga pra hoje?"</li>
-            <li>· "Quanto custa a diária?"</li>
-            <li>· "Aceita pet?"</li>
-            <li>· "Tem desconto?" <span class="text-blue-700">(testa o pivô pro Clube Domus)</span></li>
-            <li>· "Quero falar com a Gabi" <span class="text-blue-700">(testa o handoff)</span></li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="flex gap-2 mt-5">
-        <button onclick="enviarSimulacao()" class="flex-1 px-4 py-2 rounded-lg text-white font-medium" style="background:var(--azul-domus)">📨 Enviar como hóspede</button>
-        <button onclick="fecharSimular()" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm">Fechar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Botão flutuante de teste -->
-  <button onclick="abrirSimular()" class="fixed bottom-4 right-4 z-30 w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center text-xl hover:scale-105 transition" style="background:linear-gradient(135deg,#7F77DD,#534AB7)" title="Simular mensagem de hóspede">
-    🧪
-  </button>
-
   <!-- ===== TELA 2: LISTA DE CONVERSAS ===== -->
   <section class="tela tela-lista bg-white" id="tela-lista">
     <header class="header-mobile">
@@ -294,36 +248,22 @@
     </div>
 
     <div id="conversa-ativa" class="hidden flex-1 flex-col">
-      <header class="header-mobile lg:px-5 lg:py-3">
-        <button class="btn-iconico" onclick="fecharConversa()" aria-label="Voltar">
-          <svg><use href="#ico-back"/></svg>
-        </button>
-        <div class="w-10 h-10 rounded-full text-white flex items-center justify-center font-bold flex-shrink-0" style="background:var(--azul-domus)" id="conv-avatar">?</div>
+      <header class="header-mobile lg:!flex lg:px-5 lg:py-3" style="border-bottom:1px solid #E5E9EE">
+        <button class="btn-iconico" onclick="fecharConversa()" aria-label="Voltar"><svg><use href="#ico-back"/></svg></button>
+        <div class="relative flex-shrink-0">
+          <div class="w-11 h-11 rounded-full text-white flex items-center justify-center font-bold" style="background:linear-gradient(135deg,#008B9C,#0A3142)" id="conv-avatar">?</div>
+          <span class="ico-wrap ico-wrap-sm absolute -bottom-1 -right-1 border-2 border-white" id="conv-canal-ico" style="width:20px;height:20px;border-radius:6px"></span>
+        </div>
         <div class="flex-1 min-w-0">
-          <p class="font-semibold text-sm truncate" id="conv-nome">—</p>
-          <p class="text-xs text-slate-500 flex items-center gap-1.5">
-            <span class="ico-wrap ico-wrap-sm" id="conv-canal-ico" style="width:16px;height:16px;border-radius:4px"></span>
-            <span id="conv-extra" class="truncate">—</span>
-          </p>
+          <p class="font-semibold text-base truncate" style="color:var(--azul-escuro)" id="conv-nome">—</p>
+          <p class="text-xs text-slate-500 flex items-center gap-1.5"><span id="conv-canal-nome" class="font-medium" style="color:var(--azul-domus)">—</span><span class="text-slate-300">·</span><span id="conv-extra" class="truncate">—</span></p>
         </div>
-        <button class="btn-iconico" aria-label="Mais opções">
-          <svg><use href="#ico-mais"/></svg>
-        </button>
+        <div class="hidden lg:flex gap-1">
+          <button onclick="togglePainelHospede()" class="btn-iconico" title="Perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></button>
+          <button onclick="marcarResolvida()" class="btn-iconico" title="Resolvida"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button>
+        </div>
+        <button class="btn-iconico" aria-label="Mais"><svg><use href="#ico-mais"/></svg></button>
       </header>
-
-      <!-- Cartão do hóspede: dados de cadastro, reservas, saldo, selo VIP -->
-      <div id="conv-cartao-hospede" class="hidden bg-white border-b border-slate-100 px-4 py-3 text-xs">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span id="conv-cartao-selo" class="hidden px-2 py-0.5 rounded-full text-[10px] font-semibold"></span>
-          <span id="conv-cartao-tel" class="text-slate-600"></span>
-          <span id="conv-cartao-cpf" class="text-slate-500"></span>
-        </div>
-        <div class="flex items-center gap-3 mt-1.5 text-slate-600">
-          <span id="conv-cartao-reservas" class="flex items-center gap-1"></span>
-          <span id="conv-cartao-saldo" class="hidden flex items-center gap-1"></span>
-          <span id="conv-cartao-ultima" class="hidden flex items-center gap-1"></span>
-        </div>
-      </div>
 
       <div id="mensagens-area" class="flex-1 overflow-y-auto p-4 lg:p-5 flex flex-col gap-2 scroll-clean"></div>
 
@@ -345,25 +285,95 @@
 
         <div class="flex gap-2 items-end">
           <button class="btn-iconico text-slate-500" title="Anexar"><svg><use href="#ico-attach"/></svg></button>
-          <textarea id="texto-resposta" placeholder="Mensagem…"
-            onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();enviarMensagemAtiva();}"
-            class="flex-1 px-3 py-2.5 rounded-2xl border border-slate-200 focus:border-domus-azul focus:outline-none resize-none" rows="1" style="min-height:44px;max-height:120px"></textarea>
-          <button id="btn-enviar" onclick="enviarMensagemAtiva()" class="w-11 h-11 rounded-full text-white flex items-center justify-center flex-shrink-0" style="background:var(--azul-domus)" aria-label="Enviar"><svg width="20" height="20"><use href="#ico-send"/></svg></button>
+          <textarea id="texto-resposta" placeholder="Mensagem…" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); enviarMensagem();}" class="flex-1 px-3 py-2.5 rounded-2xl border border-slate-200 focus:border-domus-azul focus:outline-none resize-none" rows="1" style="min-height:44px;max-height:120px"></textarea>
+          <button id="btn-enviar" onclick="enviarMensagem()" class="w-11 h-11 rounded-full text-white flex items-center justify-center flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed" style="background:var(--azul-domus)" aria-label="Enviar"><svg width="20" height="20"><use href="#ico-send"/></svg></button>
         </div>
-        <div class="hidden lg:flex gap-3 mt-2 text-[11px] text-slate-400">
-          <button class="hover:text-slate-600">⚡ Modelos</button>
+        <div class="hidden lg:flex gap-3 mt-2 text-[11px] text-slate-400 relative">
+          <button onclick="toggleModelos()" class="hover:text-slate-600">⚡ Modelos</button>
           <span>•</span>
-          <button class="hover:text-slate-600">🎟️ Cupom</button>
+          <button class="hover:text-slate-600" onclick="alert('Em breve')">🎟️ Cupom</button>
           <span>•</span>
-          <button class="hover:text-slate-600">🏠 Indicar quarto</button>
+          <button class="hover:text-slate-600" onclick="alert('Em breve')">🏠 Indicar quarto</button>
           <span>•</span>
-          <button class="hover:text-slate-600">📅 Disponibilidade</button>
+          <button class="hover:text-slate-600" onclick="alert('Em breve')">📅 Disponibilidade</button>
+        </div>
+        <div id="modelos-dropdown" class="hidden absolute bottom-20 left-4 right-4 lg:left-auto lg:right-5 lg:w-96 bg-white border border-slate-200 rounded-xl shadow-xl z-30 max-h-80 overflow-y-auto scroll-clean">
+          <div class="sticky top-0 bg-white border-b border-slate-100 px-3 py-2 flex justify-between items-center"><p class="text-xs font-semibold text-slate-700">Modelos de resposta</p><button onclick="toggleModelos()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button></div>
+          <div id="modelos-lista" class="p-2 space-y-1"><p class="text-xs text-slate-400 italic p-3">Carregando...</p></div>
         </div>
       </footer>
     </div>
   </main>
 
+  <!-- ===== PAINEL CONTEXTO DO HÓSPEDE (desktop only) ===== -->
+  <aside id="painel-hospede" class="hidden lg:flex flex-col bg-white border-l border-slate-200 overflow-y-auto scroll-clean" style="width:300px;flex-shrink:0">
+    <div id="painel-hospede-vazio" class="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-400"><div class="text-4xl mb-3">👤</div><p class="text-sm" style="color:var(--azul-escuro)">Selecione uma conversa pra ver o perfil</p></div>
+    <div id="painel-hospede-conteudo" class="hidden p-5">
+      <div class="text-center mb-5 pb-5 border-b border-slate-100">
+        <div class="w-20 h-20 rounded-full text-white flex items-center justify-center text-2xl font-bold mx-auto mb-3" style="background:linear-gradient(135deg,#008B9C,#0A3142)" id="ph-avatar">?</div>
+        <p class="font-serif text-lg" style="color:var(--azul-escuro)" id="ph-nome">—</p>
+        <p class="text-xs text-slate-500 mt-1" id="ph-email">—</p>
+        <p class="text-xs text-slate-500" id="ph-telefone"></p>
+      </div>
+      <div class="mb-5"><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Reservas</p><div id="ph-reservas" class="space-y-2"><p class="text-xs text-slate-400 italic">Carregando...</p></div></div>
+      <div class="mb-5"><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Canal</p>
+        <div class="flex items-center gap-2 p-3 rounded-lg bg-slate-50"><span class="ico-wrap ico-wrap-sm" id="ph-canal-ico" style="width:24px;height:24px;border-radius:6px"></span><div class="flex-1 min-w-0"><p class="text-sm font-medium" id="ph-canal-nome">—</p><p class="text-[11px] text-slate-500 truncate" id="ph-canal-id">—</p></div></div>
+      </div>
+      <div class="mb-5"><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Ações rápidas</p>
+        <div class="space-y-1.5">
+          <button onclick="window.open('pms.html','_blank')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2" style="color:var(--azul-escuro)">📅 <span>Ver no PMS</span></button>
+          <button onclick="marcarResolvida()" class="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2" style="color:var(--azul-escuro)">✓ <span>Marcar resolvida</span></button>
+        </div>
+      </div>
+      <div><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Info</p><div class="text-xs text-slate-600 space-y-1"><p>Primeira: <span id="ph-primeira" class="text-slate-400">—</span></p><p>Total: <span id="ph-total" class="text-slate-400">—</span></p></div></div>
+    </div>
+  </aside>
+
 </div>
+
+<!-- ===== MODAL: Modo Teste (simular hóspede mandando mensagem) ===== -->
+<div id="modal-simular" class="fixed inset-0 z-40 hidden items-center justify-center p-4" style="background:rgba(15,23,42,.5)">
+  <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-serif text-xl" style="color:var(--azul-escuro)">🧪 Simular mensagem de hóspede</h3>
+      <button onclick="fecharSimular()" class="text-2xl text-slate-400 hover:text-slate-700" style="min-height:auto">&times;</button>
+    </div>
+    <p class="text-xs text-slate-500 mb-4">Cria uma conversa fake no canal "manual" pra testar o fluxo completo (som, notificação, sugestão da IA) — sem mexer no WhatsApp real.</p>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Nome do hóspede</label>
+        <input id="sim-nome" type="text" placeholder="Ex: Maria Teste" value="Hóspede Teste" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-domus-azul outline-none text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Telefone (opcional)</label>
+        <input id="sim-tel" type="text" placeholder="11999998888" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-domus-azul outline-none text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Mensagem do hóspede</label>
+        <textarea id="sim-msg" rows="3" placeholder="Oi, tem vaga pra essa quinta?" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-domus-azul outline-none text-sm resize-none"></textarea>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900">
+        <p class="font-semibold mb-1">💡 Exemplos pra testar:</p>
+        <ul class="space-y-1">
+          <li>· "Tem vaga pra hoje?"</li>
+          <li>· "Quanto custa a diária?"</li>
+          <li>· "Aceita pet?"</li>
+          <li>· "Tem desconto?" <span class="text-blue-700">(testa o pivô pro Clube Domus)</span></li>
+          <li>· "Quero falar com a Gabi" <span class="text-blue-700">(testa o handoff)</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button onclick="enviarSimulacao()" class="flex-1 px-4 py-2 rounded-lg text-white font-medium" style="background:var(--azul-domus)">📨 Enviar como hóspede</button>
+      <button onclick="fecharSimular()" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Botão flutuante de teste -->
+<button onclick="abrirSimular()" class="fixed bottom-4 right-4 z-30 w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center text-xl hover:scale-105 transition" style="background:linear-gradient(135deg,#7F77DD,#534AB7);min-height:auto" title="Simular mensagem de hóspede">
+  🧪
+</button>
 
 <script>
   const CANAIS = {
@@ -394,151 +404,29 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // ===== Configuração do usuário (persistente) =====
-  const CONFIG_KEY = 'atrio_config';
-  function carregarConfig() {
-    try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}'); } catch (_) { return {}; }
-  }
-  function salvarConfig(c) {
-    try { localStorage.setItem(CONFIG_KEY, JSON.stringify(c)); } catch (_) {}
-  }
-  let _config = Object.assign({
-    som: 'domus',           // som assinatura — 'domus' é o oficial
-    somAtivado: true,       // pode ser desligado em horário noturno
-    volume: 0.5,            // 0 a 1
-    notificacoesAtivadas: true,
-    naoIncomodar: false     // futuro: agenda de silêncio
-  }, carregarConfig());
-  // Aplica volume no sons-domus.js
-  if (typeof window !== 'undefined') window.SOM_DOMUS_VOLUME = _config.volume;
-
-  // ===== Estado da inbox =====
   let _conversas = [];
   let _ativa = null;
   let _filtro = 'todas';
   let _canal = null;
-  let _ultimaSyncMs = 0;      // pra detectar mensagens NOVAS (não mostrar som ao carregar histórico)
-  let _realtimeChannel = null;
 
-  // ===== Carga inicial e Realtime =====
-  async function carregarConversas(silencioso) {
+  async function carregarConversas() {
     try {
       const { data, error } = await db.from('conversas')
-        .select('*').order('ultima_mensagem_em', { ascending: false }).limit(100);
-      if (error) { console.warn('Tabela conversas nao criada:', error.message); return; }
+        .select('*').order('atualizada_em', { ascending: false }).limit(100);
+      if (error) { console.warn('Erro carregando conversas:', error.message); return; }
+      const ids = (data || []).map(c => c.id);
+      if (ids.length) {
+        const { data: msgs } = await db.from('mensagens_inbox')
+          .select('conversa_id, conteudo, enviada_em')
+          .in('conversa_id', ids)
+          .order('enviada_em', { ascending: false });
+        const previewByConv = {};
+        (msgs || []).forEach(m => { if (!previewByConv[m.conversa_id]) previewByConv[m.conversa_id] = { preview: (m.conteudo || '').slice(0, 100), em: m.enviada_em }; });
+        (data || []).forEach(c => { const p = previewByConv[c.id]; c.ultima_mensagem_preview = p ? p.preview : ''; c.ultima_mensagem_em = p ? p.em : c.atualizada_em; });
+      }
       _conversas = data || [];
       renderLista();
       atualizarContadores();
-      atualizarTituloBadge();
-      if (!silencioso && !_ultimaSyncMs) _ultimaSyncMs = Date.now();
-    } catch(e) { console.warn(e); }
-  }
-
-  // Supabase Realtime — escuta INSERTs em mensagens_inbox
-  // Quando chega mensagem nova: toca som, mostra notificação, atualiza lista.
-  function ligarRealtime() {
-    if (_realtimeChannel) {
-      try { db.removeChannel(_realtimeChannel); } catch (_) {}
-    }
-    _realtimeChannel = db
-      .channel('atrio-mensagens-inbox')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'mensagens_inbox' },
-        (payload) => onMensagemNova(payload.new)
-      )
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'conversas' },
-        () => carregarConversas(true)
-      )
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'conversas' },
-        () => carregarConversas(true)
-      )
-      .subscribe();
-  }
-
-  async function onMensagemNova(mensagem) {
-    if (!mensagem || mensagem.direcao !== 'entrada') {
-      // Só notifica em mensagens RECEBIDAS de hóspedes
-      await carregarConversas(true);
-      // Se for a conversa aberta, recarrega o histórico dela
-      if (_ativa && mensagem.conversa_id === _ativa) await recarregarMensagensAtiva();
-      return;
-    }
-
-    // Recarrega lista pra pegar a nova conversa/preview
-    await carregarConversas(true);
-
-    // Acha a conversa pra enriquecer a notificação
-    const conv = _conversas.find(c => c.id === mensagem.conversa_id) || {};
-    const nome = conv.hospede_nome_cache || 'Mensagem nova';
-    const preview = (mensagem.conteudo || '').slice(0, 120);
-
-    // Toca som (se ativado)
-    if (_config.somAtivado && typeof window.tocarSomDomus === 'function') {
-      try { window.tocarSomDomus(_config.som || 'domus'); } catch (_) {}
-    }
-
-    // Notificação popup do browser (se ativado + se aba não tá visível)
-    if (_config.notificacoesAtivadas) mostrarPopup(nome, preview, mensagem.conversa_id);
-
-    // Se a conversa aberta é essa, recarrega histórico
-    if (_ativa && mensagem.conversa_id === _ativa) await recarregarMensagensAtiva();
-  }
-
-  // ===== Notificações popup =====
-  async function pedirPermissaoNotificacao() {
-    if (!('Notification' in window)) return 'unsupported';
-    if (Notification.permission === 'granted') return 'granted';
-    if (Notification.permission === 'denied') return 'denied';
-    try { return await Notification.requestPermission(); } catch (_) { return 'error'; }
-  }
-
-  function mostrarPopup(titulo, corpo, conversaId) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    // Só mostra popup se a aba NÃO tá visível (senão é redundante)
-    if (document.visibilityState === 'visible') return;
-    try {
-      const n = new Notification('🌿 ' + titulo, {
-        body: corpo,
-        icon: '/images/icone-atrio-192.png',
-        badge: '/images/icone-atrio-192.png',
-        tag: 'atrio-' + (conversaId || 'inbox'),
-        renotify: true,
-        silent: true   // som a gente toca via Web Audio (mais bonito que o do SO)
-      });
-      n.onclick = () => {
-        window.focus();
-        if (conversaId) abrirConversa(conversaId);
-        n.close();
-      };
-      // Auto-close em 8s
-      setTimeout(() => n.close(), 8000);
-    } catch (e) { console.warn('[popup]', e); }
-  }
-
-  // ===== Badge no título "(3) Átrio" =====
-  function atualizarTituloBadge() {
-    const naoLidas = _conversas.reduce((s, c) => s + (c.nao_lidas || 0), 0);
-    const base = 'Átrio — onde toda conversa chega na Domus';
-    document.title = naoLidas > 0 ? `(${naoLidas}) ${base}` : base;
-  }
-
-  // ===== Recarregar histórico da conversa ativa =====
-  async function recarregarMensagensAtiva() {
-    if (!_ativa) return;
-    try {
-      const { data: msgs } = await db.from('mensagens_inbox')
-        .select('*').eq('conversa_id', _ativa).order('enviada_em', { ascending: true });
-      const area = document.getElementById('mensagens-area');
-      if (!area) return;
-      area.innerHTML = (msgs || []).map(function(m){
-        const cls = 'msg-' + (m.direcao === 'entrada' ? 'entrada' : (m.autor_tipo === 'ia' ? 'ia' : 'saida'));
-        const horaCls = m.direcao === 'entrada' ? 'text-slate-400' : 'text-white/70';
-        const hora = new Date(m.enviada_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        return '<div class="' + cls + ' max-w-[80%] lg:max-w-[70%] px-4 py-2.5"><p class="text-base lg:text-sm whitespace-pre-wrap">' + escapar(m.conteudo || '') + '</p><p class="text-[10px] mt-1 ' + horaCls + '">' + hora + '</p></div>';
-      }).join('');
-      area.scrollTop = area.scrollHeight;
     } catch(e) { console.warn(e); }
   }
 
@@ -615,147 +503,200 @@
     ico.style.cssText = 'width:16px;height:16px;border-radius:4px';
     ico.innerHTML = '<svg style="width:10px;height:10px"><use href="#' + cfg.ico + '"/></svg>';
 
-    // Carrega mensagens + cartão do hóspede em paralelo
-    await Promise.all([
-      recarregarMensagensAtiva(),
-      preencherCartaoHospede(conv)
-    ]);
-
-    // Zera contador de não lidas dessa conversa
-    if ((conv.nao_lidas || 0) > 0) {
-      try {
-        await db.from('conversas').update({ nao_lidas: 0 }).eq('id', id);
-        conv.nao_lidas = 0;
-        atualizarTituloBadge();
-        atualizarContadores();
-      } catch (_) {}
-    }
+    try {
+      const { data: msgs } = await db.from('mensagens_inbox').select('*').eq('conversa_id', id).order('enviada_em', { ascending: true });
+      const area = document.getElementById('mensagens-area');
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const ontem = new Date(hoje); ontem.setDate(ontem.getDate()-1);
+      let ud = null;
+      const html = (msgs || []).map(function(m){
+        const dt = new Date(m.enviada_em);
+        const dia = new Date(dt); dia.setHours(0,0,0,0);
+        let sep = '';
+        if (!ud || dia.getTime() !== ud.getTime()) {
+          let l;
+          if (dia.getTime()===hoje.getTime()) l='Hoje';
+          else if (dia.getTime()===ontem.getTime()) l='Ontem';
+          else l = dia.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:dia.getFullYear()!==hoje.getFullYear()?'numeric':undefined});
+          sep = '<div class="text-center my-2"><span class="inline-block text-[11px] text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200">'+l+'</span></div>';
+          ud = dia;
+        }
+        const cls = 'msg-' + (m.direcao === 'entrada' ? 'entrada' : (m.autor_tipo === 'ia' ? 'ia' : 'saida'));
+        const horaCls = m.direcao === 'entrada' ? 'text-slate-400' : 'text-white/70';
+        const hora = dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        return sep + '<div class="' + cls + ' max-w-[80%] lg:max-w-[70%] px-4 py-2.5"><p class="text-base lg:text-sm whitespace-pre-wrap">' + escapar(m.conteudo || '') + '</p><p class="text-[10px] mt-1 ' + horaCls + '">' + hora + '</p></div>';
+      }).join('');
+      area.innerHTML = html || '<div class="flex-1 flex items-center justify-center text-slate-400 text-sm py-8">Nenhuma mensagem ainda</div>';
+      area.scrollTop = area.scrollHeight;
+      if (conv.nao_lidas > 0) { await db.from('conversas').update({ nao_lidas: 0 }).eq('id', id); conv.nao_lidas = 0; }
+      popularPainelHospede(conv, msgs || []);
+    } catch(e) { console.warn(e); }
 
     renderLista();
   }
 
-  // Preenche o cartão do hóspede com dados ricos: reservas, saldo, selo VIP, etc.
-  async function preencherCartaoHospede(conv) {
-    const cartao = document.getElementById('conv-cartao-hospede');
-    if (!cartao) return;
-    const tel = (conv.hospede_telefone_cache || '').replace(/\D/g, '');
-    const elTel = document.getElementById('conv-cartao-tel');
-    const elCpf = document.getElementById('conv-cartao-cpf');
-    const elSelo = document.getElementById('conv-cartao-selo');
-    const elReservas = document.getElementById('conv-cartao-reservas');
-    const elSaldo = document.getElementById('conv-cartao-saldo');
-    const elUltima = document.getElementById('conv-cartao-ultima');
-
-    elTel.textContent = conv.hospede_telefone_cache ? '📞 ' + conv.hospede_telefone_cache : '';
-    elCpf.textContent = '';
-    elSelo.classList.add('hidden');
-    elReservas.textContent = '🔍 Buscando histórico...';
-    elSaldo.classList.add('hidden');
-    elUltima.classList.add('hidden');
-    cartao.classList.remove('hidden');
-
-    if (!tel) {
-      elReservas.textContent = '⚠ Sem telefone cadastrado';
-      return;
-    }
-
+  async function popularPainelHospede(conv, msgs) {
+    const v = document.getElementById('painel-hospede-vazio');
+    const c = document.getElementById('painel-hospede-conteudo');
+    if (!c) return;
+    v.classList.add('hidden'); c.classList.remove('hidden');
+    const cfg = CANAIS[conv.canal] || CANAIS.manual;
+    const nome = conv.hospede_nome_cache || 'Sem nome';
+    document.getElementById('ph-avatar').textContent = (nome||'?').charAt(0).toUpperCase();
+    document.getElementById('ph-nome').textContent = nome;
+    document.getElementById('ph-email').textContent = conv.identificador_externo || '—';
+    document.getElementById('ph-telefone').textContent = conv.hospede_telefone_cache || '';
+    const phIco = document.getElementById('ph-canal-ico');
+    phIco.className = 'ico-wrap ico-wrap-sm ' + cfg.bg;
+    phIco.innerHTML = '<svg style="width:14px;height:14px"><use href="#'+cfg.ico+'"/></svg>';
+    document.getElementById('ph-canal-nome').textContent = cfg.nome;
+    document.getElementById('ph-canal-id').textContent = conv.identificador_externo || '—';
+    document.getElementById('ph-total').textContent = msgs.length + ' mensagens';
+    if (msgs.length > 0) { document.getElementById('ph-primeira').textContent = new Date(msgs[0].enviada_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}); }
+    const headerIco = document.getElementById('conv-canal-ico');
+    headerIco.className = 'ico-wrap ico-wrap-sm absolute -bottom-1 -right-1 border-2 border-white ' + cfg.bg;
+    headerIco.innerHTML = '<svg style="width:11px;height:11px"><use href="#'+cfg.ico+'"/></svg>';
+    const ccn = document.getElementById('conv-canal-nome');
+    if (ccn) ccn.textContent = cfg.nome;
+    // Busca reservas pelo nome
+    const reservasEl = document.getElementById('ph-reservas');
+    reservasEl.innerHTML = '<p class="text-xs text-slate-400 italic">Buscando...</p>';
     try {
-      // Busca hóspede no CRM
-      let hospede = null;
-      try {
-        const { data: h } = await db.from('hospedes')
-          .select('id, nome, sobrenome, documento, email, nivel_fidelidade, pontos_fidelidade, total_reservas, total_noites')
-          .or(`telefone.eq.${tel},telefone.eq.+${tel}`)
-          .maybeSingle();
-        hospede = h;
-      } catch (_) {}
-
-      if (hospede) {
-        if (hospede.documento) elCpf.textContent = '· ' + hospede.documento;
-        const nivel = (hospede.nivel_fidelidade || '').toLowerCase();
-        if (nivel === 'ouro') {
-          elSelo.textContent = '⭐ Ouro';
-          elSelo.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800';
-          elSelo.classList.remove('hidden');
-        } else if (nivel === 'prata') {
-          elSelo.textContent = '🥈 Prata';
-          elSelo.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-700';
-          elSelo.classList.remove('hidden');
-        } else if (hospede.total_reservas > 1) {
-          elSelo.textContent = '💚 Recorrente';
-          elSelo.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700';
-          elSelo.classList.remove('hidden');
-        } else if (hospede.total_reservas === 1) {
-          elSelo.textContent = '🆕 Primeira vez';
-          elSelo.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700';
-          elSelo.classList.remove('hidden');
-        }
+      const nb = (nome||'').trim();
+      let query = db.from('reservas').select('id, hospede_nome, cama, checkin, checkout, status, valor_total').order('checkin', { ascending: false }).limit(5);
+      if (nb && nb !== 'Sem nome') query = query.ilike('hospede_nome', '%'+nb+'%');
+      const { data: reservas } = await query;
+      if (!reservas || reservas.length === 0) {
+        reservasEl.innerHTML = '<p class="text-xs text-slate-400 italic">Nenhuma reserva</p>';
+      } else {
+        reservasEl.innerHTML = reservas.map(function(r){
+          const cor = r.status === 'check-in' ? 'bg-emerald-50 text-emerald-700' : r.status === 'cancelada' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-700';
+          return '<div class="p-2 rounded-lg bg-slate-50 text-xs"><div class="flex justify-between"><span class="font-medium" style="color:var(--azul-escuro)">'+escapar(r.cama||'—')+'</span><span class="text-[10px] px-1.5 py-0.5 rounded '+cor+'">'+escapar(r.status||'')+'</span></div><p class="text-slate-500 mt-1">'+(r.checkin||'')+' → '+(r.checkout||'')+'</p>'+(r.valor_total?'<p class="text-slate-600 font-medium mt-0.5">R$ '+Number(r.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</p>':'')+'</div>';
+        }).join('');
       }
+    } catch(e) { reservasEl.innerHTML = '<p class="text-xs text-red-400">Erro buscando</p>'; }
+  }
 
-      // Busca reservas (todas, ordenando pela mais recente)
-      const { data: reservas } = await db.from('reservas')
-        .select('id, hospede_nome, cama, checkin, checkout, status, valor_total')
-        .or(`hospede_id.eq.${hospede ? hospede.id : '00000000-0000-0000-0000-000000000000'},hospede_contato.eq.${conv.hospede_telefone_cache}`)
-        .order('checkin', { ascending: false })
-        .limit(30);
+  function togglePainelHospede() { const p = document.getElementById('painel-hospede'); if (p) p.classList.toggle('hidden'); }
 
-      const lista = reservas || [];
-      const total = lista.length;
-      const ativas = lista.filter(r => r.status && r.status !== 'cancelada').length;
-      const futuras = lista.filter(r => r.checkout >= new Date().toISOString().slice(0,10) && r.status !== 'cancelada');
-      const ultima = lista[0];
+  async function marcarResolvida() {
+    if (!_ativa) return;
+    if (!confirm('Marcar conversa como resolvida?')) return;
+    try { await db.from('conversas').update({ prioridade: 'resolvida', nao_lidas: 0 }).eq('id', _ativa); alert('✓ Resolvida'); await carregarConversas(); } catch(e) { alert('Erro: '+e.message); }
+  }
 
-      elReservas.innerHTML = total === 0
-        ? '🆕 <span>Primeira interação</span>'
-        : '📋 <span>' + ativas + ' reserva' + (ativas !== 1 ? 's' : '') + '</span>';
+  async function enviarMensagem() {
+    const ta = document.getElementById('texto-resposta');
+    const btn = document.getElementById('btn-enviar');
+    const texto = (ta.value || '').trim();
+    if (!_ativa) { alert('Selecione uma conversa primeiro'); return; }
+    if (!texto) return;
+    btn.disabled = true;
+    const original = ta.value;
+    ta.value = ''; ta.style.height = '44px';
+    try {
+      // Grava em mensagens_inbox. A trigger no banco vai disparar
+      // a Edge Function de envio (whatsapp-enviar) pra canais que tem provedor.
+      await db.from('mensagens_inbox').insert({
+        conversa_id: _ativa,
+        direcao: 'saida',
+        autor: 'Gabi',
+        autor_tipo: 'humano',
+        conteudo: texto,
+        tipo: 'texto',
+        enviada_em: new Date().toISOString()
+      });
+      await db.from('conversas').update({
+        ultima_mensagem_preview: texto.slice(0, 100),
+        atualizada_em: new Date().toISOString(),
+        status: 'respondida'
+      }).eq('id', _ativa);
+      await abrirConversa(_ativa);
+    } catch(e) { ta.value = original; alert('Erro: ' + (e.message || e)); }
+    finally { btn.disabled = false; ta.focus(); }
+  }
 
-      if (ultima) {
-        const co = ultima.checkout || '';
-        const passou = co && co < new Date().toISOString().slice(0,10);
-        const fmt = (d) => d ? d.split('-').reverse().slice(0,2).join('/') : '';
-        elUltima.innerHTML = (futuras.length > 0
-          ? '🗓️ <span>Próxima ' + fmt(futuras[futuras.length-1].checkin) + ' (' + (futuras[futuras.length-1].cama || '?') + ')</span>'
-          : passou
-            ? '🕰️ <span>Última ' + fmt(ultima.checkin) + ' → ' + fmt(co) + '</span>'
-            : '');
-        if (elUltima.textContent) elUltima.classList.remove('hidden');
-      }
-    } catch (e) {
-      console.warn('[cartao hospede]', e);
-      elReservas.textContent = '⚠ Erro ao carregar histórico';
+  // ===== MODELOS DE RESPOSTA =====
+  let _modelos = null;
+  async function toggleModelos() {
+    const dd = document.getElementById('modelos-dropdown');
+    if (!dd) return;
+    if (!dd.classList.contains('hidden')) { dd.classList.add('hidden'); return; }
+    dd.classList.remove('hidden');
+    if (_modelos === null) {
+      try { const { data } = await db.from('templates_resposta_atrio').select('*').limit(50); _modelos = data || []; } catch(e) { _modelos = []; }
     }
+    const lista = document.getElementById('modelos-lista');
+    if (_modelos.length === 0) { lista.innerHTML = '<p class="text-xs text-slate-400 italic p-3">Nenhum modelo cadastrado</p>'; return; }
+    lista.innerHTML = _modelos.map(function(m){
+      const cat = (m.categoria||'geral').toUpperCase();
+      const titulo = escapar(m.titulo || m.nome || 'Sem titulo');
+      const preview = escapar((m.texto || m.mensagem || '').slice(0, 80));
+      const data = encodeURIComponent(m.texto || m.mensagem || '');
+      return '<button onclick="usarModelo(\''+data+'\')" class="w-full text-left p-2.5 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200"><div class="flex items-start gap-2"><span class="text-[9px] px-1.5 py-0.5 rounded font-semibold flex-shrink-0 mt-0.5" style="background:rgba(0,139,156,0.1);color:var(--azul-domus)">'+cat+'</span><div class="flex-1 min-w-0"><p class="text-sm font-medium" style="color:var(--azul-escuro)">'+titulo+'</p><p class="text-xs text-slate-500 truncate">'+preview+'</p></div></div></button>';
+    }).join('');
+  }
+  function usarModelo(enc) {
+    const ta = document.getElementById('texto-resposta');
+    let texto = decodeURIComponent(enc);
+    const conv = _conversas.find(c => c.id === _ativa);
+    if (conv) { const pn = (conv.hospede_nome_cache||'').split(' ')[0]; texto = texto.replace(/\{nome\}/g, pn).replace(/\{Nome\}/g, pn); }
+    ta.value = texto; ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,120)+'px'; ta.focus();
+    document.getElementById('modelos-dropdown').classList.add('hidden');
   }
 
   function escapar(s) { return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
 
-  // ===== Boot =====
-  (async function boot() {
-    // 1) Pede permissão de notificação (silencioso se já concedido/negado)
-    pedirPermissaoNotificacao();
+  // ===== Som da Domus + Notificações + Badge no título =====
+  window.SOM_DOMUS_VOLUME = 0.5;
+  function atualizarTituloBadge() {
+    const naoLidas = _conversas.reduce((s, c) => s + (c.nao_lidas || 0), 0);
+    document.title = naoLidas > 0
+      ? `(${naoLidas}) Átrio — onde toda conversa chega na Domus`
+      : 'Átrio — onde toda conversa chega na Domus';
+  }
+  async function pedirPermissaoNotificacao() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+    try { await Notification.requestPermission(); } catch(_) {}
+  }
+  function mostrarPopup(titulo, corpo, conversaId) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (document.visibilityState === 'visible') return;
+    try {
+      const n = new Notification('🌿 ' + titulo, {
+        body: corpo, icon: '/images/icone-atrio-192.png',
+        tag: 'atrio-' + (conversaId || 'x'), renotify: true, silent: true
+      });
+      n.onclick = () => { window.focus(); if (conversaId) abrirConversa(conversaId); n.close(); };
+      setTimeout(() => n.close(), 8000);
+    } catch(e) { console.warn('[popup]', e); }
+  }
 
-    // 2) Carga inicial
+  // ===== Realtime: escuta INSERTs em mensagens_inbox =====
+  let _realtimeChannel = null;
+  function ligarRealtime() {
+    if (_realtimeChannel) { try { db.removeChannel(_realtimeChannel); } catch(_) {} }
+    _realtimeChannel = db.channel('atrio-mensagens')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens_inbox' },
+        (payload) => onMensagemNova(payload.new))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversas' },
+        () => carregarConversas())
+      .subscribe();
+  }
+  async function onMensagemNova(m) {
     await carregarConversas();
-
-    // 3) Liga Realtime — recebe mensagens novas em segundos, sem polling
-    ligarRealtime();
-
-    // 4) Fallback: a cada 60s recarrega caso o Realtime caia
-    setInterval(() => carregarConversas(true), 60000);
-
-    // 5) Quando a aba volta a ficar visível, limpa badge e recarrega
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') carregarConversas(true);
-    });
-  })();
-
-  // ===== Auto-resize do textarea =====
-  document.getElementById('texto-resposta').addEventListener('input', function(){
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-  });
-
-  // ===== Atalho global: tocar som teste pelo console =====
-  window.testarSomDomus = () => window.tocarSomDomus && window.tocarSomDomus(_config.som || 'domus');
+    if (m.direcao === 'entrada') {
+      const conv = _conversas.find(c => c.id === m.conversa_id) || {};
+      const nome = conv.hospede_nome_cache || 'Mensagem nova';
+      if (typeof window.tocarSomDomus === 'function') {
+        try { window.tocarSomDomus('domus'); } catch(_) {}
+      }
+      mostrarPopup(nome, (m.conteudo || '').slice(0, 120), m.conversa_id);
+    }
+    if (_ativa === m.conversa_id) await abrirConversa(m.conversa_id);
+    atualizarTituloBadge();
+  }
 
   // ===== Modo Teste: simular mensagem de hóspede =====
   function abrirSimular() {
@@ -768,125 +709,65 @@
   }
   async function enviarSimulacao() {
     const nome = (document.getElementById('sim-nome').value || '').trim() || 'Hóspede Teste';
-    const tel = ((document.getElementById('sim-tel').value || '').replace(/\D/g, '')) || ('555555' + Math.floor(Math.random()*1000));
+    const tel = ((document.getElementById('sim-tel').value || '').replace(/\D/g,'')) || ('555555' + Math.floor(Math.random()*1000));
     const msg = (document.getElementById('sim-msg').value || '').trim();
     if (!msg) { alert('Escreva uma mensagem'); return; }
-
     try {
-      // Acha ou cria conversa (canal='manual' = modo teste)
       let conversaId = null;
       const { data: existente } = await db.from('conversas')
         .select('id, nao_lidas')
-        .eq('canal', 'manual')
-        .eq('identificador_externo', tel)
-        .maybeSingle();
-
+        .eq('canal', 'manual').eq('identificador_externo', tel).maybeSingle();
       if (existente) {
         conversaId = existente.id;
       } else {
-        const { data: nova, error: errNova } = await db.from('conversas').insert({
-          canal: 'manual',
-          identificador_externo: tel,
-          hospede_nome_cache: nome,
-          hospede_telefone_cache: tel,
-          status: 'aguardando_gabi',
-          prioridade: 'normal',
-          nao_lidas: 1,
+        const { data: nova } = await db.from('conversas').insert({
+          canal: 'manual', identificador_externo: tel,
+          hospede_nome_cache: nome, hospede_telefone_cache: tel,
+          status: 'aguardando_gabi', prioridade: 'normal', nao_lidas: 1,
           ia_pode_responder: true,
-          metadados: { modo_teste: true, criada_por: 'simulacao' }
+          metadados: { modo_teste: true }
         }).select('id').single();
-        if (errNova) throw errNova;
-        conversaId = nova.id;
+        conversaId = nova?.id;
       }
-
-      // Insere mensagem do hóspede
       await db.from('mensagens_inbox').insert({
-        conversa_id: conversaId,
-        direcao: 'entrada',
-        autor: nome,
-        autor_tipo: 'hospede',
-        conteudo: msg,
-        tipo: 'texto',
-        enviada_em: new Date().toISOString(),
-        status_envio: 'recebida',
-        metadados: { modo_teste: true }
+        conversa_id: conversaId, direcao: 'entrada', autor: nome, autor_tipo: 'hospede',
+        conteudo: msg, tipo: 'texto', enviada_em: new Date().toISOString(),
+        status_envio: 'recebida', metadados: { modo_teste: true }
       });
-
-      // Atualiza conversa
       await db.from('conversas').update({
-        ultima_mensagem_em: new Date().toISOString(),
         ultima_mensagem_preview: msg.slice(0, 200),
-        ultima_mensagem_direcao: 'entrada',
+        atualizada_em: new Date().toISOString(),
         status: 'aguardando_gabi',
         nao_lidas: (existente?.nao_lidas || 0) + 1
       }).eq('id', conversaId);
-
-      // Dispara IA Domus (mesmo fluxo do WhatsApp real)
       try {
         await db.functions.invoke('ia-responder', {
           body: { conversa_id: conversaId, conteudo: msg, nome_hospede: nome }
         });
-      } catch (errIa) {
-        console.warn('[simular] IA não respondeu (ANTHROPIC_API_KEY configurada?):', errIa);
-      }
-
-      // Limpa e fecha
+      } catch(_) {}
       document.getElementById('sim-msg').value = '';
       fecharSimular();
-      // Abre a conversa pra você ver a sugestão da IA
-      await carregarConversas(true);
+      await carregarConversas();
       setTimeout(() => abrirConversa(conversaId), 300);
-    } catch (e) {
-      console.error('[simular]', e);
-      alert('Erro: ' + (e.message || e));
-    }
+    } catch(e) { alert('Erro: ' + (e.message || e)); }
   }
 
-  // ===== Enviar mensagem da conversa ativa =====
-  // Grava em mensagens_inbox com direcao='saida'. Quando o provedor de WhatsApp
-  // estiver plugado, uma trigger/edge function vai disparar o envio real.
-  // Por enquanto, fica registrado pra você ver no histórico.
-  async function enviarMensagemAtiva() {
-    if (!_ativa) {
-      alert('Selecione uma conversa primeiro');
-      return;
-    }
-    const ta = document.getElementById('texto-resposta');
-    const texto = (ta.value || '').trim();
-    if (!texto) return;
+  // ===== Boot =====
+  (async function boot() {
+    pedirPermissaoNotificacao();
+    await carregarConversas();
+    atualizarTituloBadge();
+    ligarRealtime();
+    setInterval(() => carregarConversas(), 60000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') { carregarConversas(); atualizarTituloBadge(); }
+    });
+  })();
 
-    const btn = document.getElementById('btn-enviar');
-    if (btn) btn.disabled = true;
-
-    try {
-      // Insere mensagem de saída
-      const { error } = await db.from('mensagens_inbox').insert({
-        conversa_id: _ativa,
-        conteudo: texto,
-        direcao: 'saida',
-        autor_tipo: 'humano',
-        enviada_em: new Date().toISOString()
-      });
-      if (error) throw error;
-
-      // Atualiza preview da conversa
-      await db.from('conversas').update({
-        ultima_mensagem_preview: texto.slice(0, 100),
-        ultima_mensagem_em: new Date().toISOString(),
-        status: 'respondida'
-      }).eq('id', _ativa);
-
-      ta.value = '';
-      ta.style.height = 'auto';
-      await recarregarMensagensAtiva();
-      await carregarConversas(true);
-    } catch (e) {
-      console.error('[enviar]', e);
-      alert('Erro ao enviar: ' + (e.message || e));
-    } finally {
-      if (btn) btn.disabled = false;
-    }
-  }
+  document.getElementById('texto-resposta').addEventListener('input', function(){
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
 </script>
 
 </body>
