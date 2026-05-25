@@ -19,10 +19,22 @@
   :root {
     --azul-domus:#008B9C; --azul-escuro:#0A3142; --dourado:#C9A961;
     --rosa-rib:#D4537E; --creme:#FFF8F0; --texto-suave:#5A6B7B;
+    /* WhatsApp Web palette */
+    --wa-header:#008069;
+    --wa-header-light:#00A884;
+    --wa-bg-chat:#EFEAE2;
+    --wa-balao-saida:#D9FDD3;
+    --wa-balao-entrada:#FFFFFF;
+    --wa-texto:#111B21;
+    --wa-texto-suave:#667781;
+    --wa-borda:#E9EDEF;
+    --wa-hover:#F5F6F6;
+    --wa-ativa:#F0F2F5;
+    --wa-lida:#53BDEB;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
   *{box-sizing:border-box}
-  body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#F4F6F9;color:#0A3142;margin:0;height:100vh;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#F0F2F5;color:var(--wa-texto);margin:0;height:100vh;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent}
 
   /* Cores oficiais dos canais (logos) */
   .ico-wrap{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;flex-shrink:0}
@@ -38,17 +50,71 @@
   .ico-wrap-sm{width:24px;height:24px;border-radius:6px}
   .ico-wrap-sm svg{width:14px;height:14px}
 
-  .conversa-item{transition:background .12s}
-  .conversa-item:hover{background:#F0F4F8}
-  .conversa-item:active{background:#E6F1FB}
-  .conversa-item.ativa{background:#E6F1FB;border-left:3px solid var(--azul-domus)}
+  /* Itens da lista de conversas — estilo WhatsApp */
+  .conversa-item{transition:background .12s;background:white;border-bottom:1px solid var(--wa-borda)}
+  .conversa-item:hover{background:var(--wa-hover)}
+  .conversa-item:active{background:var(--wa-ativa)}
+  .conversa-item.ativa{background:var(--wa-ativa);border-left:none}
 
-  .msg-entrada{background:white;color:#0A3142;align-self:flex-start;border-radius:0 16px 16px 16px;box-shadow:0 1px 2px rgba(15,23,42,.06)}
-  .msg-saida{background:var(--azul-domus);color:white;align-self:flex-end;border-radius:16px 0 16px 16px}
-  .msg-ia{background:linear-gradient(135deg,#7F77DD,#534AB7);color:white;align-self:flex-end;border-radius:16px 0 16px 16px}
+  /* Bolhas de mensagem estilo WhatsApp Web */
+  .msg-entrada{background:var(--wa-balao-entrada);color:var(--wa-texto);align-self:flex-start;border-radius:8px;box-shadow:0 1px 0.5px rgba(11,20,26,.13);position:relative;padding:6px 8px 8px 10px}
+  .msg-entrada::before{content:'';position:absolute;left:-7px;top:0;width:0;height:0;border-style:solid;border-width:0 7px 7px 0;border-color:transparent var(--wa-balao-entrada) transparent transparent;filter:drop-shadow(-1px 1px 0.5px rgba(11,20,26,.06))}
+  .msg-saida{background:var(--wa-balao-saida);color:var(--wa-texto);align-self:flex-end;border-radius:8px;box-shadow:0 1px 0.5px rgba(11,20,26,.13);position:relative;padding:6px 8px 8px 10px}
+  .msg-saida::before{content:'';position:absolute;right:-7px;top:0;width:0;height:0;border-style:solid;border-width:0 0 7px 7px;border-color:transparent transparent transparent var(--wa-balao-saida);filter:drop-shadow(1px 1px 0.5px rgba(11,20,26,.06))}
+  .msg-ia{background:linear-gradient(135deg,#7F77DD,#534AB7);color:white;align-self:flex-end;border-radius:8px;box-shadow:0 1px 0.5px rgba(11,20,26,.13);padding:6px 8px 8px 10px}
 
   .scroll-clean::-webkit-scrollbar{width:6px;height:6px}
   .scroll-clean::-webkit-scrollbar-thumb{background:#D5DCE3;border-radius:3px}
+
+  /* Fundo da conversa: bege WhatsApp com padrão sutil */
+  .tela-conversa, #mensagens-area {
+    background-color: var(--wa-bg-chat);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='%23D8D2C7' fill-opacity='.35'><circle cx='10' cy='10' r='1.5'/><circle cx='40' cy='40' r='1.5'/><circle cx='70' cy='20' r='1.5'/><circle cx='20' cy='65' r='1.5'/><circle cx='60' cy='75' r='1.5'/></g></svg>");
+  }
+
+  /* Header da conversa: verde WhatsApp */
+  .header-conversa-wa {
+    background: var(--wa-header) !important;
+    color: white !important;
+    border-bottom: none !important;
+  }
+  .header-conversa-wa .btn-iconico { color: white }
+  .header-conversa-wa .btn-iconico:active { background: rgba(255,255,255,.15) }
+
+  /* Status check ✓ / ✓✓ / azul lida */
+  .status-check { display:inline-flex; align-items:center; gap:0; font-size:11px; line-height:1; margin-left:4px }
+  .status-check.lida { color: var(--wa-lida) }
+  .status-check.entregue { color: #8696A0 }
+
+  /* Botão de microfone (gravar áudio) */
+  .btn-mic { background: var(--wa-header); transition: all .15s }
+  .btn-mic:hover { background: var(--wa-header-light) }
+  .btn-mic.gravando { background: #DC2626; animation: pulso 1s infinite }
+
+  /* Picker de emojis */
+  .emoji-picker {
+    position:absolute; bottom:60px; left:8px; right:8px;
+    background:white; border:1px solid var(--wa-borda); border-radius:12px;
+    box-shadow:0 8px 24px rgba(11,20,26,.15); padding:8px;
+    max-height:280px; overflow-y:auto; z-index:40
+  }
+  .emoji-picker-cats { display:flex; gap:4px; padding:4px 0 8px; border-bottom:1px solid var(--wa-borda); margin-bottom:8px; overflow-x:auto }
+  .emoji-cat-btn { padding:4px 8px; border:none; background:transparent; cursor:pointer; border-radius:6px; font-size:18px; min-height:auto }
+  .emoji-cat-btn.ativa { background:var(--wa-hover) }
+  .emoji-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:2px }
+  .emoji-btn { padding:6px; border:none; background:transparent; cursor:pointer; border-radius:6px; font-size:22px; min-height:auto }
+  .emoji-btn:hover { background:var(--wa-hover) }
+
+  /* Menu de anexar */
+  .anexar-menu {
+    position:absolute; bottom:60px; left:8px;
+    background:white; border:1px solid var(--wa-borda); border-radius:12px;
+    box-shadow:0 8px 24px rgba(11,20,26,.15); padding:8px; z-index:40;
+    display:flex; flex-direction:column; gap:4px; min-width:180px
+  }
+  .anexar-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; border:none; background:transparent; width:100%; text-align:left; font-size:14px; color:var(--wa-texto); min-height:auto }
+  .anexar-item:hover { background:var(--wa-hover) }
+  .anexar-item .ico-wrap { width:36px; height:36px; border-radius:50% }
 
   .pulso{animation:pulso 2s infinite}
   @keyframes pulso{0%,100%{opacity:1}50%{opacity:.5}}
@@ -248,15 +314,15 @@
     </div>
 
     <div id="conversa-ativa" class="hidden flex-1 flex-col">
-      <header class="header-mobile lg:!flex lg:px-5 lg:py-3" style="border-bottom:1px solid #E5E9EE">
+      <header class="header-mobile header-conversa-wa lg:!flex lg:px-5 lg:py-3">
         <button class="btn-iconico" onclick="fecharConversa()" aria-label="Voltar"><svg><use href="#ico-back"/></svg></button>
         <div class="relative flex-shrink-0">
-          <div class="w-11 h-11 rounded-full text-white flex items-center justify-center font-bold" style="background:linear-gradient(135deg,#008B9C,#0A3142)" id="conv-avatar">?</div>
+          <div class="w-11 h-11 rounded-full text-white flex items-center justify-center font-bold" style="background:linear-gradient(135deg,#54B79B,#008069);border:2px solid rgba(255,255,255,.3)" id="conv-avatar">?</div>
           <span class="ico-wrap ico-wrap-sm absolute -bottom-1 -right-1 border-2 border-white" id="conv-canal-ico" style="width:20px;height:20px;border-radius:6px"></span>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="font-semibold text-base truncate" style="color:var(--azul-escuro)" id="conv-nome">—</p>
-          <p class="text-xs text-slate-500 flex items-center gap-1.5"><span id="conv-canal-nome" class="font-medium" style="color:var(--azul-domus)">—</span><span class="text-slate-300">·</span><span id="conv-extra" class="truncate">—</span></p>
+          <p class="font-semibold text-base truncate" id="conv-nome">—</p>
+          <p class="text-xs flex items-center gap-1.5" style="color:rgba(255,255,255,.8)"><span id="conv-canal-nome" class="font-medium">—</span><span style="color:rgba(255,255,255,.4)">·</span><span id="conv-extra" class="truncate">—</span></p>
         </div>
         <div class="hidden lg:flex gap-1">
           <button onclick="togglePainelHospede()" class="btn-iconico" title="Perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></button>
@@ -283,10 +349,53 @@
           </div>
         </div>
 
-        <div class="flex gap-2 items-end">
-          <button class="btn-iconico text-slate-500" title="Anexar"><svg><use href="#ico-attach"/></svg></button>
-          <textarea id="texto-resposta" placeholder="Mensagem…" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); enviarMensagem();}" class="flex-1 px-3 py-2.5 rounded-2xl border border-slate-200 focus:border-domus-azul focus:outline-none resize-none" rows="1" style="min-height:44px;max-height:120px"></textarea>
-          <button id="btn-enviar" onclick="enviarMensagem()" class="w-11 h-11 rounded-full text-white flex items-center justify-center flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed" style="background:var(--azul-domus)" aria-label="Enviar"><svg width="20" height="20"><use href="#ico-send"/></svg></button>
+        <div class="relative">
+          <!-- Picker de emojis (escondido por padrão) -->
+          <div id="emoji-picker" class="emoji-picker hidden">
+            <div class="emoji-picker-cats" id="emoji-cats"></div>
+            <div class="emoji-grid" id="emoji-grid"></div>
+          </div>
+
+          <!-- Menu de anexar (escondido por padrão) -->
+          <div id="anexar-menu" class="anexar-menu hidden">
+            <button onclick="alert('Em breve: anexar foto')" class="anexar-item">
+              <span class="ico-wrap" style="background:#BF59CF"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></span>
+              <span>Foto da galeria</span>
+            </button>
+            <button onclick="alert('Em breve: tirar foto')" class="anexar-item">
+              <span class="ico-wrap" style="background:#FF4B4B"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg></span>
+              <span>Câmera</span>
+            </button>
+            <button onclick="alert('Em breve: enviar documento')" class="anexar-item">
+              <span class="ico-wrap" style="background:#5157AE"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></span>
+              <span>Documento</span>
+            </button>
+            <button onclick="alert('Em breve: enviar contato')" class="anexar-item">
+              <span class="ico-wrap" style="background:#0FA884"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span>
+              <span>Contato</span>
+            </button>
+            <button onclick="alert('Em breve: localização')" class="anexar-item">
+              <span class="ico-wrap" style="background:#FFA42F"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></span>
+              <span>Localização</span>
+            </button>
+          </div>
+
+          <div class="flex gap-2 items-end">
+            <!-- Botão emoji -->
+            <button onclick="toggleEmojiPicker()" class="btn-iconico text-slate-500" title="Emoji" style="background:transparent">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            </button>
+            <!-- Botão anexar -->
+            <button onclick="toggleAnexarMenu()" class="btn-iconico text-slate-500" title="Anexar" style="background:transparent">
+              <svg><use href="#ico-attach"/></svg>
+            </button>
+            <textarea id="texto-resposta" placeholder="Mensagem" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); enviarMensagem();}" oninput="atualizarBotaoEnviar()" class="flex-1 px-4 py-2.5 rounded-2xl border border-slate-200 focus:border-domus-azul focus:outline-none resize-none bg-white" rows="1" style="min-height:44px;max-height:120px"></textarea>
+            <!-- Botão dinâmico: microfone (vazio) → enviar (com texto) -->
+            <button id="btn-mic" onclick="gravarAudio()" class="btn-mic w-11 h-11 rounded-full text-white flex items-center justify-center flex-shrink-0" aria-label="Gravar áudio" title="Gravar áudio">
+              <svg viewBox="0 0 24 24" fill="white" width="22" height="22"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+            </button>
+            <button id="btn-enviar" onclick="enviarMensagem()" class="hidden w-11 h-11 rounded-full text-white flex items-center justify-center flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed" style="background:var(--wa-header)" aria-label="Enviar"><svg width="20" height="20"><use href="#ico-send"/></svg></button>
+          </div>
         </div>
         <div class="hidden lg:flex gap-3 mt-2 text-[11px] text-slate-400 relative">
           <button onclick="toggleModelos()" class="hover:text-slate-600">⚡ Modelos</button>
@@ -646,6 +755,112 @@
   }
 
   function escapar(s) { return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ===== EMOJI PICKER =====
+  // Categorias e emojis populares organizados como no WhatsApp
+  const EMOJI_CATS = {
+    'Recentes': ['😊','💚','🌿','🏡','😂','❤️','👍','🙏','✨','😍'],
+    'Smileys': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🫢','🫣','🤫','🤔','🫡','🤐','🤨','😐','😑','😶','🫠','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🥳','🥸','😎','🤓','🧐'],
+    'Gestos': ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','🫵','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','🫦'],
+    'Coração': ['❤️','🧡','💛','💚','💙','💜','🤎','🖤','🤍','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','💌'],
+    'Comida': ['🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🥑','🌽','🥕','🫒','🌶️','🥒','🥬','🥦','🍆','🥔','🍠','🌰','🥜','🍞','🥐','🥖','🫓','🥨','🥯','🥞','🧇','🧀','🍖','🍗','🥩','🥓','🍔','🍟','🍕','🌭','🥪','🌮','🌯','🫔','🥙','🧆','🍳','🥘','🍲','🫕','🥣','🥗','🍿','🧈','🧂','🥫','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊'],
+    'Casa': ['🏡','🏠','🏘️','🏚️','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏩','💒','🏛️','⛪','🕌','🛕','🕍','⛩️','🕋','⛺','🏗️','🧱','🪨','🪵','🛖'],
+    'Domus': ['🏡','🌿','💚','✨','⭐','🌱','🌳','🌴','🪴','🌷','🌸','💐','☀️','🌙','⭐','✨','💫','🌟','🌈','🔆','💡','🎁','🎀','💍','💎']
+  };
+  let _emojiCatAtual = 'Recentes';
+
+  function toggleEmojiPicker() {
+    const p = document.getElementById('emoji-picker');
+    fecharAnexarMenu();
+    if (p.classList.contains('hidden')) {
+      renderEmojiPicker();
+      p.classList.remove('hidden');
+    } else {
+      p.classList.add('hidden');
+    }
+  }
+  function renderEmojiPicker() {
+    const cats = document.getElementById('emoji-cats');
+    cats.innerHTML = Object.keys(EMOJI_CATS).map(c =>
+      `<button class="emoji-cat-btn ${c === _emojiCatAtual ? 'ativa' : ''}" onclick="trocarEmojiCat('${c}')">${EMOJI_CATS[c][0]}</button>`
+    ).join('');
+    const grid = document.getElementById('emoji-grid');
+    grid.innerHTML = EMOJI_CATS[_emojiCatAtual].map(e =>
+      `<button class="emoji-btn" onclick="inserirEmoji('${e}')">${e}</button>`
+    ).join('');
+  }
+  function trocarEmojiCat(cat) { _emojiCatAtual = cat; renderEmojiPicker(); }
+  function inserirEmoji(emoji) {
+    const ta = document.getElementById('texto-resposta');
+    const pos = ta.selectionStart || ta.value.length;
+    ta.value = ta.value.slice(0, pos) + emoji + ta.value.slice(pos);
+    ta.focus();
+    ta.selectionEnd = pos + emoji.length;
+    atualizarBotaoEnviar();
+  }
+
+  // ===== MENU ANEXAR =====
+  function toggleAnexarMenu() {
+    const m = document.getElementById('anexar-menu');
+    document.getElementById('emoji-picker').classList.add('hidden');
+    m.classList.toggle('hidden');
+  }
+  function fecharAnexarMenu() { document.getElementById('anexar-menu').classList.add('hidden'); }
+
+  // ===== BOTÃO DINÂMICO: mic ↔ enviar =====
+  function atualizarBotaoEnviar() {
+    const ta = document.getElementById('texto-resposta');
+    const btnMic = document.getElementById('btn-mic');
+    const btnEnv = document.getElementById('btn-enviar');
+    if (ta.value.trim().length > 0) {
+      btnMic.classList.add('hidden');
+      btnEnv.classList.remove('hidden');
+    } else {
+      btnMic.classList.remove('hidden');
+      btnEnv.classList.add('hidden');
+    }
+  }
+
+  // ===== GRAVAR ÁUDIO (placeholder — implementação completa precisa de MediaRecorder API) =====
+  let _gravando = false;
+  let _mediaRecorder = null;
+  let _audioChunks = [];
+  async function gravarAudio() {
+    if (!_gravando) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        _audioChunks = [];
+        _mediaRecorder = new MediaRecorder(stream);
+        _mediaRecorder.ondataavailable = (e) => _audioChunks.push(e.data);
+        _mediaRecorder.onstop = async () => {
+          const blob = new Blob(_audioChunks, { type: 'audio/webm' });
+          alert(`🎤 Áudio gravado (${(blob.size/1024).toFixed(1)} KB). Upload pro storage será implementado no próximo passo — por enquanto fica como prévia.`);
+          stream.getTracks().forEach(t => t.stop());
+        };
+        _mediaRecorder.start();
+        _gravando = true;
+        document.getElementById('btn-mic').classList.add('gravando');
+        document.getElementById('btn-mic').title = 'Parar gravação';
+      } catch (e) {
+        alert('Permita o acesso ao microfone pra gravar áudio. ' + e.message);
+      }
+    } else {
+      _mediaRecorder.stop();
+      _gravando = false;
+      document.getElementById('btn-mic').classList.remove('gravando');
+      document.getElementById('btn-mic').title = 'Gravar áudio';
+    }
+  }
+
+  // Fecha pickers ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#emoji-picker') && !e.target.closest('[onclick*="toggleEmojiPicker"]')) {
+      document.getElementById('emoji-picker')?.classList.add('hidden');
+    }
+    if (!e.target.closest('#anexar-menu') && !e.target.closest('[onclick*="toggleAnexarMenu"]')) {
+      document.getElementById('anexar-menu')?.classList.add('hidden');
+    }
+  });
 
   // ===== Som da Domus + Notificações + Badge no título =====
   window.SOM_DOMUS_VOLUME = 0.5;
