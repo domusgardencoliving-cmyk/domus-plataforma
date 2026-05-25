@@ -14,6 +14,7 @@
 <meta name="description" content="Inbox unificado da Domus Garden — WhatsApp, Instagram, Airbnb, Booking, Webquartos e e-mail num lugar só." />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/sons-domus.js"></script>
 <style>
   :root {
     --azul-domus:#008B9C; --azul-escuro:#0A3142; --dourado:#C9A961;
@@ -264,6 +265,20 @@
         </button>
       </header>
 
+      <!-- Cartão do hóspede: dados de cadastro, reservas, saldo, selo VIP -->
+      <div id="conv-cartao-hospede" class="hidden bg-white border-b border-slate-100 px-4 py-3 text-xs">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span id="conv-cartao-selo" class="hidden px-2 py-0.5 rounded-full text-[10px] font-semibold"></span>
+          <span id="conv-cartao-tel" class="text-slate-600"></span>
+          <span id="conv-cartao-cpf" class="text-slate-500"></span>
+        </div>
+        <div class="flex items-center gap-3 mt-1.5 text-slate-600">
+          <span id="conv-cartao-reservas" class="flex items-center gap-1"></span>
+          <span id="conv-cartao-saldo" class="hidden flex items-center gap-1"></span>
+          <span id="conv-cartao-ultima" class="hidden flex items-center gap-1"></span>
+        </div>
+      </div>
+
       <div id="mensagens-area" class="flex-1 overflow-y-auto p-4 lg:p-5 flex flex-col gap-2 scroll-clean"></div>
 
       <footer class="bg-white border-t border-slate-200 p-3 lg:p-4" style="padding-bottom:max(12px,var(--safe-bottom))">
@@ -284,8 +299,10 @@
 
         <div class="flex gap-2 items-end">
           <button class="btn-iconico text-slate-500" title="Anexar"><svg><use href="#ico-attach"/></svg></button>
-          <textarea id="texto-resposta" placeholder="Mensagem…" class="flex-1 px-3 py-2.5 rounded-2xl border border-slate-200 focus:border-domus-azul focus:outline-none resize-none" rows="1" style="min-height:44px;max-height:120px"></textarea>
-          <button class="w-11 h-11 rounded-full text-white flex items-center justify-center flex-shrink-0" style="background:var(--azul-domus)" aria-label="Enviar"><svg width="20" height="20"><use href="#ico-send"/></svg></button>
+          <textarea id="texto-resposta" placeholder="Mensagem…"
+            onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();enviarMensagemAtiva();}"
+            class="flex-1 px-3 py-2.5 rounded-2xl border border-slate-200 focus:border-domus-azul focus:outline-none resize-none" rows="1" style="min-height:44px;max-height:120px"></textarea>
+          <button id="btn-enviar" onclick="enviarMensagemAtiva()" class="w-11 h-11 rounded-full text-white flex items-center justify-center flex-shrink-0" style="background:var(--azul-domus)" aria-label="Enviar"><svg width="20" height="20"><use href="#ico-send"/></svg></button>
         </div>
         <div class="hidden lg:flex gap-3 mt-2 text-[11px] text-slate-400">
           <button class="hover:text-slate-600">⚡ Modelos</button>
@@ -331,12 +348,34 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  // ===== Configuração do usuário (persistente) =====
+  const CONFIG_KEY = 'atrio_config';
+  function carregarConfig() {
+    try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}'); } catch (_) { return {}; }
+  }
+  function salvarConfig(c) {
+    try { localStorage.setItem(CONFIG_KEY, JSON.stringify(c)); } catch (_) {}
+  }
+  let _config = Object.assign({
+    som: 'domus',           // som assinatura — 'domus' é o oficial
+    somAtivado: true,       // pode ser desligado em horário noturno
+    volume: 0.5,            // 0 a 1
+    notificacoesAtivadas: true,
+    naoIncomodar: false     // futuro: agenda de silêncio
+  }, carregarConfig());
+  // Aplica volume no sons-domus.js
+  if (typeof window !== 'undefined') window.SOM_DOMUS_VOLUME = _config.volume;
+
+  // ===== Estado da inbox =====
   let _conversas = [];
   let _ativa = null;
   let _filtro = 'todas';
   let _canal = null;
+  let _ultimaSyncMs = 0;      // pra detectar mensagens NOVAS (não mostrar som ao carregar histórico)
+  let _realtimeChannel = null;
 
-  async function carregarConversas() {
+  // ===== Carga inicial e Realtime =====
+  async function carregarConversas(silencioso) {
     try {
       const { data, error } = await db.from('conversas')
         .select('*').order('ultima_mensagem_em', { ascending: false }).limit(100);
@@ -344,6 +383,116 @@
       _conversas = data || [];
       renderLista();
       atualizarContadores();
+      atualizarTituloBadge();
+      if (!silencioso && !_ultimaSyncMs) _ultimaSyncMs = Date.now();
+    } catch(e) { console.warn(e); }
+  }
+
+  // Supabase Realtime — escuta INSERTs em mensagens_inbox
+  // Quando chega mensagem nova: toca som, mostra notificação, atualiza lista.
+  function ligarRealtime() {
+    if (_realtimeChannel) {
+      try { db.removeChannel(_realtimeChannel); } catch (_) {}
+    }
+    _realtimeChannel = db
+      .channel('atrio-mensagens-inbox')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'mensagens_inbox' },
+        (payload) => onMensagemNova(payload.new)
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'conversas' },
+        () => carregarConversas(true)
+      )
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'conversas' },
+        () => carregarConversas(true)
+      )
+      .subscribe();
+  }
+
+  async function onMensagemNova(mensagem) {
+    if (!mensagem || mensagem.direcao !== 'entrada') {
+      // Só notifica em mensagens RECEBIDAS de hóspedes
+      await carregarConversas(true);
+      // Se for a conversa aberta, recarrega o histórico dela
+      if (_ativa && mensagem.conversa_id === _ativa) await recarregarMensagensAtiva();
+      return;
+    }
+
+    // Recarrega lista pra pegar a nova conversa/preview
+    await carregarConversas(true);
+
+    // Acha a conversa pra enriquecer a notificação
+    const conv = _conversas.find(c => c.id === mensagem.conversa_id) || {};
+    const nome = conv.hospede_nome_cache || 'Mensagem nova';
+    const preview = (mensagem.conteudo || '').slice(0, 120);
+
+    // Toca som (se ativado)
+    if (_config.somAtivado && typeof window.tocarSomDomus === 'function') {
+      try { window.tocarSomDomus(_config.som || 'domus'); } catch (_) {}
+    }
+
+    // Notificação popup do browser (se ativado + se aba não tá visível)
+    if (_config.notificacoesAtivadas) mostrarPopup(nome, preview, mensagem.conversa_id);
+
+    // Se a conversa aberta é essa, recarrega histórico
+    if (_ativa && mensagem.conversa_id === _ativa) await recarregarMensagensAtiva();
+  }
+
+  // ===== Notificações popup =====
+  async function pedirPermissaoNotificacao() {
+    if (!('Notification' in window)) return 'unsupported';
+    if (Notification.permission === 'granted') return 'granted';
+    if (Notification.permission === 'denied') return 'denied';
+    try { return await Notification.requestPermission(); } catch (_) { return 'error'; }
+  }
+
+  function mostrarPopup(titulo, corpo, conversaId) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    // Só mostra popup se a aba NÃO tá visível (senão é redundante)
+    if (document.visibilityState === 'visible') return;
+    try {
+      const n = new Notification('🌿 ' + titulo, {
+        body: corpo,
+        icon: '/images/icone-atrio-192.png',
+        badge: '/images/icone-atrio-192.png',
+        tag: 'atrio-' + (conversaId || 'inbox'),
+        renotify: true,
+        silent: true   // som a gente toca via Web Audio (mais bonito que o do SO)
+      });
+      n.onclick = () => {
+        window.focus();
+        if (conversaId) abrirConversa(conversaId);
+        n.close();
+      };
+      // Auto-close em 8s
+      setTimeout(() => n.close(), 8000);
+    } catch (e) { console.warn('[popup]', e); }
+  }
+
+  // ===== Badge no título "(3) Átrio" =====
+  function atualizarTituloBadge() {
+    const naoLidas = _conversas.reduce((s, c) => s + (c.nao_lidas || 0), 0);
+    const base = 'Átrio — onde toda conversa chega na Domus';
+    document.title = naoLidas > 0 ? `(${naoLidas}) ${base}` : base;
+  }
+
+  // ===== Recarregar histórico da conversa ativa =====
+  async function recarregarMensagensAtiva() {
+    if (!_ativa) return;
+    try {
+      const { data: msgs } = await db.from('mensagens_inbox')
+        .select('*').eq('conversa_id', _ativa).order('enviada_em', { ascending: true });
+      const area = document.getElementById('mensagens-area');
+      if (!area) return;
+      area.innerHTML = (msgs || []).map(function(m){
+        const cls = 'msg-' + (m.direcao === 'entrada' ? 'entrada' : (m.autor_tipo === 'ia' ? 'ia' : 'saida'));
+        const horaCls = m.direcao === 'entrada' ? 'text-slate-400' : 'text-white/70';
+        const hora = new Date(m.enviada_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        return '<div class="' + cls + ' max-w-[80%] lg:max-w-[70%] px-4 py-2.5"><p class="text-base lg:text-sm whitespace-pre-wrap">' + escapar(m.conteudo || '') + '</p><p class="text-[10px] mt-1 ' + horaCls + '">' + hora + '</p></div>';
+      }).join('');
+      area.scrollTop = area.scrollHeight;
     } catch(e) { console.warn(e); }
   }
 
@@ -420,31 +569,193 @@
     ico.style.cssText = 'width:16px;height:16px;border-radius:4px';
     ico.innerHTML = '<svg style="width:10px;height:10px"><use href="#' + cfg.ico + '"/></svg>';
 
-    try {
-      const { data: msgs } = await db.from('mensagens_inbox')
-        .select('*').eq('conversa_id', id).order('enviada_em', { ascending: true });
-      const area = document.getElementById('mensagens-area');
-      area.innerHTML = (msgs || []).map(function(m){
-        const cls = 'msg-' + (m.direcao === 'entrada' ? 'entrada' : (m.autor_tipo === 'ia' ? 'ia' : 'saida'));
-        const horaCls = m.direcao === 'entrada' ? 'text-slate-400' : 'text-white/70';
-        const hora = new Date(m.enviada_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        return '<div class="' + cls + ' max-w-[80%] lg:max-w-[70%] px-4 py-2.5"><p class="text-base lg:text-sm whitespace-pre-wrap">' + escapar(m.conteudo || '') + '</p><p class="text-[10px] mt-1 ' + horaCls + '">' + hora + '</p></div>';
-      }).join('');
-      area.scrollTop = area.scrollHeight;
-    } catch(e) { console.warn(e); }
+    // Carrega mensagens + cartão do hóspede em paralelo
+    await Promise.all([
+      recarregarMensagensAtiva(),
+      preencherCartaoHospede(conv)
+    ]);
+
+    // Zera contador de não lidas dessa conversa
+    if ((conv.nao_lidas || 0) > 0) {
+      try {
+        await db.from('conversas').update({ nao_lidas: 0 }).eq('id', id);
+        conv.nao_lidas = 0;
+        atualizarTituloBadge();
+        atualizarContadores();
+      } catch (_) {}
+    }
 
     renderLista();
   }
 
+  // Preenche o cartão do hóspede com dados ricos: reservas, saldo, selo VIP, etc.
+  async function preencherCartaoHospede(conv) {
+    const cartao = document.getElementById('conv-cartao-hospede');
+    if (!cartao) return;
+    const tel = (conv.hospede_telefone_cache || '').replace(/\D/g, '');
+    const elTel = document.getElementById('conv-cartao-tel');
+    const elCpf = document.getElementById('conv-cartao-cpf');
+    const elSelo = document.getElementById('conv-cartao-selo');
+    const elReservas = document.getElementById('conv-cartao-reservas');
+    const elSaldo = document.getElementById('conv-cartao-saldo');
+    const elUltima = document.getElementById('conv-cartao-ultima');
+
+    elTel.textContent = conv.hospede_telefone_cache ? '📞 ' + conv.hospede_telefone_cache : '';
+    elCpf.textContent = '';
+    elSelo.classList.add('hidden');
+    elReservas.textContent = '🔍 Buscando histórico...';
+    elSaldo.classList.add('hidden');
+    elUltima.classList.add('hidden');
+    cartao.classList.remove('hidden');
+
+    if (!tel) {
+      elReservas.textContent = '⚠ Sem telefone cadastrado';
+      return;
+    }
+
+    try {
+      // Busca hóspede no CRM
+      let hospede = null;
+      try {
+        const { data: h } = await db.from('hospedes')
+          .select('id, nome, sobrenome, documento, email, nivel_fidelidade, pontos_fidelidade, total_reservas, total_noites')
+          .or(`telefone.eq.${tel},telefone.eq.+${tel}`)
+          .maybeSingle();
+        hospede = h;
+      } catch (_) {}
+
+      if (hospede) {
+        if (hospede.documento) elCpf.textContent = '· ' + hospede.documento;
+        const nivel = (hospede.nivel_fidelidade || '').toLowerCase();
+        if (nivel === 'ouro') {
+          elSelo.textContent = '⭐ Ouro';
+          elSelo.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800';
+          elSelo.classList.remove('hidden');
+        } else if (nivel === 'prata') {
+          elSelo.textContent = '🥈 Prata';
+          elSelo.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-700';
+          elSelo.classList.remove('hidden');
+        } else if (hospede.total_reservas > 1) {
+          elSelo.textContent = '💚 Recorrente';
+          elSelo.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700';
+          elSelo.classList.remove('hidden');
+        } else if (hospede.total_reservas === 1) {
+          elSelo.textContent = '🆕 Primeira vez';
+          elSelo.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700';
+          elSelo.classList.remove('hidden');
+        }
+      }
+
+      // Busca reservas (todas, ordenando pela mais recente)
+      const { data: reservas } = await db.from('reservas')
+        .select('id, hospede_nome, cama, checkin, checkout, status, valor_total')
+        .or(`hospede_id.eq.${hospede ? hospede.id : '00000000-0000-0000-0000-000000000000'},hospede_contato.eq.${conv.hospede_telefone_cache}`)
+        .order('checkin', { ascending: false })
+        .limit(30);
+
+      const lista = reservas || [];
+      const total = lista.length;
+      const ativas = lista.filter(r => r.status && r.status !== 'cancelada').length;
+      const futuras = lista.filter(r => r.checkout >= new Date().toISOString().slice(0,10) && r.status !== 'cancelada');
+      const ultima = lista[0];
+
+      elReservas.innerHTML = total === 0
+        ? '🆕 <span>Primeira interação</span>'
+        : '📋 <span>' + ativas + ' reserva' + (ativas !== 1 ? 's' : '') + '</span>';
+
+      if (ultima) {
+        const co = ultima.checkout || '';
+        const passou = co && co < new Date().toISOString().slice(0,10);
+        const fmt = (d) => d ? d.split('-').reverse().slice(0,2).join('/') : '';
+        elUltima.innerHTML = (futuras.length > 0
+          ? '🗓️ <span>Próxima ' + fmt(futuras[futuras.length-1].checkin) + ' (' + (futuras[futuras.length-1].cama || '?') + ')</span>'
+          : passou
+            ? '🕰️ <span>Última ' + fmt(ultima.checkin) + ' → ' + fmt(co) + '</span>'
+            : '');
+        if (elUltima.textContent) elUltima.classList.remove('hidden');
+      }
+    } catch (e) {
+      console.warn('[cartao hospede]', e);
+      elReservas.textContent = '⚠ Erro ao carregar histórico';
+    }
+  }
+
   function escapar(s) { return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
 
-  carregarConversas();
-  setInterval(carregarConversas, 30000);
+  // ===== Boot =====
+  (async function boot() {
+    // 1) Pede permissão de notificação (silencioso se já concedido/negado)
+    pedirPermissaoNotificacao();
 
+    // 2) Carga inicial
+    await carregarConversas();
+
+    // 3) Liga Realtime — recebe mensagens novas em segundos, sem polling
+    ligarRealtime();
+
+    // 4) Fallback: a cada 60s recarrega caso o Realtime caia
+    setInterval(() => carregarConversas(true), 60000);
+
+    // 5) Quando a aba volta a ficar visível, limpa badge e recarrega
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') carregarConversas(true);
+    });
+  })();
+
+  // ===== Auto-resize do textarea =====
   document.getElementById('texto-resposta').addEventListener('input', function(){
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
   });
+
+  // ===== Atalho global: tocar som teste pelo console =====
+  window.testarSomDomus = () => window.tocarSomDomus && window.tocarSomDomus(_config.som || 'domus');
+
+  // ===== Enviar mensagem da conversa ativa =====
+  // Grava em mensagens_inbox com direcao='saida'. Quando o provedor de WhatsApp
+  // estiver plugado, uma trigger/edge function vai disparar o envio real.
+  // Por enquanto, fica registrado pra você ver no histórico.
+  async function enviarMensagemAtiva() {
+    if (!_ativa) {
+      alert('Selecione uma conversa primeiro');
+      return;
+    }
+    const ta = document.getElementById('texto-resposta');
+    const texto = (ta.value || '').trim();
+    if (!texto) return;
+
+    const btn = document.getElementById('btn-enviar');
+    if (btn) btn.disabled = true;
+
+    try {
+      // Insere mensagem de saída
+      const { error } = await db.from('mensagens_inbox').insert({
+        conversa_id: _ativa,
+        conteudo: texto,
+        direcao: 'saida',
+        autor_tipo: 'humano',
+        enviada_em: new Date().toISOString()
+      });
+      if (error) throw error;
+
+      // Atualiza preview da conversa
+      await db.from('conversas').update({
+        ultima_mensagem_preview: texto.slice(0, 100),
+        ultima_mensagem_em: new Date().toISOString(),
+        status: 'respondida'
+      }).eq('id', _ativa);
+
+      ta.value = '';
+      ta.style.height = 'auto';
+      await recarregarMensagensAtiva();
+      await carregarConversas(true);
+    } catch (e) {
+      console.error('[enviar]', e);
+      alert('Erro ao enviar: ' + (e.message || e));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
 </script>
 
 </body>

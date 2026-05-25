@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Sons da Domus — Teste</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --azul-domus:#008B9C; --azul-escuro:#0A3142; --dourado:#C9A961; --creme:#FFF8F0; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #FFF8F0 0%, #E8F1F3 100%); min-height: 100vh; }
+  .btn-som { transition: all .2s; }
+  .btn-som:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 139, 156, .15); }
+  .btn-som:active { transform: translateY(0); }
+</style>
+</head>
+<body class="p-6 lg:p-12">
+
+<div class="max-w-2xl mx-auto">
+  <header class="mb-10 text-center">
+    <p class="text-xs uppercase tracking-widest text-slate-500">Domus Garden Coliving</p>
+    <h1 class="font-serif text-4xl mt-2" style="color: var(--azul-escuro);">Sons da Domus</h1>
+    <p class="text-sm text-slate-600 mt-3">Clique pra ouvir cada um. O som "Domus 🌿" é a assinatura da casa.</p>
+  </header>
+
+  <!-- Controle de volume -->
+  <div class="bg-white rounded-2xl p-5 mb-6 border border-slate-200 shadow-sm">
+    <label class="flex items-center gap-3 text-sm font-medium" style="color: var(--azul-escuro);">
+      <span>🔊 Volume</span>
+      <input id="volume" type="range" min="0" max="100" value="50"
+             class="flex-1 accent-teal-700"
+             oninput="window.SOM_DOMUS_VOLUME = this.value / 100; document.getElementById('volume-val').textContent = this.value + '%';" />
+      <span id="volume-val" class="text-xs text-slate-500 w-10 text-right">50%</span>
+    </label>
+  </div>
+
+  <!-- Sons -->
+  <div id="lista-sons" class="space-y-3"></div>
+
+  <!-- Como usar -->
+  <div class="mt-10 p-5 rounded-2xl bg-white border border-slate-200">
+    <p class="text-xs uppercase tracking-widest text-slate-500 mb-3">Como usar em qualquer página</p>
+    <pre class="text-xs bg-slate-50 p-3 rounded overflow-x-auto"><code>&lt;script src="sons-domus.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  // Quando chegar mensagem nova:
+  tocarSomDomus('domus');   // ou 'drop', 'pixie', 'chime', 'bossa', 'garden'
+&lt;/script&gt;</code></pre>
+  </div>
+</div>
+
+<!-- ===== Sons embutidos no próprio HTML pra rodar self-contained ===== -->
+<script>
+(function () {
+  'use strict';
+  window.SOM_DOMUS_VOLUME = window.SOM_DOMUS_VOLUME ?? 0.5;
+  let _ctx = null;
+  function ctx() {
+    if (!_ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      _ctx = new C();
+    }
+    if (_ctx.state === 'suspended') _ctx.resume();
+    return _ctx;
+  }
+  function nota({ freq = 880, duracao = 0.3, delay = 0, tipo = 'sine', ataque = 0.01, decay = 0.3, vol = 0.3 } = {}) {
+    const c = ctx(); if (!c) return;
+    const t = c.currentTime + delay;
+    const masterVol = (typeof window.SOM_DOMUS_VOLUME === 'number') ? window.SOM_DOMUS_VOLUME : 0.5;
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = tipo; osc.frequency.value = freq;
+    osc.connect(gain); gain.connect(c.destination);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(vol * masterVol, t + ataque);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + ataque + decay);
+    osc.start(t); osc.stop(t + duracao);
+  }
+  function notaComReverb(opts) {
+    nota(opts);
+    nota({ ...opts, delay: (opts.delay || 0) + 0.08, vol: (opts.vol || 0.3) * 0.35, freq: (opts.freq || 880) * 0.5 });
+  }
+  function domus() {
+    notaComReverb({ freq: 659.25, duracao: 0.6, delay: 0,    tipo: 'sine', ataque: 0.02, decay: 0.55, vol: 0.32 });
+    notaComReverb({ freq: 783.99, duracao: 0.6, delay: 0.10, tipo: 'sine', ataque: 0.02, decay: 0.55, vol: 0.28 });
+    notaComReverb({ freq: 987.77, duracao: 0.7, delay: 0.22, tipo: 'sine', ataque: 0.02, decay: 0.65, vol: 0.24 });
+  }
+  function drop() {
+    const c = ctx(); if (!c) return;
+    const t = c.currentTime;
+    const masterVol = window.SOM_DOMUS_VOLUME || 0.5;
+    const osc = c.createOscillator(); const gain = c.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1200, t);
+    osc.frequency.exponentialRampToValueAtTime(600, t + 0.15);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.4 * masterVol, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    osc.connect(gain).connect(c.destination);
+    osc.start(t); osc.stop(t + 0.2);
+  }
+  function pixie() {
+    nota({ freq: 1046.5,  duracao: 0.18, delay: 0,    tipo: 'triangle', ataque: 0.005, decay: 0.17, vol: 0.35 });
+    nota({ freq: 1567.98, duracao: 0.22, delay: 0.08, tipo: 'triangle', ataque: 0.005, decay: 0.21, vol: 0.30 });
+  }
+  function chime() {
+    notaComReverb({ freq: 880,     duracao: 1.0, delay: 0,    tipo: 'sine', ataque: 0.03, decay: 0.95, vol: 0.30 });
+    notaComReverb({ freq: 1174.66, duracao: 1.2, delay: 0.25, tipo: 'sine', ataque: 0.03, decay: 1.15, vol: 0.25 });
+  }
+  function bossa() {
+    nota({ freq: 523.25, duracao: 0.35, delay: 0,    tipo: 'triangle', ataque: 0.01, decay: 0.33, vol: 0.28 });
+    nota({ freq: 659.25, duracao: 0.35, delay: 0.09, tipo: 'triangle', ataque: 0.01, decay: 0.33, vol: 0.26 });
+    nota({ freq: 783.99, duracao: 0.40, delay: 0.18, tipo: 'triangle', ataque: 0.01, decay: 0.38, vol: 0.24 });
+    nota({ freq: 987.77, duracao: 0.50, delay: 0.30, tipo: 'sine',     ataque: 0.02, decay: 0.47, vol: 0.20 });
+  }
+  function garden() {
+    const c = ctx(); if (!c) return;
+    const t = c.currentTime;
+    const masterVol = window.SOM_DOMUS_VOLUME || 0.5;
+    [0, 0.08].forEach((d, i) => {
+      const osc = c.createOscillator(); const gain = c.createGain();
+      osc.type = 'sine';
+      const f0 = i === 0 ? 1800 : 2200;
+      osc.frequency.setValueAtTime(f0, t + d);
+      osc.frequency.exponentialRampToValueAtTime(f0 * 0.7, t + d + 0.09);
+      gain.gain.setValueAtTime(0, t + d);
+      gain.gain.linearRampToValueAtTime(0.18 * masterVol, t + d + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.10);
+      osc.connect(gain).connect(c.destination);
+      osc.start(t + d); osc.stop(t + d + 0.12);
+    });
+  }
+  const SONS = {
+    domus:  { nome: 'Domus 🌿',        descricao: 'Sino acolhedor em harmonia maior — o som da casa',     toca: domus },
+    drop:   { nome: 'Gota 💧',         descricao: 'Plip elegante, descendente',                            toca: drop },
+    pixie:  { nome: 'Pixie ✨',        descricao: 'Ding alegre tipo iMessage — leve e direto',             toca: pixie },
+    chime:  { nome: 'Sino Japonês 🎐', descricao: 'Duas notas suaves, longas, com reverberação',          toca: chime },
+    bossa:  { nome: 'Bossa 🎵',        descricao: 'Quatro notas em acorde maior 7 — brasileiro e calmo',  toca: bossa },
+    garden: { nome: 'Jardim 🌱',       descricao: 'Trinado discreto de passarinho',                       toca: garden }
+  };
+  function tocarSomDomus(nome) {
+    const s = SONS[nome] || SONS.domus;
+    try { s.toca(); } catch (e) { console.warn('[sons-domus]', e); }
+  }
+  window.SONS_DOMUS = SONS;
+  window.tocarSomDomus = tocarSomDomus;
+})();
+</script>
+
+<!-- ===== Lista de sons renderizada ===== -->
+<script>
+  function renderSons() {
+    const lista = document.getElementById('lista-sons');
+    lista.innerHTML = Object.entries(window.SONS_DOMUS).map(([id, s]) => `
+      <button class="btn-som w-full flex items-center justify-between gap-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm text-left"
+              onclick="tocarSomDomus('${id}')">
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-base" style="color: var(--azul-escuro);">${s.nome}</p>
+          <p class="text-sm text-slate-500 mt-1">${s.descricao}</p>
+        </div>
+        <div class="text-2xl flex-shrink-0">▶️</div>
+      </button>
+    `).join('');
+  }
+  renderSons();
+</script>
+
+</body>
+</html>
