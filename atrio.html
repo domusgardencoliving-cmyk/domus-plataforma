@@ -272,6 +272,10 @@
           <span class="flex items-center gap-2">🤖 IA sugere resposta</span>
           <span class="text-xs text-purple-500" id="cnt-ia">0</span>
         </button>
+        <button class="filtro-tab" data-filtro="arquivadas" onclick="setFiltro('arquivadas')">
+          <span class="flex items-center gap-2">📁 Arquivadas</span>
+          <span class="text-xs text-slate-400" id="cnt-arquivadas">0</span>
+        </button>
       </div>
 
       <div class="px-5 pt-5 pb-2 text-[10px] uppercase tracking-widest text-slate-400">Canais</div>
@@ -385,7 +389,9 @@
         </div>
         <div class="hidden lg:flex gap-1">
           <button onclick="togglePainelHospede()" class="btn-iconico" title="Perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></button>
-          <button onclick="marcarResolvida()" class="btn-iconico" title="Resolvida"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button>
+          <button id="btn-arquivar" onclick="toggleArquivar()" class="btn-iconico" title="Arquivar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+          </button>
         </div>
         <button class="btn-iconico" aria-label="Mais"><svg><use href="#ico-mais"/></svg></button>
       </header>
@@ -495,7 +501,7 @@
       <div class="mb-5"><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Ações rápidas</p>
         <div class="space-y-1.5">
           <button onclick="window.open('pms.html','_blank')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2" style="color:var(--azul-escuro)">📅 <span>Ver no PMS</span></button>
-          <button onclick="marcarResolvida()" class="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2" style="color:var(--azul-escuro)">✓ <span>Marcar resolvida</span></button>
+          <button onclick="toggleArquivar()" id="btn-arquivar-painel" class="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2" style="color:var(--azul-escuro)">📁 <span id="btn-arquivar-painel-txt">Arquivar conversa</span></button>
         </div>
       </div>
       <div><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Info</p><div class="text-xs text-slate-600 space-y-1"><p>Primeira: <span id="ph-primeira" class="text-slate-400">—</span></p><p>Total: <span id="ph-total" class="text-slate-400">—</span></p></div></div>
@@ -608,6 +614,11 @@
 
   function conversasFiltradas(){
     let lista = _conversas;
+    // Arquivadas: filtro dedicado. Em todos os outros filtros, esconde arquivadas.
+    if (_filtro === 'arquivadas') {
+      return lista.filter(c => c.status === 'arquivada' || (c.metadados && c.metadados.arquivada === true));
+    }
+    lista = lista.filter(c => c.status !== 'arquivada' && !(c.metadados && c.metadados.arquivada === true));
     if (_canal) lista = lista.filter(c => c.canal === _canal);
     else if (_filtro === 'aguardando_gabi') lista = lista.filter(c => c.status === 'aguardando_gabi');
     else if (_filtro === 'vip') lista = lista.filter(c => c.prioridade === 'vip');
@@ -649,13 +660,17 @@
   }
 
   function atualizarContadores() {
-    document.getElementById('cnt-todas').textContent = _conversas.length;
-    document.getElementById('cnt-aguardando').textContent = _conversas.filter(c => c.status === 'aguardando_gabi').length;
-    document.getElementById('cnt-vip').textContent = _conversas.filter(c => c.prioridade === 'vip').length;
-    document.getElementById('cnt-ia').textContent = _conversas.filter(c => c.tem_sugestao_ia).length;
+    const arquivadas = _conversas.filter(c => c.status === 'arquivada' || (c.metadados && c.metadados.arquivada === true));
+    const nao_arquivadas = _conversas.filter(c => c.status !== 'arquivada' && !(c.metadados && c.metadados.arquivada === true));
+    document.getElementById('cnt-todas').textContent = nao_arquivadas.length;
+    document.getElementById('cnt-aguardando').textContent = nao_arquivadas.filter(c => c.status === 'aguardando_gabi').length;
+    document.getElementById('cnt-vip').textContent = nao_arquivadas.filter(c => c.prioridade === 'vip').length;
+    document.getElementById('cnt-ia').textContent = nao_arquivadas.filter(c => c.tem_sugestao_ia).length;
+    const elArq = document.getElementById('cnt-arquivadas');
+    if (elArq) elArq.textContent = arquivadas.length;
     Object.keys(CANAIS).forEach(canal => {
       const el = document.getElementById('cnt-' + canal);
-      if (el) el.textContent = _conversas.filter(c => c.canal === canal).length;
+      if (el) el.textContent = nao_arquivadas.filter(c => c.canal === canal).length;
     });
   }
 
@@ -709,6 +724,13 @@
       area.scrollTop = area.scrollHeight;
       if (conv.nao_lidas > 0) { await db.from('conversas').update({ nao_lidas: 0 }).eq('id', id); conv.nao_lidas = 0; }
       popularPainelHospede(conv, msgs || []);
+      atualizarBotaoArquivar();
+      // Atualiza texto do botão no painel hóspede
+      const elTxt = document.getElementById('btn-arquivar-painel-txt');
+      if (elTxt) {
+        const arquivada = conv.status === 'arquivada' || (conv.metadados && conv.metadados.arquivada === true);
+        elTxt.textContent = arquivada ? 'Desarquivar conversa' : 'Arquivar conversa';
+      }
     } catch(e) { console.warn(e); }
 
     renderLista();
@@ -759,11 +781,53 @@
 
   function togglePainelHospede() { const p = document.getElementById('painel-hospede'); if (p) p.classList.toggle('hidden'); }
 
-  async function marcarResolvida() {
+  // ===== ARQUIVAR / DESARQUIVAR =====
+  // Conversas arquivadas saem da lista principal mas ficam acessíveis no filtro 📁.
+  // Quando chega mensagem nova, desarquiva automaticamente (igual WhatsApp).
+  async function toggleArquivar() {
     if (!_ativa) return;
-    if (!confirm('Marcar conversa como resolvida?')) return;
-    try { await db.from('conversas').update({ prioridade: 'resolvida', nao_lidas: 0 }).eq('id', _ativa); alert('✓ Resolvida'); await carregarConversas(); } catch(e) { alert('Erro: '+e.message); }
+    const conv = _conversas.find(c => c.id === _ativa);
+    if (!conv) return;
+    const taArquivada = conv.status === 'arquivada' || (conv.metadados && conv.metadados.arquivada === true);
+    try {
+      if (taArquivada) {
+        // Desarquiva: volta pro fluxo normal
+        await db.from('conversas').update({
+          status: 'aguardando_gabi',
+          metadados: { ...(conv.metadados || {}), arquivada: false, desarquivada_em: new Date().toISOString() }
+        }).eq('id', _ativa);
+      } else {
+        // Arquiva: silenciosa, sai da lista principal
+        await db.from('conversas').update({
+          status: 'arquivada', nao_lidas: 0,
+          metadados: { ...(conv.metadados || {}), arquivada: true, arquivada_em: new Date().toISOString() }
+        }).eq('id', _ativa);
+        // Volta pra lista principal
+        _ativa = null;
+        document.getElementById('tela-conversa').classList.remove('aberta');
+        document.getElementById('conversa-vazia')?.classList.remove('hidden');
+        document.getElementById('conversa-vazia')?.classList.add('lg:flex');
+        document.getElementById('conversa-ativa')?.classList.add('hidden');
+      }
+      await carregarConversas();
+    } catch(e) { alert('Erro: '+e.message); }
   }
+
+  // Atualiza tooltip e ícone do botão Arquivar conforme estado atual
+  function atualizarBotaoArquivar() {
+    const btn = document.getElementById('btn-arquivar');
+    if (!btn) return;
+    const conv = _conversas.find(c => c.id === _ativa);
+    if (!conv) return;
+    const taArquivada = conv.status === 'arquivada' || (conv.metadados && conv.metadados.arquivada === true);
+    btn.title = taArquivada ? 'Desarquivar' : 'Arquivar';
+    btn.innerHTML = taArquivada
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 3 21 21 21 21 8"/><polyline points="9 12 12 9 15 12"/><line x1="12" y1="9" x2="12" y2="17"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>';
+  }
+
+  // Compat: outros pontos do código ainda podem chamar marcarResolvida
+  const marcarResolvida = toggleArquivar;
 
   async function enviarMensagem() {
     const ta = document.getElementById('texto-resposta');
@@ -1082,6 +1146,20 @@
   };
 
   async function onMensagemNova(m) {
+    if (m.direcao === 'entrada') {
+      // Se a conversa estava arquivada, desarquiva automaticamente (igual WhatsApp)
+      try {
+        const { data: conv } = await db.from('conversas')
+          .select('status, metadados').eq('id', m.conversa_id).single();
+        const taArquivada = conv && (conv.status === 'arquivada' || (conv.metadados && conv.metadados.arquivada === true));
+        if (taArquivada) {
+          await db.from('conversas').update({
+            status: 'aguardando_gabi',
+            metadados: { ...(conv.metadados || {}), arquivada: false, desarquivada_em: new Date().toISOString(), desarquivada_por: 'mensagem_nova' }
+          }).eq('id', m.conversa_id);
+        }
+      } catch(_) {}
+    }
     await carregarConversas();
     if (m.direcao === 'entrada') {
       const conv = _conversas.find(c => c.id === m.conversa_id) || {};
