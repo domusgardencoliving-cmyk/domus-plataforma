@@ -208,6 +208,52 @@
 
   <div class="backdrop" id="backdrop" onclick="fecharSidebar()"></div>
 
+  <!-- ===== MODAL: Modo Teste (simular hóspede mandando mensagem) ===== -->
+  <div id="modal-simular" class="fixed inset-0 z-40 hidden items-center justify-center p-4" style="background:rgba(15,23,42,.5)">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-serif text-xl" style="color:var(--azul-escuro)">🧪 Simular mensagem de hóspede</h3>
+        <button onclick="fecharSimular()" class="text-2xl text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+      <p class="text-xs text-slate-500 mb-4">Esse modo cria uma conversa fake no canal "manual" pra testar o fluxo completo (som, notificação, sugestão da IA) — sem mexer no WhatsApp real.</p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Nome do hóspede</label>
+          <input id="sim-nome" type="text" placeholder="Ex: Maria Teste" value="Hóspede Teste" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-domus-azul outline-none text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Telefone (opcional)</label>
+          <input id="sim-tel" type="text" placeholder="11999998888" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-domus-azul outline-none text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Mensagem do hóspede</label>
+          <textarea id="sim-msg" rows="3" placeholder="Oi, tem vaga pra essa quinta?" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-domus-azul outline-none text-sm resize-none"></textarea>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900">
+          <p class="font-semibold mb-1">💡 Exemplos pra testar:</p>
+          <ul class="space-y-1">
+            <li>· "Tem vaga pra hoje?"</li>
+            <li>· "Quanto custa a diária?"</li>
+            <li>· "Aceita pet?"</li>
+            <li>· "Tem desconto?" <span class="text-blue-700">(testa o pivô pro Clube Domus)</span></li>
+            <li>· "Quero falar com a Gabi" <span class="text-blue-700">(testa o handoff)</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-5">
+        <button onclick="enviarSimulacao()" class="flex-1 px-4 py-2 rounded-lg text-white font-medium" style="background:var(--azul-domus)">📨 Enviar como hóspede</button>
+        <button onclick="fecharSimular()" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão flutuante de teste -->
+  <button onclick="abrirSimular()" class="fixed bottom-4 right-4 z-30 w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center text-xl hover:scale-105 transition" style="background:linear-gradient(135deg,#7F77DD,#534AB7)" title="Simular mensagem de hóspede">
+    🧪
+  </button>
+
   <!-- ===== TELA 2: LISTA DE CONVERSAS ===== -->
   <section class="tela tela-lista bg-white" id="tela-lista">
     <header class="header-mobile">
@@ -710,6 +756,91 @@
 
   // ===== Atalho global: tocar som teste pelo console =====
   window.testarSomDomus = () => window.tocarSomDomus && window.tocarSomDomus(_config.som || 'domus');
+
+  // ===== Modo Teste: simular mensagem de hóspede =====
+  function abrirSimular() {
+    const m = document.getElementById('modal-simular');
+    m.classList.remove('hidden'); m.classList.add('flex');
+  }
+  function fecharSimular() {
+    const m = document.getElementById('modal-simular');
+    m.classList.add('hidden'); m.classList.remove('flex');
+  }
+  async function enviarSimulacao() {
+    const nome = (document.getElementById('sim-nome').value || '').trim() || 'Hóspede Teste';
+    const tel = ((document.getElementById('sim-tel').value || '').replace(/\D/g, '')) || ('555555' + Math.floor(Math.random()*1000));
+    const msg = (document.getElementById('sim-msg').value || '').trim();
+    if (!msg) { alert('Escreva uma mensagem'); return; }
+
+    try {
+      // Acha ou cria conversa (canal='manual' = modo teste)
+      let conversaId = null;
+      const { data: existente } = await db.from('conversas')
+        .select('id, nao_lidas')
+        .eq('canal', 'manual')
+        .eq('identificador_externo', tel)
+        .maybeSingle();
+
+      if (existente) {
+        conversaId = existente.id;
+      } else {
+        const { data: nova, error: errNova } = await db.from('conversas').insert({
+          canal: 'manual',
+          identificador_externo: tel,
+          hospede_nome_cache: nome,
+          hospede_telefone_cache: tel,
+          status: 'aguardando_gabi',
+          prioridade: 'normal',
+          nao_lidas: 1,
+          ia_pode_responder: true,
+          metadados: { modo_teste: true, criada_por: 'simulacao' }
+        }).select('id').single();
+        if (errNova) throw errNova;
+        conversaId = nova.id;
+      }
+
+      // Insere mensagem do hóspede
+      await db.from('mensagens_inbox').insert({
+        conversa_id: conversaId,
+        direcao: 'entrada',
+        autor: nome,
+        autor_tipo: 'hospede',
+        conteudo: msg,
+        tipo: 'texto',
+        enviada_em: new Date().toISOString(),
+        status_envio: 'recebida',
+        metadados: { modo_teste: true }
+      });
+
+      // Atualiza conversa
+      await db.from('conversas').update({
+        ultima_mensagem_em: new Date().toISOString(),
+        ultima_mensagem_preview: msg.slice(0, 200),
+        ultima_mensagem_direcao: 'entrada',
+        status: 'aguardando_gabi',
+        nao_lidas: (existente?.nao_lidas || 0) + 1
+      }).eq('id', conversaId);
+
+      // Dispara IA Domus (mesmo fluxo do WhatsApp real)
+      try {
+        await db.functions.invoke('ia-responder', {
+          body: { conversa_id: conversaId, conteudo: msg, nome_hospede: nome }
+        });
+      } catch (errIa) {
+        console.warn('[simular] IA não respondeu (ANTHROPIC_API_KEY configurada?):', errIa);
+      }
+
+      // Limpa e fecha
+      document.getElementById('sim-msg').value = '';
+      fecharSimular();
+      // Abre a conversa pra você ver a sugestão da IA
+      await carregarConversas(true);
+      setTimeout(() => abrirConversa(conversaId), 300);
+    } catch (e) {
+      console.error('[simular]', e);
+      alert('Erro: ' + (e.message || e));
+    }
+  }
 
   // ===== Enviar mensagem da conversa ativa =====
   // Grava em mensagens_inbox com direcao='saida'. Quando o provedor de WhatsApp
