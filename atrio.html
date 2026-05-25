@@ -105,6 +105,52 @@
   .emoji-btn { padding:6px; border:none; background:transparent; cursor:pointer; border-radius:6px; font-size:22px; min-height:auto }
   .emoji-btn:hover { background:var(--wa-hover) }
 
+  /* ===== BROCHES (badges de origem/nível do hóspede) ===== */
+  .broches { display:inline-flex; gap:4px; flex-wrap:wrap; align-items:center }
+  .broche {
+    display:inline-flex; align-items:center; gap:3px;
+    padding:2px 6px; border-radius:10px; font-size:10px; font-weight:600;
+    line-height:1; white-space:nowrap; min-height:auto
+  }
+  .broche-icon { width:12px; height:12px; flex-shrink:0 }
+  .broche-booking { background:#E0EAFF; color:#003580 }
+  .broche-airbnb { background:#FFE4E5; color:#C9182B }
+  .broche-direto { background:#D9FDD3; color:#008069 }
+  .broche-hospedin { background:#EDE9FE; color:#5B21B6 }
+  .broche-ouro { background:linear-gradient(135deg,#FCD34D,#F59E0B); color:white }
+  .broche-prata { background:linear-gradient(135deg,#E5E7EB,#9CA3AF); color:white }
+  .broche-bronze { background:linear-gradient(135deg,#FED7AA,#D97706); color:white }
+  .broche-vip { background:linear-gradient(135deg,#A78BFA,#7C3AED); color:white }
+  .broche-recorrente { background:#D1FAE5; color:#065F46 }
+  .broche-primeira { background:#DBEAFE; color:#1E40AF }
+  /* Versão "broche-aplicado": pequeno círculo sobreposto no avatar */
+  .broche-mini {
+    position:absolute; bottom:-3px; right:-3px;
+    width:18px; height:18px; border-radius:50%;
+    border:2px solid white; display:flex; align-items:center; justify-content:center;
+    font-size:10px; box-shadow:0 1px 2px rgba(0,0,0,.15)
+  }
+
+  /* ===== MODOS DE TELA (compacta / normal / fullscreen) ===== */
+  body.modo-compacto .desktop-row { max-width:900px; margin:0 auto; box-shadow:0 0 30px rgba(0,0,0,.08) }
+  body.modo-compacto .tela-sidebar { display:none !important }
+  body.modo-compacto .tela-lista { width:280px !important }
+  body.modo-compacto #painel-hospede { display:none !important }
+  body.modo-fullscreen .desktop-row { max-width:none; margin:0 }
+  /* Controle de tamanho no canto */
+  .controles-tamanho {
+    position:fixed; top:8px; right:8px; z-index:50;
+    display:flex; gap:4px; background:white; border:1px solid var(--wa-borda);
+    border-radius:8px; padding:4px; box-shadow:0 2px 8px rgba(0,0,0,.08)
+  }
+  .controles-tamanho button {
+    width:30px; height:30px; min-height:30px; border:none; background:transparent;
+    border-radius:6px; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center
+  }
+  .controles-tamanho button:hover { background:var(--wa-hover) }
+  .controles-tamanho button.ativo { background:var(--wa-ativa); color:var(--wa-header) }
+  .controles-tamanho svg { width:16px; height:16px }
+
   /* Menu de anexar */
   .anexar-menu {
     position:absolute; bottom:60px; left:8px;
@@ -159,6 +205,19 @@
 </style>
 </head>
 <body>
+
+<!-- ===== Controles de tamanho de tela (canto superior direito) ===== -->
+<div class="controles-tamanho hidden lg:flex">
+  <button onclick="setModoTela('compacto')" id="btn-modo-compacto" title="Compacto (estilo Gmail mini)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="5" width="10" height="14" rx="1"/></svg>
+  </button>
+  <button onclick="setModoTela('normal')" id="btn-modo-normal" class="ativo" title="Normal">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="1"/></svg>
+  </button>
+  <button onclick="setModoTela('fullscreen')" id="btn-modo-fullscreen" title="Tela cheia">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h6m12 0h-6m6 18h-6M3 21h6M3 9V3m18 0v6m0 12v-6M3 21v-6"/></svg>
+  </button>
+</div>
 
 <!-- ====== ÍCONES SVG (definição única reutilizável) ====== -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -378,6 +437,10 @@
               <span class="ico-wrap" style="background:#FFA42F"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></span>
               <span>Localização</span>
             </button>
+            <button onclick="abrirFigurinhas()" class="anexar-item">
+              <span class="ico-wrap" style="background:#10B981"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.74 0 3.41-.44 4.86-1.23l-1.51-1.51A7.94 7.94 0 0 1 12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 1.05-.21 2.06-.58 2.99l1.45 1.45A9.94 9.94 0 0 0 22 12c0-5.52-4.48-10-10-10zm-1 14l-3-3 1.41-1.41L11 13.17l4.59-4.59L17 10l-6 6z"/></svg></span>
+              <span>Figurinhas</span>
+            </button>
           </div>
 
           <div class="flex gap-2 items-end">
@@ -419,10 +482,11 @@
     <div id="painel-hospede-vazio" class="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-400"><div class="text-4xl mb-3">👤</div><p class="text-sm" style="color:var(--azul-escuro)">Selecione uma conversa pra ver o perfil</p></div>
     <div id="painel-hospede-conteudo" class="hidden p-5">
       <div class="text-center mb-5 pb-5 border-b border-slate-100">
-        <div class="w-20 h-20 rounded-full text-white flex items-center justify-center text-2xl font-bold mx-auto mb-3" style="background:linear-gradient(135deg,#008B9C,#0A3142)" id="ph-avatar">?</div>
+        <div class="w-20 h-20 rounded-full text-white flex items-center justify-center text-2xl font-bold mx-auto mb-3" style="background:linear-gradient(135deg,#54B79B,#008069)" id="ph-avatar">?</div>
         <p class="font-serif text-lg" style="color:var(--azul-escuro)" id="ph-nome">—</p>
         <p class="text-xs text-slate-500 mt-1" id="ph-email">—</p>
         <p class="text-xs text-slate-500" id="ph-telefone"></p>
+        <div id="ph-broches" class="flex flex-wrap gap-1 justify-center mt-3"></div>
       </div>
       <div class="mb-5"><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Reservas</p><div id="ph-reservas" class="space-y-2"><p class="text-xs text-slate-400 italic">Carregando...</p></div></div>
       <div class="mb-5"><p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Canal</p>
@@ -534,6 +598,9 @@
         (data || []).forEach(c => { const p = previewByConv[c.id]; c.ultima_mensagem_preview = p ? p.preview : ''; c.ultima_mensagem_em = p ? p.em : c.atualizada_em; });
       }
       _conversas = data || [];
+      // Carrega broches (em background, não bloqueia render)
+      const tels = (data || []).map(c => c.hospede_telefone_cache).filter(Boolean);
+      carregarBrochesPraTelefones(tels).then(() => renderLista());
       renderLista();
       atualizarContadores();
     } catch(e) { console.warn(e); }
@@ -576,7 +643,8 @@
       const nome = escapar(c.hospede_nome_cache || 'Sem nome');
       const prev = escapar(c.ultima_mensagem_preview || '');
       const naoLidas = c.nao_lidas > 0 ? ('<span class="text-[11px] bg-rose-500 text-white rounded-full px-1.5 min-w-[20px] h-5 flex items-center justify-center font-semibold flex-shrink-0">' + c.nao_lidas + '</span>') : '';
-      return '<div class="conversa-item flex items-start gap-3 border-b border-slate-100 cursor-pointer ' + (_ativa === c.id ? 'ativa' : '') + '" onclick="abrirConversa(\'' + c.id + '\')"><div class="relative"><div class="w-12 h-12 rounded-full text-white flex items-center justify-center font-semibold flex-shrink-0" style="background:var(--azul-domus)">' + inicial + '</div><span class="ico-wrap ico-wrap-sm ' + cfg.bg + ' absolute -bottom-1 -right-1 border-2 border-white" style="width:20px;height:20px"><svg style="width:11px;height:11px"><use href="#' + cfg.ico + '"/></svg></span></div><div class="flex-1 min-w-0"><div class="flex justify-between items-baseline gap-2"><p class="text-base font-semibold truncate" style="color:var(--azul-escuro)">' + nome + '</p><span class="text-[11px] text-slate-400 flex-shrink-0">' + horario + '</span></div><div class="flex justify-between items-start gap-2 mt-0.5"><p class="text-sm text-slate-500 truncate flex-1">' + prev + '</p>' + naoLidas + '</div></div></div>';
+      const brochesHtml = renderBrochesHtml(c.hospede_telefone_cache, 2);
+      return '<div class="conversa-item flex items-start gap-3 cursor-pointer ' + (_ativa === c.id ? 'ativa' : '') + '" onclick="abrirConversa(\'' + c.id + '\')"><div class="relative"><div class="w-12 h-12 rounded-full text-white flex items-center justify-center font-semibold flex-shrink-0" style="background:linear-gradient(135deg,#54B79B,#008069)">' + inicial + '</div><span class="ico-wrap ico-wrap-sm ' + cfg.bg + ' absolute -bottom-1 -right-1 border-2 border-white" style="width:20px;height:20px"><svg style="width:11px;height:11px"><use href="#' + cfg.ico + '"/></svg></span></div><div class="flex-1 min-w-0"><div class="flex justify-between items-baseline gap-2"><p class="text-base font-semibold truncate" style="color:var(--wa-texto)">' + nome + '</p><span class="text-[11px] text-slate-400 flex-shrink-0">' + horario + '</span></div><div class="flex justify-between items-start gap-2 mt-0.5"><p class="text-sm truncate flex-1" style="color:var(--wa-texto-suave)">' + prev + '</p>' + naoLidas + '</div>' + (brochesHtml ? '<div class="mt-1">' + brochesHtml + '</div>' : '') + '</div></div>';
     }).join('');
   }
 
@@ -603,7 +671,9 @@
     document.getElementById('conversa-ativa').classList.remove('hidden');
     document.getElementById('conversa-ativa').classList.add('flex');
 
-    document.getElementById('conv-nome').textContent = conv.hospede_nome_cache || 'Sem nome';
+    // Nome + broches no cabeçalho
+    const brHeader = renderBrochesHtml(conv.hospede_telefone_cache, 2);
+    document.getElementById('conv-nome').innerHTML = escapar(conv.hospede_nome_cache || 'Sem nome') + (brHeader ? ' ' + brHeader : '');
     document.getElementById('conv-extra').textContent = conv.hospede_telefone_cache || cfg.nome;
     document.getElementById('conv-avatar').textContent = (conv.hospede_nome_cache || '?').charAt(0).toUpperCase();
 
@@ -655,6 +725,7 @@
     document.getElementById('ph-nome').textContent = nome;
     document.getElementById('ph-email').textContent = conv.identificador_externo || '—';
     document.getElementById('ph-telefone').textContent = conv.hospede_telefone_cache || '';
+    document.getElementById('ph-broches').innerHTML = renderBrochesHtml(conv.hospede_telefone_cache, 6);
     const phIco = document.getElementById('ph-canal-ico');
     phIco.className = 'ico-wrap ico-wrap-sm ' + cfg.bg;
     phIco.innerHTML = '<svg style="width:14px;height:14px"><use href="#'+cfg.ico+'"/></svg>';
@@ -756,6 +827,89 @@
 
   function escapar(s) { return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
 
+  // ===== BROCHES: identificam plataformas + nível Clube Domus =====
+  // Cache em memória — telefone → { reservas, nivel, total_reservas }
+  const _brochesCache = new Map();
+
+  async function carregarBrochesPraTelefones(tels) {
+    const novos = (tels || []).filter(t => t && !_brochesCache.has(t));
+    if (novos.length === 0) return;
+    try {
+      // Busca reservas pelo contato (telefone)
+      const { data: reservas } = await db.from('reservas')
+        .select('hospede_contato, hospede_telefone, plataforma, status, checkin')
+        .or(novos.map(t => `hospede_contato.ilike.%${t.slice(-8)}%,hospede_telefone.ilike.%${t.slice(-8)}%`).join(','))
+        .limit(500);
+      // Busca hóspedes pra pegar nível
+      const { data: hospedes } = await db.from('hospedes')
+        .select('telefone, nivel_fidelidade, total_reservas')
+        .or(novos.map(t => `telefone.ilike.%${t.slice(-8)}%`).join(','))
+        .limit(200);
+
+      // Agrupa por telefone (últimos 8 dígitos como chave)
+      novos.forEach(tel => {
+        const sufixo = tel.slice(-8);
+        const rs = (reservas || []).filter(r =>
+          (r.hospede_contato || '').replace(/\D/g,'').endsWith(sufixo) ||
+          (r.hospede_telefone || '').replace(/\D/g,'').endsWith(sufixo)
+        );
+        const h = (hospedes || []).find(x => (x.telefone || '').replace(/\D/g,'').endsWith(sufixo));
+        // Plataformas distintas
+        const plataformas = [...new Set(rs.map(r => r.plataforma).filter(Boolean))];
+        _brochesCache.set(tel, {
+          plataformas,
+          total_reservas: h?.total_reservas || rs.length,
+          nivel: h?.nivel_fidelidade || (rs.length > 1 ? 'Recorrente' : (rs.length === 1 ? 'Primeira' : null))
+        });
+      });
+    } catch (e) { console.warn('[broches]', e); }
+  }
+
+  function brochesPara(telefone) {
+    if (!telefone) return [];
+    const info = _brochesCache.get(telefone);
+    if (!info) return [];
+    const out = [];
+    info.plataformas.forEach(p => {
+      const k = (p || '').toLowerCase();
+      if (k === 'booking')  out.push({ classe:'broche-booking',  texto:'Booking',  ico:'ico-booking-svg' });
+      else if (k === 'airbnb')   out.push({ classe:'broche-airbnb',   texto:'Airbnb',   ico:'ico-airbnb-svg' });
+      else if (k === 'direto' || k === 'venda direta')  out.push({ classe:'broche-direto',   texto:'Direta 💚', ico:null });
+      // 'Hospedin' não tem broche — é categoria legado/genérica, não agrega valor visual
+    });
+    const niv = (info.nivel || '').toLowerCase();
+    if (niv === 'ouro')       out.push({ classe:'broche-ouro',       texto:'⭐ Ouro' });
+    else if (niv === 'prata') out.push({ classe:'broche-prata',      texto:'🥈 Prata' });
+    else if (niv === 'bronze')out.push({ classe:'broche-bronze',     texto:'🥉 Bronze' });
+    else if (niv === 'recorrente') out.push({ classe:'broche-recorrente', texto:'💚 Recorrente' });
+    else if (niv === 'primeira')   out.push({ classe:'broche-primeira',   texto:'🆕 Primeira vez' });
+    return out;
+  }
+
+  function renderBrochesHtml(telefone, max = 3) {
+    const lista = brochesPara(telefone);
+    if (lista.length === 0) return '';
+    const mostrar = lista.slice(0, max);
+    return '<span class="broches">' + mostrar.map(b => {
+      const ico = b.ico ? `<svg class="broche-icon"><use href="#${b.ico}"/></svg>` : '';
+      return `<span class="broche ${b.classe}">${ico}${b.texto}</span>`;
+    }).join('') + '</span>';
+  }
+
+  // ===== MODOS DE TELA =====
+  function setModoTela(modo) {
+    document.body.classList.remove('modo-compacto','modo-normal','modo-fullscreen');
+    document.body.classList.add('modo-' + modo);
+    document.querySelectorAll('.controles-tamanho button').forEach(b => b.classList.remove('ativo'));
+    document.getElementById('btn-modo-' + modo)?.classList.add('ativo');
+    try { localStorage.setItem('atrio_modo_tela', modo); } catch(_) {}
+  }
+  // Recupera preferência salva
+  try {
+    const m = localStorage.getItem('atrio_modo_tela');
+    if (m) setTimeout(() => setModoTela(m), 50);
+  } catch(_) {}
+
   // ===== EMOJI PICKER =====
   // Categorias e emojis populares organizados como no WhatsApp
   const EMOJI_CATS = {
@@ -797,6 +951,23 @@
     ta.focus();
     ta.selectionEnd = pos + emoji.length;
     atualizarBotaoEnviar();
+  }
+
+  // ===== FIGURINHAS (galeria de stickers salvos) =====
+  async function abrirFigurinhas() {
+    fecharAnexarMenu();
+    try {
+      const { data: figs } = await db.from('figurinhas_salvas')
+        .select('*').order('favorito', { ascending: false }).order('usos_total', { ascending: false }).limit(30);
+      if (!figs || figs.length === 0) {
+        alert('🌿 Você ainda não salvou nenhuma figurinha.\n\nQuando rolar a integração com WhatsApp real, vai poder salvar stickers que os hóspedes mandam clicando em "💾 Salvar" no balão deles. Daí ficam aqui pra reusar.');
+        return;
+      }
+      // TODO: mostrar painel visual com a galeria
+      alert(`🌿 ${figs.length} figurinha(s) salva(s).\n\nGaleria visual fica pra próxima iteração.`);
+    } catch (e) {
+      alert('Tabela de figurinhas ainda não criada. Rode setup-figurinhas-atrio.sql primeiro.');
+    }
   }
 
   // ===== MENU ANEXAR =====
@@ -899,13 +1070,25 @@
         () => carregarConversas())
       .subscribe();
   }
+  // Som por canal — cada origem tem seu jeito de chamar atenção
+  const SOM_POR_CANAL = {
+    'whatsapp':  'garden',  // 🌱 passarinho discreto — conversa normal
+    'instagram': 'pixie',   // ✨ alegre
+    'airbnb':    'chime',   // 🎐 sino japonês — reserva nova!
+    'booking':   'chime',   // 🎐 sino japonês — reserva nova!
+    'webquartos':'chime',   // 🎐 reserva nova também
+    'email':     null,      // 📧 silencioso (e-mail não corre)
+    'manual':    'domus'    // 🌿 assinatura — modo teste
+  };
+
   async function onMensagemNova(m) {
     await carregarConversas();
     if (m.direcao === 'entrada') {
       const conv = _conversas.find(c => c.id === m.conversa_id) || {};
       const nome = conv.hospede_nome_cache || 'Mensagem nova';
-      if (typeof window.tocarSomDomus === 'function') {
-        try { window.tocarSomDomus('domus'); } catch(_) {}
+      const somId = SOM_POR_CANAL[conv.canal] !== undefined ? SOM_POR_CANAL[conv.canal] : 'domus';
+      if (somId && typeof window.tocarSomDomus === 'function') {
+        try { window.tocarSomDomus(somId); } catch(_) {}
       }
       mostrarPopup(nome, (m.conteudo || '').slice(0, 120), m.conversa_id);
     }
