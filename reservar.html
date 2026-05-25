@@ -2141,10 +2141,14 @@
       // Pegar valor total atual
       var valorTotal = _prTotalOriginal || 0;
 
+      // Pegar CPF/documento (necessário pra cupons 1x por CPF tipo BEMVINDA10)
+      var documento = (document.getElementById('pr-documento')?.value || '').trim();
+
       try {
         var { data, error } = await db.rpc('validar_cupom', {
           p_codigo: codigo,
-          p_valor_total: valorTotal
+          p_valor_total: valorTotal,
+          p_documento: documento || null
         });
         if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Aplicar'; }
         if (error) throw error;
