@@ -388,6 +388,12 @@
           <p class="text-xs flex items-center gap-1.5" style="color:rgba(255,255,255,.8)"><span id="conv-canal-nome" class="font-medium">—</span><span style="color:rgba(255,255,255,.4)">·</span><span id="conv-extra" class="truncate">—</span></p>
         </div>
         <div class="hidden lg:flex gap-1">
+          <button onclick="toggleBuscaConversa()" class="btn-iconico" title="Buscar nesta conversa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <button id="btn-pinar" onclick="togglePinar()" class="btn-iconico" title="Fixar conversa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+          </button>
           <button onclick="togglePainelHospede()" class="btn-iconico" title="Perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></button>
           <button id="btn-arquivar" onclick="toggleArquivar()" class="btn-iconico" title="Arquivar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
@@ -395,6 +401,14 @@
         </div>
         <button class="btn-iconico" aria-label="Mais"><svg><use href="#ico-mais"/></svg></button>
       </header>
+
+      <!-- Barra de busca dentro da conversa (escondida por padrão) -->
+      <div id="busca-conversa-bar" class="hidden bg-white border-b border-slate-200 px-3 py-2 flex items-center gap-2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="text-slate-400"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="busca-conversa-input" type="text" placeholder="Buscar nesta conversa…" oninput="filtrarMensagensConversa(this.value)" class="flex-1 text-sm outline-none" />
+        <span id="busca-conversa-cnt" class="text-[11px] text-slate-400"></span>
+        <button onclick="toggleBuscaConversa()" class="text-slate-400 hover:text-slate-700 text-xl leading-none" style="min-height:auto">&times;</button>
+      </div>
 
       <div id="mensagens-area" class="flex-1 overflow-y-auto p-4 lg:p-5 flex flex-col gap-2 scroll-clean"></div>
 
@@ -630,7 +644,22 @@
     else if (_filtro === 'aguardando_gabi') lista = lista.filter(c => c.status === 'aguardando_gabi');
     else if (_filtro === 'vip') lista = lista.filter(c => c.prioridade === 'vip');
     else if (_filtro === 'ia_pendente') lista = lista.filter(c => c.tem_sugestao_ia);
-    return lista;
+    // Fixadas primeiro (ordenadas por quando foram fixadas, mais recente primeiro)
+    return lista.sort((a, b) => {
+      const fa = ehFixada(a) ? 1 : 0;
+      const fb = ehFixada(b) ? 1 : 0;
+      if (fa !== fb) return fb - fa;
+      // Entre fixadas: mais recentemente fixada primeiro
+      if (fa && fb) {
+        const ta = new Date(a.metadados?.fixada_em || 0).getTime();
+        const tb = new Date(b.metadados?.fixada_em || 0).getTime();
+        if (ta !== tb) return tb - ta;
+      }
+      // Entre não-fixadas: última mensagem mais recente primeiro
+      const ma = new Date(a.ultima_mensagem_em || a.atualizada_em || 0).getTime();
+      const mb = new Date(b.ultima_mensagem_em || b.atualizada_em || 0).getTime();
+      return mb - ma;
+    });
   }
 
   function setFiltro(f){
@@ -662,7 +691,8 @@
       const prev = escapar(c.ultima_mensagem_preview || '');
       const naoLidas = c.nao_lidas > 0 ? ('<span class="text-[11px] bg-rose-500 text-white rounded-full px-1.5 min-w-[20px] h-5 flex items-center justify-center font-semibold flex-shrink-0">' + c.nao_lidas + '</span>') : '';
       const brochesHtml = renderBrochesHtml(c.hospede_telefone_cache, 2);
-      return '<div class="conversa-item flex items-start gap-3 cursor-pointer ' + (_ativa === c.id ? 'ativa' : '') + '" onclick="abrirConversa(\'' + c.id + '\')"><div class="relative"><div class="w-12 h-12 rounded-full text-white flex items-center justify-center font-semibold flex-shrink-0" style="background:linear-gradient(135deg,#54B79B,#008069)">' + inicial + '</div><span class="ico-wrap ico-wrap-sm ' + cfg.bg + ' absolute -bottom-1 -right-1 border-2 border-white" style="width:20px;height:20px"><svg style="width:11px;height:11px"><use href="#' + cfg.ico + '"/></svg></span></div><div class="flex-1 min-w-0"><div class="flex justify-between items-baseline gap-2"><p class="text-base font-semibold truncate" style="color:var(--wa-texto)">' + nome + '</p><span class="text-[11px] text-slate-400 flex-shrink-0">' + horario + '</span></div><div class="flex justify-between items-start gap-2 mt-0.5"><p class="text-sm truncate flex-1" style="color:var(--wa-texto-suave)">' + prev + '</p>' + naoLidas + '</div>' + (brochesHtml ? '<div class="mt-1">' + brochesHtml + '</div>' : '') + '</div></div>';
+      const pinHtml = ehFixada(c) ? '<svg viewBox="0 0 24 24" fill="#F59E0B" width="13" height="13" style="margin-right:2px;flex-shrink:0" title="Fixada"><path d="M16 9V4l1-1V1H7v2l1 1v5L5 12v2h6v7l1 1 1-1v-7h6v-2l-3-3z"/></svg>' : '';
+      return '<div class="conversa-item flex items-start gap-3 cursor-pointer ' + (_ativa === c.id ? 'ativa' : '') + '" onclick="abrirConversa(\'' + c.id + '\')"><div class="relative"><div class="w-12 h-12 rounded-full text-white flex items-center justify-center font-semibold flex-shrink-0" style="background:linear-gradient(135deg,#54B79B,#008069)">' + inicial + '</div><span class="ico-wrap ico-wrap-sm ' + cfg.bg + ' absolute -bottom-1 -right-1 border-2 border-white" style="width:20px;height:20px"><svg style="width:11px;height:11px"><use href="#' + cfg.ico + '"/></svg></span></div><div class="flex-1 min-w-0"><div class="flex justify-between items-baseline gap-2"><p class="text-base font-semibold truncate flex items-center" style="color:var(--wa-texto)">' + pinHtml + nome + '</p><span class="text-[11px] text-slate-400 flex-shrink-0">' + horario + '</span></div><div class="flex justify-between items-start gap-2 mt-0.5"><p class="text-sm truncate flex-1" style="color:var(--wa-texto-suave)">' + prev + '</p>' + naoLidas + '</div>' + (brochesHtml ? '<div class="mt-1">' + brochesHtml + '</div>' : '') + '</div></div>';
     }).join('');
   }
 
@@ -723,19 +753,39 @@
           ud = dia;
         }
         const cls = 'msg-' + (m.direcao === 'entrada' ? 'entrada' : (m.autor_tipo === 'ia' ? 'ia' : 'saida'));
-        const horaCls = m.direcao === 'entrada' ? 'text-slate-400' : 'text-white/70';
+        const ehSaida = m.direcao !== 'entrada';
+        const horaCls = ehSaida ? 'text-slate-500' : 'text-slate-400';
         const hora = dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        return sep + '<div class="' + cls + ' max-w-[80%] lg:max-w-[70%] px-4 py-2.5"><p class="text-base lg:text-sm whitespace-pre-wrap">' + escapar(m.conteudo || '') + '</p><p class="text-[10px] mt-1 ' + horaCls + '">' + hora + '</p></div>';
+        // ✓✓ status — só pra mensagens enviadas (saída)
+        // ✓✓ status sem indicador de "lida" — privacidade pros dois lados
+        // (Z-API vai ser configurada pra NÃO enviar confirmação de leitura também,
+        //  igual quando você desliga "Confirmação de leitura" no WhatsApp pessoal)
+        let checkHtml = '';
+        if (ehSaida) {
+          const s = (m.status_envio || '').toLowerCase();
+          if (s === 'erro') checkHtml = '<span class="status-check" style="color:#DC2626" title="Erro ao enviar">⚠</span>';
+          else if (s === 'enviada' || s === 'entregue' || s === 'lida') checkHtml = '<span class="status-check entregue" title="Enviada">✓✓</span>';
+          else checkHtml = '<span class="status-check entregue" title="Enviando…">⏱</span>';
+        }
+        return sep + '<div class="' + cls + ' max-w-[80%] lg:max-w-[70%]"><p class="text-base lg:text-sm whitespace-pre-wrap">' + escapar(m.conteudo || '') + '</p><p class="text-[10px] mt-1 ' + horaCls + ' flex items-center justify-end gap-1">' + hora + checkHtml + '</p></div>';
       }).join('');
       area.innerHTML = html || '<div class="flex-1 flex items-center justify-center text-slate-400 text-sm py-8">Nenhuma mensagem ainda</div>';
       area.scrollTop = area.scrollHeight;
       if (conv.nao_lidas > 0) { await db.from('conversas').update({ nao_lidas: 0 }).eq('id', id); conv.nao_lidas = 0; }
       popularPainelHospede(conv, msgs || []);
       atualizarBotaoArquivar();
+      atualizarBotaoPinar();
       // Atualiza texto do botão no painel hóspede
       const elTxt = document.getElementById('btn-arquivar-painel-txt');
       if (elTxt) {
         elTxt.textContent = ehArquivada(conv) ? 'Desarquivar conversa' : 'Arquivar conversa';
+      }
+      // Limpa busca ao trocar de conversa
+      const buscaBar = document.getElementById('busca-conversa-bar');
+      if (buscaBar && !buscaBar.classList.contains('hidden')) {
+        buscaBar.classList.add('hidden');
+        document.getElementById('busca-conversa-input').value = '';
+        _buscaConversaTermo = '';
       }
     } catch(e) { console.warn(e); }
 
@@ -786,6 +836,78 @@
   }
 
   function togglePainelHospede() { const p = document.getElementById('painel-hospede'); if (p) p.classList.toggle('hidden'); }
+
+  // ===== FIXAR (PIN) CONVERSA =====
+  // Conversas fixadas aparecem no TOPO da lista, com um ícone de pin.
+  // Usa metadados.fixada = true (e ordem_fixada = timestamp pra ordenar fixadas entre si).
+  function ehFixada(c) {
+    return c.metadados && c.metadados.fixada === true;
+  }
+  async function togglePinar() {
+    if (!_ativa) return;
+    const conv = _conversas.find(c => c.id === _ativa);
+    if (!conv) return;
+    const taFixada = ehFixada(conv);
+    try {
+      await db.from('conversas').update({
+        metadados: {
+          ...(conv.metadados || {}),
+          fixada: !taFixada,
+          fixada_em: !taFixada ? new Date().toISOString() : null
+        }
+      }).eq('id', _ativa);
+      await carregarConversas();
+    } catch(e) { alert('Erro: '+e.message); }
+  }
+  function atualizarBotaoPinar() {
+    const btn = document.getElementById('btn-pinar');
+    if (!btn) return;
+    const conv = _conversas.find(c => c.id === _ativa);
+    if (!conv) return;
+    if (ehFixada(conv)) {
+      btn.title = 'Desafixar';
+      btn.style.color = '#FCD34D';
+    } else {
+      btn.title = 'Fixar conversa';
+      btn.style.color = '';
+    }
+  }
+
+  // ===== BUSCAR DENTRO DA CONVERSA =====
+  let _buscaConversaTermo = '';
+  function toggleBuscaConversa() {
+    const bar = document.getElementById('busca-conversa-bar');
+    if (bar.classList.contains('hidden')) {
+      bar.classList.remove('hidden');
+      bar.classList.add('flex');
+      document.getElementById('busca-conversa-input').focus();
+    } else {
+      bar.classList.add('hidden');
+      bar.classList.remove('flex');
+      document.getElementById('busca-conversa-input').value = '';
+      _buscaConversaTermo = '';
+      filtrarMensagensConversa('');
+    }
+  }
+  function filtrarMensagensConversa(termo) {
+    _buscaConversaTermo = (termo || '').toLowerCase();
+    const area = document.getElementById('mensagens-area');
+    if (!area) return;
+    const bolhas = area.querySelectorAll('.msg-entrada, .msg-saida, .msg-ia');
+    let achados = 0;
+    bolhas.forEach(b => {
+      const txt = (b.textContent || '').toLowerCase();
+      if (!_buscaConversaTermo || txt.includes(_buscaConversaTermo)) {
+        b.style.display = '';
+        if (_buscaConversaTermo) achados++;
+        b.style.outline = _buscaConversaTermo && txt.includes(_buscaConversaTermo) ? '2px solid #FCD34D' : '';
+      } else {
+        b.style.display = 'none';
+      }
+    });
+    const cnt = document.getElementById('busca-conversa-cnt');
+    if (cnt) cnt.textContent = _buscaConversaTermo ? `${achados} resultado${achados !== 1 ? 's' : ''}` : '';
+  }
 
   // ===== ARQUIVAR / DESARQUIVAR =====
   // Conversas arquivadas saem da lista principal mas ficam acessíveis no filtro 📁.
