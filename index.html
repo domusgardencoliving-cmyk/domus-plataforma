@@ -2989,7 +2989,7 @@ html { scroll-behavior: smooth; }
               </button>
               <div class="flex-1 min-w-0">
                 <h1 class="font-serif text-xl sm:text-3xl text-domus-azul-escuro">Ribeirão Claro</h1>
-                <p class="text-xs sm:text-sm text-domus-texto-suave">Coliving exclusivamente feminino · Abril 2026</p>
+                <p id="uni-rib-subtitulo" class="text-xs sm:text-sm text-domus-texto-suave">Coliving exclusivamente feminino</p>
               </div>
               <select id="sel-mes-rib" onchange="carregarUnidade('Rib', this.value)" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-domus-borda bg-white text-xs sm:text-sm"></select>
               <button onclick="abrirRelatorioMensal('Rib')" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-domus-azul text-white text-xs sm:text-sm hover:opacity-90">Relatório</button>
@@ -3023,45 +3023,13 @@ html { scroll-behavior: smooth; }
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
               <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
                 <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Pendencias</h3>
-                <ul class="space-y-2 text-sm">
-                  <li class="flex justify-between p-2 rounded-lg bg-red-50">
-                    <span>1 moradora inadimplente</span>
-                    <button class="text-red-700 hover:underline">Ver</button>
-                  </li>
-                  <li class="flex justify-between p-2 rounded-lg bg-yellow-50">
-                    <span>1 nota pendente de revisão</span>
-                    <button class="text-yellow-800 hover:underline">Ver</button>
-                  </li>
+                <ul id="uni-rib-pendencias" class="space-y-2 text-sm">
+                  <li class="text-domus-texto-suave">carregando...</li>
                 </ul>
               </div>
               <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
                 <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Evolucao (ultimos 6 meses)</h3>
-                <div class="h-40 flex items-end gap-2">
-                  <div class="flex-1 flex flex-col items-center gap-1">
-                    <div class="w-full bg-domus-azul/60 rounded-t" style="height: 55%;"></div>
-                    <span class="text-xs text-domus-texto-suave">nov</span>
-                  </div>
-                  <div class="flex-1 flex flex-col items-center gap-1">
-                    <div class="w-full bg-domus-azul/60 rounded-t" style="height: 60%;"></div>
-                    <span class="text-xs text-domus-texto-suave">dez</span>
-                  </div>
-                  <div class="flex-1 flex flex-col items-center gap-1">
-                    <div class="w-full bg-domus-azul/60 rounded-t" style="height: 68%;"></div>
-                    <span class="text-xs text-domus-texto-suave">jan</span>
-                  </div>
-                  <div class="flex-1 flex flex-col items-center gap-1">
-                    <div class="w-full bg-domus-azul/60 rounded-t" style="height: 75%;"></div>
-                    <span class="text-xs text-domus-texto-suave">fev</span>
-                  </div>
-                  <div class="flex-1 flex flex-col items-center gap-1">
-                    <div class="w-full bg-domus-azul/60 rounded-t" style="height: 82%;"></div>
-                    <span class="text-xs text-domus-texto-suave">mar</span>
-                  </div>
-                  <div class="flex-1 flex flex-col items-center gap-1">
-                    <div class="w-full bg-domus-azul rounded-t" style="height: 95%;"></div>
-                    <span class="text-xs text-domus-azul-escuro font-medium">abr</span>
-                  </div>
-                </div>
+                <div id="uni-rib-evolucao" class="h-40 flex items-end gap-2"><span class="text-xs text-domus-texto-suave">carregando...</span></div>
                 <p class="text-xs text-domus-texto-suave mt-3">Liquido mensal — Ribeirão Claro</p>
               </div>
               <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
@@ -3094,7 +3062,7 @@ html { scroll-behavior: smooth; }
               </button>
               <div class="flex-1 min-w-0">
                 <h1 class="font-serif text-xl sm:text-3xl text-domus-azul-escuro">Andrade Pertence</h1>
-                <p class="text-xs sm:text-sm text-domus-texto-suave">Coliving feminino + Hostel misto · Abril 2026</p>
+                <p id="uni-ap-subtitulo" class="text-xs sm:text-sm text-domus-texto-suave">Coliving feminino + Hostel misto</p>
               </div>
               <select id="sel-mes-ap" onchange="carregarUnidade('AP', this.value)" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-domus-borda bg-white text-xs sm:text-sm"></select>
               <button onclick="abrirRelatorioMensal('AP')" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-domus-azul text-white text-xs sm:text-sm hover:opacity-90">Relatório</button>
@@ -3136,50 +3104,14 @@ html { scroll-behavior: smooth; }
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
                 <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
                   <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Pendencias</h3>
-                  <ul class="space-y-2 text-sm">
-                    <li class="flex justify-between p-2 rounded-lg bg-red-50">
-                      <span>1 moradora inadimplente</span>
-                      <button class="text-red-700 hover:underline">Ver</button>
-                    </li>
-                    <li class="flex justify-between p-2 rounded-lg bg-yellow-50">
-                      <span>2 notas pendentes de revisão</span>
-                      <button class="text-yellow-800 hover:underline">Ver</button>
-                    </li>
-                    <li class="flex justify-between p-2 rounded-lg bg-blue-50">
-                      <span>1 rescisão para formalizar</span>
-                      <button class="text-blue-700 hover:underline">Ver</button>
-                    </li>
+                  <ul id="uni-ap-pendencias" class="space-y-2 text-sm">
+                    <li class="text-domus-texto-suave">carregando...</li>
                   </ul>
                 </div>
                 <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
                   <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Evolucao (ultimos 6 meses)</h3>
-                  <div class="h-40 flex items-end gap-2">
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul/60 rounded-t" style="height: 45%;"></div>
-                      <span class="text-xs text-domus-texto-suave">nov</span>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul/60 rounded-t" style="height: 55%;"></div>
-                      <span class="text-xs text-domus-texto-suave">dez</span>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul/60 rounded-t" style="height: 62%;"></div>
-                      <span class="text-xs text-domus-texto-suave">jan</span>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul/60 rounded-t" style="height: 70%;"></div>
-                      <span class="text-xs text-domus-texto-suave">fev</span>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul/60 rounded-t" style="height: 78%;"></div>
-                      <span class="text-xs text-domus-texto-suave">mar</span>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul rounded-t" style="height: 92%;"></div>
-                      <span class="text-xs text-domus-azul-escuro font-medium">abr</span>
-                    </div>
-                  </div>
-                  <p class="text-xs text-domus-texto-suave mt-3">Liquido mensal — Andrade Pertence</p>
+                <div id="uni-ap-evolucao" class="h-40 flex items-end gap-2"><span class="text-xs text-domus-texto-suave">carregando...</span></div>
+                <p class="text-xs text-domus-texto-suave mt-3">Liquido mensal — Andrade Pertence</p>
                 </div>
                 <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
                   <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Atalhos</h3>
@@ -18148,7 +18080,7 @@ html { scroll-behavior: smooth; }
     async function carregarUnidade(unidade, mesEscolhido) {
       try {
         const key = unidade.toLowerCase(); // 'rib' ou 'ap'
-        const capacidade = { rib: 11, ap: 15 };
+        const capacidade = { rib: 14, ap: 7 }; // moradoras (Rib 10 quartos/14 vagas; AP 7 vagas coliving)
         const LEITOS_HOSTEL = 13;
 
         // Meses com dados (popula o seletor)
@@ -18201,28 +18133,73 @@ html { scroll-behavior: smooth; }
           elRes.classList.toggle('text-red-500', resultado < 0);
         }
 
-        // Atualizar subtítulo com mês correto
+        // Atualizar subtítulo com mês correto (id direto — classe sm:text-sm não casava com .text-sm)
         const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
         const [anoRef, mesNum] = mesRef.split('-');
         const mesNome = meses[parseInt(mesNum)] + ' ' + anoRef;
-        const container = document.getElementById('dg-unidade-'+key);
-        if (container) {
-          const sub = container.querySelector('.text-sm.text-domus-texto-suave');
-          if (sub) sub.textContent = sub.textContent.replace(/·.*/, '· ' + mesNome);
-
+        const sub = document.getElementById('uni-'+key+'-subtitulo');
+        if (sub) {
+          const base = sub.textContent.split('·')[0].trim();
+          sub.textContent = base + ' · ' + mesNome;
         }
 
-        // Vagas
-        const { data: morAtivos } = await db.from('moradores')
-          .select('id')
-          .eq('unidade', unidade)
-          .eq('status', 'ativo');
-        const nMor = (morAtivos||[]).length;
-        const vagas = (capacidade[key]||0) - nMor;
+        // Vagas (RPC — tabela moradores fechada pra anon; exclui ex-moradoras em acordo de saída)
+        const { data: contagemU } = await db.rpc('contar_moradoras_ativas');
+        const nMor = (contagemU && contagemU[unidade]) || 0;
+        const vagas = Math.max(0, (capacidade[key]||0) - nMor);
         const elVag = document.getElementById('uni-'+key+'-vagas');
         const elVagD = document.getElementById('uni-'+key+'-vagas-detail');
         if (elVag) elVag.textContent = vagas;
         if (elVagD) elVagD.textContent = nMor + ' moradoras de ' + (capacidade[key]||0);
+
+        // Pendencias REAIS (RPC pendencias_unidade)
+        try {
+          const { data: pend } = await db.rpc('pendencias_unidade', { p_unidade: unidade });
+          const ulPend = document.getElementById('uni-'+key+'-pendencias');
+          if (ulPend && pend) {
+            const itens = [];
+            if (pend.inadimplentes > 0) {
+              itens.push('<li class="flex justify-between p-2 rounded-lg bg-red-50"><span>' + pend.inadimplentes + (pend.inadimplentes > 1 ? ' moradoras inadimplentes' : ' moradora inadimplente') + ' — ' + fmt(pend.valor_vencido) + '</span><button onclick="mostrarDgTab(\'dg-inadimplencia\', document.querySelectorAll(\'.dg-nav-item\')[5] || document.querySelector(\'.dg-nav-item\'))" class="text-red-700 hover:underline">Ver</button></li>');
+            }
+            if (pend.notas_pendentes > 0) {
+              itens.push('<li class="flex justify-between p-2 rounded-lg bg-yellow-50"><span>' + pend.notas_pendentes + (pend.notas_pendentes > 1 ? ' notas pendentes' : ' nota pendente') + ' de revisão</span><button onclick="mostrarDgTab(\'dg-notas\', document.querySelectorAll(\'.dg-nav-item\')[4] || document.querySelector(\'.dg-nav-item\'))" class="text-yellow-800 hover:underline">Ver</button></li>');
+            }
+            ulPend.innerHTML = itens.length ? itens.join('') : '<li class="p-2 rounded-lg bg-green-50 text-green-800">Nenhuma pendência 🎉</li>';
+          }
+        } catch (e) { console.warn('pendencias:', e); }
+
+        // Evolucao REAL — líquido mensal dos últimos 6 meses (terminando no mês exibido)
+        try {
+          const iniEvo = new Date(aR, mR - 6, 1).toISOString().slice(0, 10);
+          const { data: lancEvo } = await db.from('lancamentos')
+            .select('tipo, valor, data')
+            .eq('unidade', unidade)
+            .gte('data', iniEvo)
+            .lt('data', proxMesRef);
+          const porMes = {};
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date(aR, mR - 1 - i, 1);
+            porMes[d.toISOString().slice(0, 7)] = 0;
+          }
+          (lancEvo || []).forEach(l => {
+            const m2 = String(l.data).slice(0, 7);
+            if (m2 in porMes) porMes[m2] += (l.tipo === 'receita' ? 1 : -1) * Number(l.valor);
+          });
+          const evoDiv = document.getElementById('uni-'+key+'-evolucao');
+          if (evoDiv) {
+            const vals = Object.values(porMes);
+            const maxAbs = Math.max(...vals.map(v => Math.abs(v)), 1);
+            const mesesCurto = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+            evoDiv.innerHTML = Object.entries(porMes).map(([m2, v], idx, arr) => {
+              const ultimo = idx === arr.length - 1;
+              const h = Math.max(4, Math.round(Math.abs(v) / maxAbs * 95));
+              const cor = v < 0 ? 'bg-red-400' : (ultimo ? 'bg-domus-azul' : 'bg-domus-azul/60');
+              const lbl = mesesCurto[parseInt(m2.slice(5))];
+              const tt = m2 + ': ' + fmt(v);
+              return '<div class="flex-1 flex flex-col items-center gap-1" title="' + tt + '"><div class="w-full ' + cor + ' rounded-t" style="height:' + h + '%"></div><span class="text-xs ' + (ultimo ? 'text-domus-azul-escuro font-medium' : 'text-domus-texto-suave') + '">' + lbl + '</span></div>';
+            }).join('');
+          }
+        } catch (e) { console.warn('evolucao:', e); }
 
         // Para AP: carregar dados do hostel
         if (key === 'ap') {
