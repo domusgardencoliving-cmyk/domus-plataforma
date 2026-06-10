@@ -413,7 +413,7 @@ Deno.serve(async (_req) => {
             checkout,
             status: statusInicial,
             status_hospedin: statusHospedin,
-            valor_total: valorTotal,
+            valor_total: (valorTotal !== null && valorTotal !== undefined) ? valorTotal : 0, // FIX 10/06: API sem valor NAO pode impedir a reserva de existir (caso Nicole Sena)
             plataforma,
             canal_codigo: canal,
             hospedin_id: hospedinId,
