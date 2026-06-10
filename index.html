@@ -13575,10 +13575,9 @@ html { scroll-behavior: smooth; }
           }
         });
 
-        // Moradoras ativas por unidade
-        const { data: moradoras } = await db.from('moradores').select('unidade, quarto').eq('status', 'ativo');
-        const countMor = { Rib: 0, AP: 0 };
-        (moradoras || []).forEach(m => { if (countMor[m.unidade] !== undefined) countMor[m.unidade]++; });
+        // Moradoras ativas por unidade (RPC — tabela moradores fechada pra anon)
+        const { data: contagemMor } = await db.rpc('contar_moradoras_ativas');
+        const countMor = { Rib: (contagemMor && contagemMor.Rib) || 0, AP: (contagemMor && contagemMor.AP) || 0 };
 
         const capacidade = { Rib: 14, AP: 7 }; // capacidade de moradores (Rib: 10 quartos/14 vagas, AP: 7 vagas — Q1,Q2.1,Q2.2,Q2.3,Q3,Q4,Q5)
         ['Rib', 'AP'].forEach(u => {
@@ -13586,13 +13585,16 @@ html { scroll-behavior: smooth; }
           const elMor = document.getElementById('dash-'+key+'-moradoras');
           const elVag = document.getElementById('dash-'+key+'-vagas');
           if (elMor) elMor.textContent = countMor[u] + ' moradoras';
-          if (elVag) elVag.textContent = (capacidade[u] - countMor[u]) + ' vagas';
+          if (elVag) elVag.textContent = Math.max(0, capacidade[u] - countMor[u]) + ' vagas';
         });
 
         // Hóspedes últimos 30 dias (AP)
+        const hojeStrDash = new Date().toISOString().slice(0, 10);
         const { count: hospCount } = await db.from('reservas')
           .select('id', { count: 'exact', head: true })
-          .gte('checkin', ha30dias);
+          .gte('checkin', ha30dias)
+          .lte('checkin', hojeStrDash)
+          .neq('status', 'cancelada');
         const elHosp = document.getElementById('dash-ap-hospedes');
         if (elHosp) elHosp.textContent = (hospCount || 0) + ' hóspedes nos últimos 30 dias';
 
