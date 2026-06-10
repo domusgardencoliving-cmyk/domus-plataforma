@@ -3010,6 +3010,7 @@ html { scroll-behavior: smooth; }
               <div class="bg-domus-azul-claro/20 rounded-xl p-5">
                 <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Resultado</p>
                 <p id="uni-rib-resultado" class="font-serif text-2xl text-domus-azul mt-1">carregando...</p>
+                <p id="uni-rib-socios" class="text-xs text-domus-texto-suave mt-1"></p>
                 <p id="uni-rib-resultado-delta" class="text-xs text-domus-azul mt-1"></p>
               </div>
               <div class="bg-domus-areia rounded-xl p-5">
@@ -3124,6 +3125,7 @@ html { scroll-behavior: smooth; }
                 <div class="bg-domus-azul-claro/20 rounded-xl p-5">
                   <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Resultado</p>
                   <p id="uni-ap-resultado" class="font-serif text-2xl text-domus-azul mt-1">carregando...</p>
+                <p id="uni-ap-socios" class="text-xs text-domus-texto-suave mt-1"></p>
                   <p id="uni-ap-resultado-delta" class="text-xs text-domus-azul mt-1"></p>
                 </div>
                 <div class="bg-domus-areia rounded-xl p-5">
@@ -18211,6 +18213,8 @@ html { scroll-behavior: smooth; }
           elRes.textContent = fmt(resultado);
           elRes.classList.toggle('text-red-500', resultado < 0);
         }
+        const elSoc = document.getElementById('uni-'+key+'-socios');
+        if (elSoc) elSoc.innerHTML = '<span class="valor-financeiro">' + fmt(resultado / 2) + '</span> por sócio (50/50)';
 
         // Atualizar subtítulo com mês correto (id direto — classe sm:text-sm não casava com .text-sm)
         const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
