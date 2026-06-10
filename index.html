@@ -2991,9 +2991,7 @@ html { scroll-behavior: smooth; }
                 <h1 class="font-serif text-xl sm:text-3xl text-domus-azul-escuro">Ribeirão Claro</h1>
                 <p class="text-xs sm:text-sm text-domus-texto-suave">Coliving exclusivamente feminino · Abril 2026</p>
               </div>
-              <select class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-domus-borda bg-white text-xs sm:text-sm">
-                <option>Abril 2026</option><option>Marco 2026</option><option>Fevereiro 2026</option>
-              </select>
+              <select id="sel-mes-rib" onchange="carregarUnidade('Rib', this.value)" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-domus-borda bg-white text-xs sm:text-sm"></select>
             </div>
 
             <!-- Financeiro Rib -->
@@ -3097,9 +3095,7 @@ html { scroll-behavior: smooth; }
                 <h1 class="font-serif text-xl sm:text-3xl text-domus-azul-escuro">Andrade Pertence</h1>
                 <p class="text-xs sm:text-sm text-domus-texto-suave">Coliving feminino + Hostel misto · Abril 2026</p>
               </div>
-              <select class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-domus-borda bg-white text-xs sm:text-sm">
-                <option>Abril 2026</option><option>Marco 2026</option><option>Fevereiro 2026</option>
-              </select>
+              <select id="sel-mes-ap" onchange="carregarUnidade('AP', this.value)" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-domus-borda bg-white text-xs sm:text-sm"></select>
             </div>
 
             <!-- Sub-navegacao AP: Coliving | Hostel | Obra -->
@@ -12597,10 +12593,12 @@ html { scroll-behavior: smooth; }
       document.querySelectorAll('.dg-tab').forEach(t => t.classList.add('hidden-mod'));
       if (unidade === 'rib') {
         document.getElementById('dg-unidade-rib').classList.remove('hidden-mod');
+        carregarUnidade('Rib');
       } else if (unidade === 'ap') {
         document.getElementById('dg-unidade-ap').classList.remove('hidden-mod');
         // Garante que a sub-aba Coliving apareca por padrao
         mostrarSubAP('ap-coliving');
+        carregarUnidade('AP');
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -18008,27 +18006,39 @@ html { scroll-behavior: smooth; }
     // ==========================================
     // UNIDADES — Carrega dados da página de unidade
     // ==========================================
-    async function carregarUnidade(unidade) {
+    async function carregarUnidade(unidade, mesEscolhido) {
       try {
         const key = unidade.toLowerCase(); // 'rib' ou 'ap'
         const capacidade = { rib: 11, ap: 15 };
         const LEITOS_HOSTEL = 13;
 
-        // Buscar último mês com dados
-        const { data: ultimoReg } = await db.from('lancamentos')
+        // Meses com dados (popula o seletor)
+        const { data: todosLanc } = await db.from('lancamentos')
           .select('data')
           .eq('unidade', unidade)
           .order('data', { ascending: false })
-          .limit(1);
+          .limit(2000);
+        const mesesDisponiveis = [...new Set((todosLanc || []).map(l => String(l.data).slice(0, 7)))];
 
-        let mesRef, proxMesRef;
-        if (ultimoReg && ultimoReg.length > 0) {
-          mesRef = ultimoReg[0].data.slice(0,7);
-          const [a,m] = mesRef.split('-').map(Number);
-          proxMesRef = new Date(a, m, 1).toISOString().slice(0,10);
+        let mesRef;
+        if (mesEscolhido) {
+          mesRef = mesEscolhido;
+        } else if (mesesDisponiveis.length > 0) {
+          mesRef = mesesDisponiveis[0];
         } else {
           mesRef = mesAtual;
-          proxMesRef = mesProxPrimeiro;
+        }
+        const [aR, mR] = mesRef.split('-').map(Number);
+        const proxMesRef = new Date(aR, mR, 1).toISOString().slice(0, 10);
+
+        // popular seletor de meses
+        const mesesNomes = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        const selMes = document.getElementById('sel-mes-' + key);
+        if (selMes) {
+          selMes.innerHTML = mesesDisponiveis.map(m => {
+            const [a2, m2] = m.split('-');
+            return '<option value="' + m + '"' + (m === mesRef ? ' selected' : '') + '>' + mesesNomes[parseInt(m2)] + ' ' + a2 + '</option>';
+          }).join('');
         }
 
         // Financeiro do mês
@@ -18060,8 +18070,7 @@ html { scroll-behavior: smooth; }
         if (container) {
           const sub = container.querySelector('.text-sm.text-domus-texto-suave');
           if (sub) sub.textContent = sub.textContent.replace(/·.*/, '· ' + mesNome);
-          const sel = container.querySelector('select');
-          if (sel) sel.innerHTML = '<option>' + mesNome + '</option>';
+
         }
 
         // Vagas
