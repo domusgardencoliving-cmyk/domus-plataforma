@@ -454,6 +454,90 @@ Deno.serve(async (req) => {
       reservasOut.push(linha);
     }
 
+    // ===== V2 (10/06/2026): blacklist + overbooking + severidade + alerta email =====
+    try {
+      const { data: bl } = await sb.from("reservas_ignoradas_sync").select("identificador");
+      const blSet = new Set((bl || []).map((x: any) => String(x.identificador || "").replace(/^HO:/, "")));
+      for (const l of reservasOut) {
+        if (l.hospedin_id && blSet.has(String(l.hospedin_id))) l.blacklist = true;
+      }
+    } catch (_) {}
+
+    const hojeISO = new Date().toISOString().slice(0, 10);
+    const ativosPMS = (listaPMS || []).filter((r: any) => ["confirmada", "check-in", "em_espera"].includes(r.status) && String(r.checkout || "") > hojeISO);
+    const overbookingPMS: any[] = [];
+    const porCama: Record<string, any[]> = {};
+    for (const r of ativosPMS) { (porCama[r.cama] = porCama[r.cama] || []).push(r); }
+    for (const cama in porCama) {
+      const rs = porCama[cama].sort((a: any, b: any) => String(a.checkin).localeCompare(String(b.checkin)));
+      for (let i = 0; i < rs.length - 1; i++) for (let j = i + 1; j < rs.length; j++) {
+        if (String(rs[i].checkout) > String(rs[j].checkin) && String(rs[j].checkout) > String(rs[i].checkin)) {
+          overbookingPMS.push({ cama, a: { nome: rs[i].hospede_nome, ci: rs[i].checkin, co: rs[i].checkout }, b: { nome: rs[j].hospede_nome, ci: rs[j].checkin, co: rs[j].checkout } });
+        }
+      }
+    }
+    const ativosH = hElegiveis.filter((h: any) => !["canceled", "cancelled", "blocked"].includes(String(h.status || "")) && String(brToISO(h.check_out) || "") > hojeISO);
+    const overbookingH: any[] = [];
+    const porPlace: Record<string, any[]> = {};
+    for (const h of ativosH) { const c = HOSPEDIN_PLACE_TO_CAMA[String(h.place_id)] || String(h.place_id); (porPlace[c] = porPlace[c] || []).push(h); }
+    for (const cama in porPlace) {
+      const rs = porPlace[cama].map((h: any) => ({ nome: h.full_name, ci: brToISO(h.check_in), co: brToISO(h.check_out) })).sort((a: any, b: any) => String(a.ci).localeCompare(String(b.ci)));
+      for (let i = 0; i < rs.length - 1; i++) for (let j = i + 1; j < rs.length; j++) {
+        if (String(rs[i].co) > String(rs[j].ci) && String(rs[j].co) > String(rs[i].ci)) overbookingH.push({ cama, a: rs[i], b: rs[j] });
+      }
+    }
+
+    const criticos: any[] = [];
+    for (const ob of overbookingPMS) criticos.push({ tipo: "OVERBOOKING_PMS", ...ob });
+    for (const ob of overbookingH) criticos.push({ tipo: "OVERBOOKING_HOSPEDIN", ...ob });
+    for (const l of reservasOut) {
+      if (l.blacklist) continue;
+      if (l.tipo === "somente_hospedin" && String(l.checkout || l.checkin || "") >= hojeISO && l.status_hospedin !== "canceled") {
+        criticos.push({ tipo: "OTA_NAO_DESCEU_PRO_PMS", nome: l.hospede_nome, cama: l.cama, ci: l.checkin, co: l.checkout, code: l.code });
+      }
+      if (l.tipo === "somente_pms" && l.status_atual_pms !== "cancelada" && String(l.checkout || "") >= hojeISO) {
+        criticos.push({ tipo: "SUMIU_DO_HOSPEDIN", nome: l.hospede_nome, cama: l.cama, ci: l.checkin, co: l.checkout });
+      }
+      if (l.tipo === "divergente" && Array.isArray(l.divergencias)) {
+        const grave = l.divergencias.some((d: any) => ["cama", "checkin", "checkout"].includes(d.campo));
+        const m = pmsPorHospedinId[String(l.hospedin_id)];
+        if (grave && m && String(m.checkout || "") >= hojeISO && m.status !== "cancelada") {
+          criticos.push({ tipo: "DIVERGENCIA_GRAVE", nome: l.hospede_nome, cama: l.cama, campos: l.divergencias.map((d: any) => d.campo) });
+        }
+      }
+    }
+    resumo.criticos = criticos.length;
+    resumo.overbooking_pms = overbookingPMS.length;
+    resumo.overbooking_hospedin = overbookingH.length;
+
+    let hashCriticos: string | null = null;
+    if (criticos.length > 0) {
+      hashCriticos = JSON.stringify(criticos.map((c: any) => [c.tipo, c.cama, c.nome || (c.a && c.a.nome), c.ci || (c.a && c.a.ci)]).sort());
+      try {
+        const { data: ult } = await sb.from("auditoria_reconciliacao_runs").select("hash_criticos").not("hash_criticos", "is", null).order("rodou_em", { ascending: false }).limit(1);
+        if (!ult || !ult[0] || ult[0].hash_criticos !== hashCriticos) {
+          const RESEND = Deno.env.get("RESEND_API_KEY");
+          if (RESEND) {
+            const linhas = criticos.map((c: any) => `<li><b>${c.tipo}</b> — ${c.cama || ""} — ${c.nome || (c.a ? c.a.nome + " × " + (c.b && c.b.nome) : "")} ${c.ci || (c.a && c.a.ci) || ""}</li>`).join("");
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${RESEND}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                from: "Domus Auditoria <onboarding@resend.dev>",
+                to: ["domusgardencoliving@gmail.com"],
+                subject: `\u{1F6A8} Auditoria Domus: ${criticos.length} problema(s) de sync/overbooking`,
+                html: `<h3>Auditoria Hospedin \u00d7 DG</h3><ul>${linhas}</ul><p>Rodada autom\u00e1tica \u2014 corrigir no PMS/Hospedin e a pr\u00f3xima rodada limpa o alerta.</p>`
+              })
+            });
+            (resumo as any).email_alerta = "enviado";
+          }
+        } else {
+          (resumo as any).email_alerta = "dedupe";
+        }
+      } catch (e: any) { resumo.erros.push("alerta email: " + String(e).slice(0, 100)); }
+    }
+    (resumo as any).lista_criticos = criticos.slice(0, 30);
+
     // 8) Grava histórico
     try {
       await sb.from("auditoria_reconciliacao_runs").insert({
@@ -462,6 +546,8 @@ Deno.serve(async (req) => {
         modo,
         resumo,
         reservas: reservasOut.slice(0, 500),
+        criticos,
+        hash_criticos: hashCriticos,
       });
     } catch (e: any) {
       resumo.erros.push("Falha gravando histórico: " + (e.message || String(e)).slice(0, 200));
