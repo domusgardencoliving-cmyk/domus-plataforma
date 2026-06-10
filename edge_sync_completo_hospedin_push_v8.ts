@@ -101,20 +101,54 @@ function fmtBR(iso: string): string {
 }
 
 // Pega CSRF da página /edit da reserva
-async function pegarCSRFEdit(cookie: string, hospedinId: string): Promise<string | null> {
+async function pegarCSRFEdit(cookie: string, hospedinId: string): Promise<{ csrf: string | null; cookie: string }> {
   const r = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/${hospedinId}/edit`, {
     headers: { Cookie: cookie, accept: "text/html" },
   });
+  cookie = mergeCookies(cookie, r.headers.get("set-cookie"));
   if (!r.ok) {
     console.log(`[csrf-edit] HTTP ${r.status} pra ${hospedinId}`);
-    return null;
+    return { csrf: null, cookie };
   }
   const html = await r.text();
   const m = html.match(/name="authenticity_token"[^>]*value="([^"]+)"/);
-  return m ? m[1] : null;
+  return { csrf: m ? m[1] : null, cookie };
 }
 
 // PARTE A: cria reserva nova
+function normNomeGuest(s: string): string {
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+}
+
+async function buscarGuestHospedin(cookie: string, nome: string): Promise<any | null> {
+  try {
+    const r = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/services/guests.json?term=${encodeURIComponent(nome)}`, { headers: { Cookie: cookie, accept: "application/json" } });
+    const l = await r.json();
+    return (Array.isArray(l) ? l : []).find((x: any) => normNomeGuest(x.name) === normNomeGuest(nome)) || null;
+  } catch (_) { return null; }
+}
+
+async function criarGuestHospedin(cookie: string, nome: string, tel: string | null): Promise<{ cookie: string; id: string | null }> {
+  try {
+    const rN = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/guests/new`, { headers: { Cookie: cookie, accept: "text/html" } });
+    cookie = mergeCookies(cookie, rN.headers.get("set-cookie"));
+    const csrf = (await rN.text()).match(/name="authenticity_token"[^>]*value="([^"]+)"/)?.[1];
+    if (!csrf) return { cookie, id: null };
+    const p = new URLSearchParams();
+    p.append("utf8", "\u2713"); p.append("authenticity_token", csrf);
+    p.append("guest[name]", nome);
+    ["email", "ssn", "identification", "passport", "birth", "gender", "occupation", "note"].forEach((k) => p.append(`guest[${k}]`, ""));
+    const t = String(tel || "").replace(/\D/g, "");
+    p.append("guest[contact_attributes][ddi]", t.length >= 10 ? "55" : "");
+    p.append("guest[contact_attributes][phone]", t.length >= 10 ? (t.startsWith("55") ? t.slice(2) : t) : "");
+    p.append("commit", "Salvar");
+    const r = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/guests`, { method: "POST", body: p.toString(), redirect: "manual", headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded", Origin: HOSPEDIN_BASE, Referer: `${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/guests/new` } });
+    cookie = mergeCookies(cookie, r.headers.get("set-cookie"));
+    const g = await buscarGuestHospedin(cookie, nome);
+    return { cookie, id: g ? String(g.id) : null };
+  } catch (_) { return { cookie, id: null }; }
+}
+
 async function criarReservaHospedin(cookie: string, reserva: any): Promise<{ code: string | null; hospedin_id: string | null; erro?: string }> {
   const cama = reserva.cama;
   const placeId = HOSPEDIN_PLACE_IDS[cama];
@@ -123,9 +157,24 @@ async function criarReservaHospedin(cookie: string, reserva: any): Promise<{ cod
   const canalKey = reserva.plataforma || "Direto";
   const canalId = HOSPEDIN_CANAIS[canalKey] || HOSPEDIN_CANAIS["Direto"];
 
+  // resolve guest central (busca -> cria) pra reserva nascer COM hospede vinculado
+  let guestId: string | null = null;
+  if (!ehBloqueio) {
+    const nomeGuest = String(reserva.hospede_nome || "").trim();
+    if (nomeGuest && nomeGuest.length >= 5 && !/^(hospede|teste|VD:|PR:|BO:|AI:|Cama )/i.test(nomeGuest)) {
+      const gx = await buscarGuestHospedin(cookie, nomeGuest);
+      if (gx) { guestId = String(gx.id); }
+      else {
+        const cr = await criarGuestHospedin(cookie, nomeGuest, reserva.hospede_contato);
+        cookie = cr.cookie; guestId = cr.id;
+      }
+    }
+  }
+
   const rNew = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/new`, {
     headers: { Cookie: cookie, accept: "text/html" },
   });
+  cookie = mergeCookies(cookie, rNew.headers.get("set-cookie"));
   const newHtml = await rNew.text();
   const csrf = newHtml.match(/name="authenticity_token"[^>]*value="([^"]+)"/)?.[1];
   if (!csrf) return { code: null, hospedin_id: null, erro: "CSRF Nova Reserva não encontrado" };
@@ -146,7 +195,8 @@ async function criarReservaHospedin(cookie: string, reserva: any): Promise<{ cod
   params.append("reservation[adults]", String(reserva.num_hospedes || 1));
   params.append("reservation[children]", "0");
   params.append("reservation[note]", `Sync DG ${new Date().toISOString().slice(0, 10)} ${reserva.observacoes || ""}`.slice(0, 500));
-  params.append("guest[name]", reserva.hospede_nome || "Hóspede Direto");
+  if (guestId) params.append("reservation[guest_id]", guestId);
+    params.append("guest[name]", reserva.hospede_nome || "Hóspede Direto");
 
   const tel = String(reserva.hospede_contato || "").replace(/[^0-9]/g, "");
   if (tel.length >= 10) {
@@ -158,7 +208,7 @@ async function criarReservaHospedin(cookie: string, reserva: any): Promise<{ cod
   const r = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations`, {
     method: "POST",
     body: params.toString(),
-    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded", Origin: HOSPEDIN_BASE, Referer: `${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/new` },
     redirect: "manual",
   });
 
@@ -181,7 +231,7 @@ async function criarReservaHospedin(cookie: string, reserva: any): Promise<{ cod
   const errosMatch = Array.from(body.matchAll(/<(?:div|p|span)[^>]+class="[^"]*(?:error|alert|invalid)[^"]*"[^>]*>([^<]{5,200})</g))
     .map((m) => m[1].trim())
     .filter(Boolean);
-  return { code: null, hospedin_id: null, erro: errosMatch.join(" | ") || `HTTP ${r.status}` };
+  return { code: null, hospedin_id: null, erro: (errosMatch.join(" | ") || `HTTP ${r.status}`) + ` [loc=${loc.slice(0,140)}] [body=${body.replace(/\s+/g, " ").slice(0,200)}]` };
 }
 
 // PARTE B/C: atualiza ou cancela reserva existente
@@ -191,7 +241,9 @@ async function atualizarReservaHospedin(
   hospedinId: string,
   campos: { status?: string; checkin?: string; checkout?: string; cama?: string; valor_total?: number; nome?: string }
 ): Promise<{ ok: boolean; erro?: string }> {
-  const csrf = await pegarCSRFEdit(cookie, hospedinId);
+  const edit = await pegarCSRFEdit(cookie, hospedinId);
+  const csrf = edit.csrf;
+  cookie = edit.cookie;
   if (!csrf) return { ok: false, erro: "CSRF Edit não encontrado (reserva existe?)" };
 
   const params = new URLSearchParams();
@@ -222,7 +274,7 @@ async function atualizarReservaHospedin(
   const r = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/${hospedinId}`, {
     method: "POST",
     body: params.toString(),
-    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded", Origin: HOSPEDIN_BASE, Referer: `${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/${hospedinId}/edit` },
     redirect: "manual",
   });
 
@@ -269,7 +321,7 @@ Deno.serve(async (_req) => {
       .in("canal_codigo", ["direto", "venda_direta", "pre_reserva", "VD", "PR"])
       .is("hospedin_id", null)
       .neq("status", "cancelada")
-      .gte("checkin", new Date(Date.now() - 86400000).toISOString().slice(0, 10))
+      .gte("checkin", new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10))
       .limit(MAX_CREATE);
 
     for (const r of paraCriar || []) {
@@ -403,7 +455,7 @@ Deno.serve(async (_req) => {
     await sb.from("auditoria_sync_hospedin").insert({
       rodou_em: new Date().toISOString(),
       duracao_ms: Date.now() - inicio,
-      stats: { ...stats, direcao: "push_dg_pra_hospedin", versao: "v8_create_update_cancel" },
+      stats: { ...stats, direcao: "push_dg_pra_hospedin", versao: "v8_guest_vinculado" },
       acoes: acoes.slice(0, 50),
       erros,
     });
