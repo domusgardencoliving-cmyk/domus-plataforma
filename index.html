@@ -2992,6 +2992,7 @@ html { scroll-behavior: smooth; }
                 <p class="text-xs sm:text-sm text-domus-texto-suave">Coliving exclusivamente feminino · Abril 2026</p>
               </div>
               <select id="sel-mes-rib" onchange="carregarUnidade('Rib', this.value)" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-domus-borda bg-white text-xs sm:text-sm"></select>
+              <button onclick="abrirRelatorioMensal('Rib')" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-domus-azul text-white text-xs sm:text-sm hover:opacity-90">Relatório</button>
             </div>
 
             <!-- Financeiro Rib -->
@@ -3096,6 +3097,7 @@ html { scroll-behavior: smooth; }
                 <p class="text-xs sm:text-sm text-domus-texto-suave">Coliving feminino + Hostel misto · Abril 2026</p>
               </div>
               <select id="sel-mes-ap" onchange="carregarUnidade('AP', this.value)" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-domus-borda bg-white text-xs sm:text-sm"></select>
+              <button onclick="abrirRelatorioMensal('AP')" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-domus-azul text-white text-xs sm:text-sm hover:opacity-90">Relatório</button>
             </div>
 
             <!-- Sub-navegacao AP: Coliving | Hostel | Obra -->
@@ -12521,6 +12523,7 @@ html { scroll-behavior: smooth; }
       btn.classList.add('active');
       fecharSidebarMobile();
       // Carregar dados especificos da aba
+      if (id === 'dg-dashboard') carregarDashboard();
       if (id === 'dg-notas') ocrCarregarHistorico();
       if (id === 'dg-whatsapp') waInicializar();
       if (id === 'dg-fidelidade') fidelidadeInicializar();
@@ -18006,6 +18009,130 @@ html { scroll-behavior: smooth; }
     // ==========================================
     // UNIDADES — Carrega dados da página de unidade
     // ==========================================
+
+    // ==========================================
+    // RELATORIO MENSAL DE FECHAMENTO (dinamico, por unidade/mes)
+    // ==========================================
+    async function abrirRelatorioMensal(unidade) {
+      const w = window.open('', '_blank'); // abre ANTES dos awaits (popup blocker)
+      if (!w) { alert('Permita pop-ups para abrir o relatório.'); return; }
+      w.document.write('<p style="font-family:sans-serif;padding:40px">Gerando relatório...</p>');
+      try {
+        const key = unidade.toLowerCase();
+        const sel = document.getElementById('sel-mes-' + key);
+        const mesRef = (sel && sel.value) ? sel.value : mesAtual;
+        const [aR, mR] = mesRef.split('-').map(Number);
+        const proxMesRef = new Date(aR, mR, 1).toISOString().slice(0, 10);
+        const mesesNomes = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        const nomeUnidade = unidade === 'Rib' ? 'Domus Ribeirão Claro' : 'Domus Andrade Pertence';
+
+        const { data: lanc, error } = await db.from('lancamentos')
+          .select('tipo, categoria, descricao, valor, data, forma_pagamento, origem')
+          .eq('unidade', unidade)
+          .gte('data', mesRef + '-01')
+          .lt('data', proxMesRef)
+          .order('data', { ascending: true });
+        if (error) throw error;
+
+        const receitas = (lanc || []).filter(l => l.tipo === 'receita');
+        const despesas = (lanc || []).filter(l => l.tipo === 'despesa');
+        const totR = receitas.reduce((s2, l) => s2 + Number(l.valor), 0);
+        const totD = despesas.reduce((s2, l) => s2 + Number(l.valor), 0);
+        const res = totR - totD;
+        const margem = totR > 0 ? Math.round((res / totR) * 100) : 0;
+        const moeda = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const dataBr = d => { const p = String(d).slice(0, 10).split('-'); return p[2] + '/' + p[1]; };
+        const fonteLbl = o => o === 'inter_api' ? 'Inter API' : (o === 'ocr' ? 'Nota (OCR)' : (o || 'manual'));
+        const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        // agregados
+        const porCat = {};
+        despesas.forEach(l => { const c = l.categoria || 'Outros'; porCat[c] = (porCat[c] || 0) + Number(l.valor); });
+        const catOrd = Object.entries(porCat).sort((a, b) => b[1] - a[1]);
+        const porForma = {};
+        receitas.forEach(l => { const f = l.forma_pagamento || 'Não informado'; porForma[f] = (porForma[f] || 0) + Number(l.valor); });
+        const formaOrd = Object.entries(porForma).sort((a, b) => b[1] - a[1]);
+
+        const pill = f => {
+          const fl = String(f || '').toLowerCase();
+          const cls = fl.includes('pix') ? 'pix' : (fl.includes('débito') || fl.includes('debito') ? 'deb' : '');
+          return '<span class="pill ' + cls + '">' + esc(f || '—') + '</span>';
+        };
+        const linhasR = receitas.map(l =>
+          '<tr><td>' + dataBr(l.data) + '</td><td>' + esc(l.descricao) + '</td><td>' + pill(l.forma_pagamento) + '</td><td>' + esc(fonteLbl(l.origem)) + '</td><td class="v">' + moeda(l.valor).replace('R$ ', '') + '</td></tr>').join('');
+        const linhasD = despesas.map(l =>
+          '<tr><td>' + dataBr(l.data) + '</td><td>' + esc(l.descricao) + '</td><td>' + pill(l.forma_pagamento) + '</td><td>' + esc(fonteLbl(l.origem)) + '</td><td class="v">' + moeda(l.valor).replace('R$ ', '') + '</td></tr>').join('');
+
+        const SC = '</scr' + 'ipt>';
+        const hoje = new Date().toLocaleDateString('pt-BR');
+        const html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
+          + '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+          + '<title>Fechamento ' + mesesNomes[mR] + '/' + aR + ' — ' + nomeUnidade + '</title>'
+          + '<link href="https://fonts.googleapis.com/css2?family=Catamaran:wght@300;400;500;700&display=swap" rel="stylesheet">'
+          + '<scr' + 'ipt src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">' + SC
+          + '<style>'
+          + ':root{--tq:#1BA8B8;--tqe:#0A6B75;--creme:#F5EFE6}*{margin:0;padding:0;box-sizing:border-box}'
+          + 'body{font-family:Catamaran,sans-serif;background:var(--creme);color:#24343a;padding:32px 16px}'
+          + '.wrap{max-width:1000px;margin:0 auto}header{text-align:center;margin-bottom:28px}'
+          + 'header h1{color:var(--tqe);font-weight:700;font-size:1.9rem}header p{color:#7a8a90;font-weight:300}'
+          + '.badge{display:inline-block;background:var(--tq);color:#fff;padding:4px 16px;border-radius:99px;font-size:.8rem;margin-top:8px;font-weight:500}'
+          + '.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:28px}'
+          + '.kpi{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 10px rgba(10,107,117,.08)}'
+          + '.kpi .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#8aa0a6;font-weight:500}'
+          + '.kpi .val{font-size:1.7rem;font-weight:700;margin-top:4px}'
+          + '.kpi.ent .val{color:var(--tq)}.kpi.sai .val{color:#c0653a}'
+          + '.kpi.res{background:var(--tqe)}.kpi.res .lbl{color:#bfe3e8}.kpi.res .val{color:#fff}'
+          + '.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px}'
+          + '@media(max-width:760px){.grid2{grid-template-columns:1fr}}'
+          + '.card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 2px 10px rgba(10,107,117,.08);margin-bottom:14px}'
+          + '.card h3{color:var(--tqe);font-size:1rem;margin-bottom:14px;font-weight:700}'
+          + 'table{width:100%;border-collapse:collapse;font-size:.85rem}'
+          + 'th{text-align:left;color:#8aa0a6;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;border-bottom:2px solid var(--creme)}'
+          + 'td{padding:8px 10px;border-bottom:1px solid var(--creme)}td.v{text-align:right;font-weight:600;white-space:nowrap}'
+          + '.ent td.v{color:var(--tqe)}.sai td.v{color:#c0653a}'
+          + '.pill{display:inline-block;font-size:.68rem;padding:2px 9px;border-radius:99px;background:var(--creme);color:var(--tqe);font-weight:500;white-space:nowrap}'
+          + '.pill.pix{background:#e3f6ec;color:#1c7a4d}.pill.deb{background:#fdf0e4;color:#a3692e}'
+          + 'tfoot td{font-weight:700;color:var(--tqe);border-top:2px solid var(--tq)}'
+          + 'footer{text-align:center;color:#9bb0b5;font-size:.75rem;margin-top:26px}canvas{max-height:260px}'
+          + '.btn-print{position:fixed;top:18px;right:18px;background:var(--tqe);color:#fff;border:0;border-radius:99px;padding:10px 22px;font-family:Catamaran;font-weight:700;font-size:.85rem;cursor:pointer;box-shadow:0 4px 14px rgba(10,107,117,.3)}'
+          + '@media print{.btn-print{display:none}body{background:#fff}}'
+          + '</style></head><body>'
+          + '<button class="btn-print" onclick="window.print()">Imprimir / PDF</button>'
+          + '<div class="wrap"><header><h1>' + nomeUnidade + '</h1>'
+          + '<p>Fechamento financeiro mensal · DG Gestão</p>'
+          + '<span class="badge">' + mesesNomes[mR].toUpperCase() + ' ' + aR + '</span></header>'
+          + '<div class="kpis">'
+          + '<div class="kpi ent"><div class="lbl">Entradas</div><div class="val">' + moeda(totR) + '</div></div>'
+          + '<div class="kpi sai"><div class="lbl">Saídas</div><div class="val">' + moeda(totD) + '</div></div>'
+          + '<div class="kpi res"><div class="lbl">Resultado</div><div class="val">' + (res >= 0 ? '+' : '') + moeda(res) + '</div></div>'
+          + '<div class="kpi"><div class="lbl">Margem</div><div class="val" style="color:var(--tq)">' + margem + '%</div></div>'
+          + '</div>'
+          + '<div class="grid2"><div class="card"><h3>Saídas por categoria</h3><canvas id="gDesp"></canvas></div>'
+          + '<div class="card"><h3>Entradas por forma de pagamento</h3><canvas id="gForma"></canvas></div></div>'
+          + '<div class="card"><h3>Entradas — ' + receitas.length + ' lançamentos</h3><table class="ent">'
+          + '<thead><tr><th>Data</th><th>Descrição</th><th>Forma</th><th>Fonte</th><th style="text-align:right">Valor</th></tr></thead>'
+          + '<tbody>' + (linhasR || '<tr><td colspan="5">Sem lançamentos</td></tr>') + '</tbody>'
+          + '<tfoot><tr><td colspan="4">TOTAL ENTRADAS</td><td class="v">' + moeda(totR) + '</td></tr></tfoot></table></div>'
+          + '<div class="card"><h3>Saídas — ' + despesas.length + ' lançamentos</h3><table class="sai">'
+          + '<thead><tr><th>Data</th><th>Descrição</th><th>Forma</th><th>Fonte</th><th style="text-align:right">Valor</th></tr></thead>'
+          + '<tbody>' + (linhasD || '<tr><td colspan="5">Sem lançamentos</td></tr>') + '</tbody>'
+          + '<tfoot><tr><td colspan="4">TOTAL SAÍDAS</td><td class="v">' + moeda(totD) + '</td></tr></tfoot></table></div>'
+          + '<footer>Domus Garden Coliving · gerado em ' + hoje + ' · fonte: DG Gestão</footer></div>'
+          + '<scr' + 'ipt>'
+          + 'const cores=["#0A6B75","#1BA8B8","#5BC4CF","#8ED8DF","#C0653A","#D98E63","#E8B79A","#A3692E","#6b8e94","#94b8be","#bfd9dd","#d9ebee","#86a8ae"];'
+          + 'new Chart(document.getElementById("gDesp"),{type:"doughnut",data:{labels:' + JSON.stringify(catOrd.map(c => c[0])) + ',datasets:[{data:' + JSON.stringify(catOrd.map(c => Math.round(c[1] * 100) / 100)) + ',backgroundColor:cores,borderColor:"#F5EFE6",borderWidth:2}]},options:{plugins:{legend:{position:"right",labels:{font:{family:"Catamaran",size:11},boxWidth:12}}}}});'
+          + 'new Chart(document.getElementById("gForma"),{type:"bar",data:{labels:' + JSON.stringify(formaOrd.map(f => f[0])) + ',datasets:[{data:' + JSON.stringify(formaOrd.map(f => Math.round(f[1] * 100) / 100)) + ',backgroundColor:["#0A6B75","#1BA8B8","#5BC4CF","#8ED8DF"],borderRadius:10}]},options:{plugins:{legend:{display:false}},scales:{y:{ticks:{font:{family:"Catamaran"},callback:v=>"R$ "+(v/1000)+"k"}},x:{ticks:{font:{family:"Catamaran",size:13}}}}}});'
+          + SC + '</body></html>';
+
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+      } catch (err) {
+        console.error('[Relatório]', err);
+        try { w.document.body.innerHTML = '<p style="font-family:sans-serif;padding:40px;color:#c0392b">Erro ao gerar relatório: ' + (err.message || err) + '</p>'; } catch (_) {}
+      }
+    }
+
     async function carregarUnidade(unidade, mesEscolhido) {
       try {
         const key = unidade.toLowerCase(); // 'rib' ou 'ap'
@@ -19137,4 +19264,3 @@ Encher de novo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-bord
 
 </body>
 </html>
-         
