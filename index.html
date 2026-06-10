@@ -13528,11 +13528,21 @@ html { scroll-behavior: smooth; }
 
     async function carregarDashboard() {
       try {
+        // Mês de referência = mês atual, ou o último mês COM dados (fallback)
+        let mesRefDash = mesAtual;
+        const { data: ultimoLanc } = await db.from('lancamentos')
+          .select('data').order('data', { ascending: false }).limit(1);
+        if (ultimoLanc && ultimoLanc.length && String(ultimoLanc[0].data).slice(0,7) < mesAtual) {
+          mesRefDash = String(ultimoLanc[0].data).slice(0,7);
+        }
+        const [aD, mD] = mesRefDash.split('-').map(Number);
+        const proxMesDash = new Date(aD, mD, 1).toISOString().slice(0,10);
+
         // Financeiro do mês por unidade
         const { data: lancamentos } = await db.from('lancamentos')
           .select('tipo, unidade, valor, data')
-          .gte('data', mesAtual + '-01')
-          .lt('data', mesProxPrimeiro);
+          .gte('data', mesRefDash + '-01')
+          .lt('data', proxMesDash);
 
         const totais = { Rib: { receita: 0, despesa: 0 }, AP: { receita: 0, despesa: 0 } };
         (lancamentos || []).forEach(l => {
@@ -13543,7 +13553,7 @@ html { scroll-behavior: smooth; }
 
         // Sempre mostra o mês atual no subtítulo
         const mesesNome = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-        const mesDisplay = mesesNome[_agora.getMonth() + 1] + ' ' + _agora.getFullYear();
+        const mesDisplay = mesesNome[mD] + ' ' + aD;
         document.querySelectorAll('#dg-dashboard .text-sm.text-domus-texto-suave').forEach(el => {
           if (el.textContent.includes('Selecione') || el.textContent.includes('Dados de')) el.textContent = 'Dados de ' + mesDisplay;
         });
