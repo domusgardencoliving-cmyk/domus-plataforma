@@ -2839,8 +2839,12 @@
           .not('status', 'in', '(cancelada,rescindida)')
           .or('nao_contabilizar.is.null,nao_contabilizar.eq.false');
 
-        const ocupados = (reservas || []).length;
-        const disponiveis = 13 - ocupados;
+        // FIX 10/06: contar CAMAS unicas ocupadas na NOITE de hoje (checkout > hoje),
+        // nao reservas. Cama com troca no dia (sai hoje + entra hoje) contava 2x,
+        // e quem sai hoje nao ocupa a noite de hoje (cama vendavel).
+        const camasOcupadasHoje = new Set((reservas || []).filter(r => String(r.checkout) > hoje).map(r => r.cama));
+        const ocupados = camasOcupadasHoje.size;
+        const disponiveis = Math.max(0, 13 - ocupados);
 
         document.getElementById('statusAvailable').textContent = disponiveis;
         document.getElementById('statusOccupied').textContent = ocupados;
