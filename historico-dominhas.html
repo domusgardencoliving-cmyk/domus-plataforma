@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Histórico de Acesso · Portal Dominhas · Domus Garden</title>
+  <meta name="theme-color" content="#008B9C" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👀</text></svg>" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: {
+      'domus-azul':         '#008B9C',
+      'domus-azul-escuro':  '#0A3142',
+      'domus-azul-claro':   '#4DC5D0',
+      'domus-creme':        '#FFF8F0',
+      'domus-borda':        '#E5E5E5',
+      'domus-texto':        '#222',
+      'domus-texto-suave':  '#717171',
+      'domus-rosa':         '#E5707D',
+      'domus-dourado':      '#C9A961'
+    }, fontFamily: { serif: ['Cormorant Garamond', 'serif'] } }}};
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { background:#FFF8F0; font-family: system-ui,-apple-system,'Segoe UI',sans-serif; }
+    .badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
+    .badge-app { background:#DCFCE7; color:#166534; }
+    .badge-navegador { background:#DBEAFE; color:#1E40AF; }
+    .badge-ativo { background:#FCE7F3; color:#9D174D; }
+    .badge-restaurada { background:#F3F4F6; color:#374151; }
+    .badge-nunca { background:#FEE2E2; color:#991B1B; }
+    .row:hover { background:#F0F9FF; }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="min-h-screen">
+
+  <!-- HEADER -->
+  <header class="bg-domus-azul text-white px-6 py-5 shadow-md">
+    <div class="max-w-7xl mx-auto flex items-center gap-3">
+      <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">👀</div>
+      <div class="flex-1">
+        <h1 class="font-serif text-2xl leading-tight">Histórico de acesso · Portal Dominhas</h1>
+        <p class="text-xs text-white/80">Quem acessou o portal, quando e por onde — atualizado em tempo real</p>
+      </div>
+      <button onclick="carregar()" class="px-3 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium">↻ Atualizar</button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-6 space-y-6">
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="kpis">
+      <div class="bg-white rounded-2xl p-4 border border-domus-borda/30">
+        <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold">Moradoras ativas</p>
+        <p class="text-3xl font-bold text-domus-azul-escuro mt-1" id="kpi-total">—</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-domus-borda/30">
+        <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold">Já entraram</p>
+        <p class="text-3xl font-bold text-green-600 mt-1" id="kpi-entraram">—</p>
+        <p class="text-[10px] text-domus-texto-suave mt-1" id="kpi-entraram-pct">—</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-2 border-red-300 bg-red-50">
+        <p class="text-[10px] text-red-700 uppercase tracking-wider font-semibold">Nunca entraram ⚠️</p>
+        <p class="text-3xl font-bold text-red-700 mt-1" id="kpi-nunca">—</p>
+        <p class="text-[10px] text-red-700 mt-1">precisam de lembrete</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-domus-borda/30">
+        <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold">Acessos hoje</p>
+        <p class="text-3xl font-bold text-domus-azul mt-1" id="kpi-hoje">—</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-domus-borda/30">
+        <p class="text-[10px] text-domus-texto-suave uppercase tracking-wider font-semibold">Últimos 7 dias</p>
+        <p class="text-3xl font-bold text-domus-azul mt-1" id="kpi-7d">—</p>
+      </div>
+    </div>
+
+    <!-- ALERTA: NUNCA LOGARAM -->
+    <div id="nunca-wrap" class="hidden bg-amber-50 border-2 border-amber-300 rounded-2xl p-5">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-2xl">⚠️</span>
+        <h2 class="font-serif text-xl text-amber-900">Moradoras que ainda não acessaram o Portal</h2>
+      </div>
+      <p class="text-sm text-amber-800 mb-3">Vale mandar um zap pra elas lembrarem — segue a lista:</p>
+      <div id="nunca-list" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+    </div>
+
+    <!-- TOP MORADORAS -->
+    <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-serif text-lg text-domus-azul-escuro">Top 5 mais ativas</h2>
+        <p class="text-[11px] text-domus-texto-suave">Quem mais usa o Portal</p>
+      </div>
+      <div id="top-list" class="space-y-2"></div>
+    </div>
+
+    <!-- FILTROS + LISTA CRONOLOGICA -->
+    <div class="bg-white rounded-2xl border border-domus-borda/30 p-5">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h2 class="font-serif text-lg text-domus-azul-escuro">Acessos recentes</h2>
+        <div class="flex items-center gap-2 flex-wrap text-sm">
+          <select id="filtro-unidade" onchange="renderTabela()" class="px-3 py-1.5 rounded-lg border border-domus-borda bg-white text-sm">
+            <option value="">Todas as casas</option>
+            <option value="AP">Andrade</option>
+            <option value="Rib">Ribeirão Claro</option>
+          </select>
+          <select id="filtro-moradora" onchange="renderTabela()" class="px-3 py-1.5 rounded-lg border border-domus-borda bg-white text-sm">
+            <option value="">Todas as moradoras</option>
+          </select>
+          <select id="filtro-periodo" onchange="renderTabela()" class="px-3 py-1.5 rounded-lg border border-domus-borda bg-white text-sm">
+            <option value="7">Últimos 7 dias</option>
+            <option value="1">Hoje</option>
+            <option value="30">Últimos 30 dias</option>
+            <option value="0">Tudo</option>
+          </select>
+        </div>
+      </div>
+      <div id="tabela-wrap" class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-[11px] text-domus-texto-suave uppercase tracking-wider border-b border-domus-borda">
+              <th class="py-2 pr-3">Quando</th>
+              <th class="py-2 pr-3">Quem</th>
+              <th class="py-2 pr-3">Casa</th>
+              <th class="py-2 pr-3">Dispositivo</th>
+              <th class="py-2 pr-3">Navegador</th>
+              <th class="py-2 pr-3">App?</th>
+              <th class="py-2 pr-3">Origem</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-body"></tbody>
+        </table>
+      </div>
+      <p id="tabela-vazio" class="hidden text-center text-domus-texto-suave py-6 text-sm">Nenhum acesso pra esses filtros.</p>
+      <p class="text-[11px] text-domus-texto-suave mt-3 text-center" id="tabela-count">—</p>
+    </div>
+
+    <!-- FOOTER -->
+    <p class="text-[11px] text-domus-texto-suave text-center py-4">Domus Garden · DG Gestão · Histórico de acesso ao Portal Dominhas</p>
+  </main>
+
+  <script>
+    const SUPABASE_URL  = 'https://motwhfbpundrhvuwjntw.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdHdoZmJwdW5kcmh2dXdqbnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODA4NTksImV4cCI6MjA5MTg1Njg1OX0.pwGUjK7PGWlJ-0uue_QIN6HtWSH-MWZnKMOzxqjfg6Q';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    let _acessos = [];      // todos os acessos
+    let _moradores = [];    // moradoras ativas
+    let _porMoradora = {};  // morador_id => { acessos:[], primeiro, ultimo, total }
+
+    async function carregar() {
+      try {
+        // Moradoras ativas
+        const { data: mors } = await db.from('moradores')
+          .select('id, nome, email, unidade, quarto, contato, status')
+          .or('status.is.null,status.eq.ativo,status.eq.ativa')
+          .order('nome');
+        _moradores = mors || [];
+
+        // Todos os acessos (limit alto)
+        const { data: acs } = await db.from('dominhas_acessos')
+          .select('id, morador_id, nome, email, unidade, quarto, acessado_em, dispositivo, sistema, navegador, instalado_app, origem')
+          .order('acessado_em', { ascending: false })
+          .limit(2000);
+        _acessos = acs || [];
+
+        // Agrupa por moradora
+        _porMoradora = {};
+        _acessos.forEach(a => {
+          const k = a.morador_id || ('email:' + (a.email||''));
+          if (!_porMoradora[k]) _porMoradora[k] = { acessos: [], primeiro: a.acessado_em, ultimo: a.acessado_em, total: 0, nome: a.nome, unidade: a.unidade };
+          _porMoradora[k].acessos.push(a);
+          _porMoradora[k].total++;
+          if (a.acessado_em < _porMoradora[k].primeiro) _porMoradora[k].primeiro = a.acessado_em;
+          if (a.acessado_em > _porMoradora[k].ultimo) _porMoradora[k].ultimo = a.acessado_em;
+        });
+
+        renderKPIs();
+        renderNuncaLogaram();
+        renderTopAtivas();
+        popularFiltroMoradoras();
+        renderTabela();
+      } catch (e) {
+        console.error('erro carregar:', e);
+        alert('Erro ao carregar histórico: ' + (e.message || e));
+      }
+    }
+
+    function renderKPIs() {
+      const totalAtivas = _moradores.length;
+      const idsLogaram = new Set(_acessos.map(a => a.morador_id).filter(Boolean));
+      const entraram = _moradores.filter(m => idsLogaram.has(m.id)).length;
+      const nunca = totalAtivas - entraram;
+
+      const hoje = new Date().toISOString().slice(0,10);
+      const acessosHoje = _acessos.filter(a => (a.acessado_em||'').slice(0,10) === hoje).length;
+
+      const seteDiasAtras = new Date(); seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+      const seteIso = seteDiasAtras.toISOString();
+      const acessos7d = _acessos.filter(a => a.acessado_em >= seteIso).length;
+
+      document.getElementById('kpi-total').textContent = totalAtivas;
+      document.getElementById('kpi-entraram').textContent = entraram;
+      document.getElementById('kpi-entraram-pct').textContent = totalAtivas ? Math.round(entraram/totalAtivas*100) + '% das ativas' : '';
+      document.getElementById('kpi-nunca').textContent = nunca;
+      document.getElementById('kpi-hoje').textContent = acessosHoje;
+      document.getElementById('kpi-7d').textContent = acessos7d;
+    }
+
+    function renderNuncaLogaram() {
+      const idsLogaram = new Set(_acessos.map(a => a.morador_id).filter(Boolean));
+      const nunca = _moradores.filter(m => !idsLogaram.has(m.id));
+      const wrap = document.getElementById('nunca-wrap');
+      const list = document.getElementById('nunca-list');
+      if (!nunca.length) { wrap.classList.add('hidden'); return; }
+      wrap.classList.remove('hidden');
+      list.innerHTML = nunca.map(m => {
+        const tel = (m.contato || '').replace(/\D/g,'');
+        const wa = tel ? '<a href="https://wa.me/55' + tel + '" target="_blank" class="ml-auto px-2 py-1 rounded-lg bg-green-600 text-white text-[10px] font-medium hover:bg-green-700">💬 zap</a>' : '';
+        const casa = m.unidade === 'Rib' ? 'Ribeirão Claro' : 'Andrade';
+        return '<div class="flex items-center gap-2 bg-white border border-amber-200 rounded-lg px-3 py-2">'
+          + '<div class="flex-1 min-w-0">'
+          + '<p class="text-sm font-semibold text-amber-900 truncate">' + (m.nome || '?') + '</p>'
+          + '<p class="text-[11px] text-amber-700">' + casa + ' · Quarto ' + (m.quarto || '?') + '</p>'
+          + '</div>' + wa + '</div>';
+      }).join('');
+    }
+
+    function renderTopAtivas() {
+      const top = Object.values(_porMoradora)
+        .filter(x => x.total > 0)
+        .sort((a,b) => b.total - a.total)
+        .slice(0, 5);
+      const wrap = document.getElementById('top-list');
+      if (!top.length) { wrap.innerHTML = '<p class="text-sm text-domus-texto-suave">Sem dados ainda.</p>'; return; }
+      const maxAcc = top[0].total;
+      wrap.innerHTML = top.map((t, i) => {
+        const casa = t.unidade === 'Rib' ? 'Ribeirão' : 'Andrade';
+        const pct = Math.round(t.total/maxAcc*100);
+        const ult = tempoRelativo(t.ultimo);
+        const medalha = ['🥇','🥈','🥉','4️⃣','5️⃣'][i];
+        return '<div class="flex items-center gap-3">'
+          + '<span class="text-xl">' + medalha + '</span>'
+          + '<div class="flex-1 min-w-0">'
+          + '<div class="flex items-baseline justify-between gap-2">'
+          + '<p class="text-sm font-semibold text-domus-azul-escuro truncate">' + (t.nome || '?') + '</p>'
+          + '<p class="text-[11px] text-domus-texto-suave whitespace-nowrap">' + t.total + ' acesso' + (t.total>1?'s':'') + ' · último ' + ult + '</p>'
+          + '</div>'
+          + '<div class="relative w-full bg-gray-100 rounded-full h-1.5 mt-1">'
+          + '<div class="absolute top-0 left-0 h-1.5 rounded-full bg-domus-azul" style="width:' + pct + '%"></div>'
+          + '</div>'
+          + '<p class="text-[10px] text-domus-texto-suave mt-0.5">' + casa + '</p>'
+          + '</div></div>';
+      }).join('');
+    }
+
+    function popularFiltroMoradoras() {
+      const sel = document.getElementById('filtro-moradora');
+      const nomes = [...new Set(_moradores.map(m => m.nome).filter(Boolean))].sort();
+      sel.innerHTML = '<option value="">Todas as moradoras</option>'
+        + nomes.map(n => '<option value="' + n.replace(/"/g,'&quot;') + '">' + n + '</option>').join('');
+    }
+
+    function renderTabela() {
+      const fUni = document.getElementById('filtro-unidade').value;
+      const fMor = document.getElementById('filtro-moradora').value;
+      const fPer = parseInt(document.getElementById('filtro-periodo').value, 10);
+
+      let lista = _acessos.slice();
+      if (fUni) lista = lista.filter(a => a.unidade === fUni);
+      if (fMor) lista = lista.filter(a => a.nome === fMor);
+      if (fPer > 0) {
+        const dt = new Date(); dt.setDate(dt.getDate() - fPer);
+        const iso = dt.toISOString();
+        lista = lista.filter(a => a.acessado_em >= iso);
+      }
+      lista = lista.slice(0, 200);
+
+      const body = document.getElementById('tabela-body');
+      const vazio = document.getElementById('tabela-vazio');
+      if (!lista.length) {
+        body.innerHTML = '';
+        vazio.classList.remove('hidden');
+        document.getElementById('tabela-count').textContent = '0 acessos';
+        return;
+      }
+      vazio.classList.add('hidden');
+
+      body.innerHTML = lista.map(a => {
+        const casa = a.unidade === 'Rib' ? 'Ribeirão Claro' : (a.unidade === 'AP' ? 'Andrade' : '—');
+        const icone = a.sistema === 'iOS' ? '🍎' : a.sistema === 'Android' ? '📱' : (a.sistema === 'Windows' || a.sistema === 'macOS' || a.sistema === 'Linux' ? '💻' : '❓');
+        const appBadge = a.instalado_app ? '<span class="badge badge-app">📲 instalado</span>' : '<span class="text-[11px] text-domus-texto-suave">navegador</span>';
+        const origemBadge = a.origem === 'login_ativo'
+          ? '<span class="badge badge-ativo">🔑 login</span>'
+          : '<span class="badge badge-restaurada">↻ sessão</span>';
+        return '<tr class="row border-b border-domus-borda/30">'
+          + '<td class="py-2 pr-3 text-domus-azul-escuro whitespace-nowrap">' + formatarData(a.acessado_em) + '</td>'
+          + '<td class="py-2 pr-3 font-medium text-domus-azul-escuro">' + (a.nome || '—') + '</td>'
+          + '<td class="py-2 pr-3 text-domus-texto-suave">' + casa + (a.quarto ? ' · Q' + a.quarto : '') + '</td>'
+          + '<td class="py-2 pr-3"><span class="mr-1">' + icone + '</span>' + (a.dispositivo || '—') + '</td>'
+          + '<td class="py-2 pr-3"><span class="badge badge-navegador">' + (a.navegador || '—') + '</span></td>'
+          + '<td class="py-2 pr-3">' + appBadge + '</td>'
+          + '<td class="py-2 pr-3">' + origemBadge + '</td>'
+          + '</tr>';
+      }).join('');
+      document.getElementById('tabela-count').textContent = lista.length + (lista.length === 200 ? ' (mostrando 200 mais recentes)' : ' acessos');
+    }
+
+    function formatarData(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      const hoje = new Date();
+      const ontem = new Date(); ontem.setDate(ontem.getDate() - 1);
+      const isHoje = d.toDateString() === hoje.toDateString();
+      const isOntem = d.toDateString() === ontem.toDateString();
+      const hora = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+      if (isHoje) return 'Hoje · ' + hora;
+      if (isOntem) return 'Ontem · ' + hora;
+      const dia = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+      return dia + ' · ' + hora;
+    }
+
+    function tempoRelativo(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      const agora = new Date();
+      const ms = agora - d;
+      const min = Math.floor(ms / 60000);
+      if (min < 1) return 'agora';
+      if (min < 60) return 'há ' + min + ' min';
+      const h = Math.floor(min / 60);
+      if (h < 24) return 'há ' + h + 'h';
+      const dias = Math.floor(h / 24);
+      if (dias === 1) return 'ontem';
+      if (dias < 30) return 'há ' + dias + ' dias';
+      const meses = Math.floor(dias / 30);
+      return 'há ' + meses + (meses === 1 ? ' mês' : ' meses');
+    }
+
+    // Auto-refresh a cada 60s
+    carregar();
+    setInterval(carregar, 60000);
+  </script>
+</body>
+</html>
