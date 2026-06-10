@@ -12,7 +12,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 const HOSPEDIN_BASE = "https://pms.hospedin.com";
 const HOSPEDIN_SLUG = "domus-garden-coliving-894c75e4-0dae-4a75-8dca-9a8ee53a2369";
 
-const MAX_RESERVAS_POR_EXECUCAO = 30;
+const MAX_RESERVAS_POR_EXECUCAO = 150; // era 30: reservas alem da 30a posicao NUNCA eram processadas (furo do Fabrizio 10/06)
 const TIMEOUT_LOGIN_MS = 20000;
 const TIMEOUT_FETCH_LISTA_MS = 60000;
 
@@ -222,6 +222,14 @@ Deno.serve(async (_req) => {
       if (r.hospedin_id) porHospedinId[String(r.hospedin_id)] = r;
       if (r.codigo_externo) porCodigo[r.codigo_externo] = r;
     }
+
+    // PRIORIDADE (10/06/2026): reservas NOVAS (sem match no DG) processam primeiro.
+    // Antes a ordem era a da API e o corte de 30 deixava novas de fora pra sempre.
+    elegiveis.sort((a: any, b: any) => {
+      const aExiste = (porHospedinId[String(a.id)] || (a.code && porCodigo[a.code])) ? 1 : 0;
+      const bExiste = (porHospedinId[String(b.id)] || (b.code && porCodigo[b.code])) ? 1 : 0;
+      return aExiste - bExiste;
+    });
 
     ondeParou = "loop_processamento";
     console.log(`[main] loop (limite ${MAX_RESERVAS_POR_EXECUCAO})`);
