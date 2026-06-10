@@ -273,7 +273,7 @@ Deno.serve(async (_req) => {
       .in("canal_codigo", ["direto", "venda_direta", "pre_reserva", "VD", "PR"])
       .is("hospedin_id", null)
       .neq("status", "cancelada")
-      .gte("checkin", new Date(Date.now() - 86400000).toISOString().slice(0, 10))
+      .gte("checkin", new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10))
       .limit(MAX_CREATE);
 
     for (const r of paraCriar || []) {
@@ -407,7 +407,7 @@ Deno.serve(async (_req) => {
     await sb.from("auditoria_sync_hospedin").insert({
       rodou_em: new Date().toISOString(),
       duracao_ms: Date.now() - inicio,
-      stats: { ...stats, direcao: "push_dg_pra_hospedin", versao: "v8_fix302_origin" },
+      stats: { ...stats, direcao: "push_dg_pra_hospedin", versao: "v8_fix302_origin_janela3d" },
       acoes: acoes.slice(0, 50),
       erros,
     });
