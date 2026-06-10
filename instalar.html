@@ -265,8 +265,8 @@
       atualizarQR();
 
       // No iOS, redireciona pra própria página da app pra que o "Adicionar à tela inicial" peque o ícone certo
-      const plat = detectarPlataforma();
-      if (plat === 'ios' || plat === 'android') {
+      const platTroca = detectarPlataforma();
+      if (platTroca === 'ios' || platTroca === 'android') {
         // Não redireciona automaticamente, só mostra as instruções
       }
 
