@@ -101,18 +101,17 @@ function fmtBR(iso: string): string {
 }
 
 // Pega CSRF da página /edit da reserva
-async function pegarCSRFEdit(cookie: string, hospedinId: string): Promise<{ csrf: string | null; cookie: string }> {
+async function pegarCSRFEdit(cookie: string, hospedinId: string): Promise<string | null> {
   const r = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/${hospedinId}/edit`, {
     headers: { Cookie: cookie, accept: "text/html" },
   });
-  cookie = mergeCookies(cookie, r.headers.get("set-cookie"));
   if (!r.ok) {
     console.log(`[csrf-edit] HTTP ${r.status} pra ${hospedinId}`);
-    return { csrf: null, cookie };
+    return null;
   }
   const html = await r.text();
   const m = html.match(/name="authenticity_token"[^>]*value="([^"]+)"/);
-  return { csrf: m ? m[1] : null, cookie };
+  return m ? m[1] : null;
 }
 
 // PARTE A: cria reserva nova
@@ -127,7 +126,6 @@ async function criarReservaHospedin(cookie: string, reserva: any): Promise<{ cod
   const rNew = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/new`, {
     headers: { Cookie: cookie, accept: "text/html" },
   });
-  cookie = mergeCookies(cookie, rNew.headers.get("set-cookie"));
   const newHtml = await rNew.text();
   const csrf = newHtml.match(/name="authenticity_token"[^>]*value="([^"]+)"/)?.[1];
   if (!csrf) return { code: null, hospedin_id: null, erro: "CSRF Nova Reserva não encontrado" };
@@ -160,7 +158,7 @@ async function criarReservaHospedin(cookie: string, reserva: any): Promise<{ cod
   const r = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations`, {
     method: "POST",
     body: params.toString(),
-    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded", Origin: HOSPEDIN_BASE, Referer: `${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/new` },
+    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded" },
     redirect: "manual",
   });
 
@@ -183,7 +181,7 @@ async function criarReservaHospedin(cookie: string, reserva: any): Promise<{ cod
   const errosMatch = Array.from(body.matchAll(/<(?:div|p|span)[^>]+class="[^"]*(?:error|alert|invalid)[^"]*"[^>]*>([^<]{5,200})</g))
     .map((m) => m[1].trim())
     .filter(Boolean);
-  return { code: null, hospedin_id: null, erro: (errosMatch.join(" | ") || `HTTP ${r.status}`) + ` [loc=${loc.slice(0,140)}] [body=${body.replace(/\s+/g, " ").slice(0,200)}]` };
+  return { code: null, hospedin_id: null, erro: errosMatch.join(" | ") || `HTTP ${r.status}` };
 }
 
 // PARTE B/C: atualiza ou cancela reserva existente
@@ -193,9 +191,7 @@ async function atualizarReservaHospedin(
   hospedinId: string,
   campos: { status?: string; checkin?: string; checkout?: string; cama?: string; valor_total?: number; nome?: string }
 ): Promise<{ ok: boolean; erro?: string }> {
-  const edit = await pegarCSRFEdit(cookie, hospedinId);
-  const csrf = edit.csrf;
-  cookie = edit.cookie;
+  const csrf = await pegarCSRFEdit(cookie, hospedinId);
   if (!csrf) return { ok: false, erro: "CSRF Edit não encontrado (reserva existe?)" };
 
   const params = new URLSearchParams();
@@ -226,7 +222,7 @@ async function atualizarReservaHospedin(
   const r = await fetch(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/${hospedinId}`, {
     method: "POST",
     body: params.toString(),
-    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded", Origin: HOSPEDIN_BASE, Referer: `${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/${hospedinId}/edit` },
+    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded" },
     redirect: "manual",
   });
 
@@ -273,7 +269,7 @@ Deno.serve(async (_req) => {
       .in("canal_codigo", ["direto", "venda_direta", "pre_reserva", "VD", "PR"])
       .is("hospedin_id", null)
       .neq("status", "cancelada")
-      .gte("checkin", new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10))
+      .gte("checkin", new Date(Date.now() - 86400000).toISOString().slice(0, 10))
       .limit(MAX_CREATE);
 
     for (const r of paraCriar || []) {
@@ -407,7 +403,7 @@ Deno.serve(async (_req) => {
     await sb.from("auditoria_sync_hospedin").insert({
       rodou_em: new Date().toISOString(),
       duracao_ms: Date.now() - inicio,
-      stats: { ...stats, direcao: "push_dg_pra_hospedin", versao: "v8_fix302_origin_janela3d" },
+      stats: { ...stats, direcao: "push_dg_pra_hospedin", versao: "v8_create_update_cancel" },
       acoes: acoes.slice(0, 50),
       erros,
     });
