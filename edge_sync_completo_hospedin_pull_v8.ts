@@ -245,7 +245,14 @@ Deno.serve(async (_req) => {
         const rawGuest = String(h.guest_name || (h.guest && h.guest.name) || "").trim();
         let nomeReal = nome;
         if (!rawGuest && /^[A-Z]{2}:\d+/.test(nomeReal)) {
-          nomeReal = nomeReal.split(" - ").slice(2).join(" - ").trim();
+          // remove o prefixo "VD:001234 - " e depois o nome do lugar (que pode conter " - ")
+          nomeReal = nomeReal.replace(/^[A-Z]{2}:\d+\s*-\s*/, "");
+          const placeNome = String(h.place_name || "").trim();
+          if (placeNome && nomeReal.startsWith(placeNome)) {
+            nomeReal = nomeReal.slice(placeNome.length).replace(/^\s*-\s*/, "").trim();
+          }
+          // sobras tipo "Cama 7 -" ou só hifens nao sao nome
+          if (/^(cama\s*\d*\s*-?\s*)$/i.test(nomeReal) || /^[-\s]*$/.test(nomeReal)) nomeReal = "";
         }
         const nomeEhReal = !!nomeReal && !/^[A-Z]{2}:\d+/.test(nomeReal);
         const tel = (h.guest_phone || h.guest?.phone || "").trim();
