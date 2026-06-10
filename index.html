@@ -3050,6 +3050,38 @@ html { scroll-behavior: smooth; }
                 </div>
               </div>
             </div>
+
+            <!-- ===== Fechamento do mês (dinâmico — espelho do relatório) ===== -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
+              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
+                <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Saídas por categoria</h3>
+                <div class="relative h-64"><canvas id="uni-rib-chart-cat"></canvas></div>
+              </div>
+              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
+                <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Entradas por forma de pagamento</h3>
+                <div class="relative h-64"><canvas id="uni-rib-chart-forma"></canvas></div>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
+              <h3 id="uni-rib-ent-titulo" class="font-serif text-lg text-domus-azul-escuro mb-3">Entradas</h3>
+              <div class="overflow-x-auto"><table class="w-full text-sm">
+                <thead><tr class="text-left text-xs uppercase tracking-wider text-domus-texto-suave border-b border-domus-borda"><th class="py-2 pr-3">Data</th><th class="py-2 pr-3">Quem</th><th class="py-2 pr-3">Forma</th><th class="py-2 pr-3">Fonte</th><th class="py-2 text-right">Valor</th></tr></thead>
+                <tbody id="uni-rib-ent-corpo"><tr><td colspan="5" class="py-3 text-domus-texto-suave">carregando...</td></tr></tbody>
+                <tfoot><tr class="font-bold text-domus-azul-escuro"><td class="py-2 border-t-2 border-domus-azul" colspan="4">TOTAL ENTRADAS</td><td id="uni-rib-ent-total" class="py-2 text-right border-t-2 border-domus-azul"></td></tr></tfoot>
+              </table></div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
+              <h3 id="uni-rib-sai-titulo" class="font-serif text-lg text-domus-azul-escuro mb-3">Saídas</h3>
+              <div class="overflow-x-auto"><table class="w-full text-sm">
+                <thead><tr class="text-left text-xs uppercase tracking-wider text-domus-texto-suave border-b border-domus-borda"><th class="py-2 pr-3">Data</th><th class="py-2 pr-3">O quê</th><th class="py-2 pr-3">Forma</th><th class="py-2 pr-3">Fonte</th><th class="py-2 text-right">Valor</th></tr></thead>
+                <tbody id="uni-rib-sai-corpo"><tr><td colspan="5" class="py-3 text-domus-texto-suave">carregando...</td></tr></tbody>
+                <tfoot><tr class="font-bold text-domus-azul-escuro"><td class="py-2 border-t-2 border-domus-azul" colspan="4">TOTAL SAÍDAS</td><td id="uni-rib-sai-total" class="py-2 text-right border-t-2 border-domus-azul"></td></tr></tfoot>
+              </table></div>
+            </div>
+            <div id="uni-rib-notas" class="bg-white rounded-2xl p-4 sm:p-6 border-l-4 border-domus-azul mb-6 text-sm text-domus-texto-suave" style="display:none">
+              <p class="font-bold text-domus-azul-escuro mb-2">Notas do fechamento</p>
+              <div id="uni-rib-notas-corpo" class="space-y-1"></div>
+            </div>
           </div>
 
           <!-- ============================================ -->
@@ -3131,6 +3163,39 @@ html { scroll-behavior: smooth; }
                   </div>
                 </div>
               </div>
+            </div>
+
+            
+            <!-- ===== Fechamento do mês (dinâmico — espelho do relatório) ===== -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
+              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
+                <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Saídas por categoria</h3>
+                <div class="relative h-64"><canvas id="uni-ap-chart-cat"></canvas></div>
+              </div>
+              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
+                <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Entradas por forma de pagamento</h3>
+                <div class="relative h-64"><canvas id="uni-ap-chart-forma"></canvas></div>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
+              <h3 id="uni-ap-ent-titulo" class="font-serif text-lg text-domus-azul-escuro mb-3">Entradas</h3>
+              <div class="overflow-x-auto"><table class="w-full text-sm">
+                <thead><tr class="text-left text-xs uppercase tracking-wider text-domus-texto-suave border-b border-domus-borda"><th class="py-2 pr-3">Data</th><th class="py-2 pr-3">Quem</th><th class="py-2 pr-3">Forma</th><th class="py-2 pr-3">Fonte</th><th class="py-2 text-right">Valor</th></tr></thead>
+                <tbody id="uni-ap-ent-corpo"><tr><td colspan="5" class="py-3 text-domus-texto-suave">carregando...</td></tr></tbody>
+                <tfoot><tr class="font-bold text-domus-azul-escuro"><td class="py-2 border-t-2 border-domus-azul" colspan="4">TOTAL ENTRADAS</td><td id="uni-ap-ent-total" class="py-2 text-right border-t-2 border-domus-azul"></td></tr></tfoot>
+              </table></div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
+              <h3 id="uni-ap-sai-titulo" class="font-serif text-lg text-domus-azul-escuro mb-3">Saídas</h3>
+              <div class="overflow-x-auto"><table class="w-full text-sm">
+                <thead><tr class="text-left text-xs uppercase tracking-wider text-domus-texto-suave border-b border-domus-borda"><th class="py-2 pr-3">Data</th><th class="py-2 pr-3">O quê</th><th class="py-2 pr-3">Forma</th><th class="py-2 pr-3">Fonte</th><th class="py-2 text-right">Valor</th></tr></thead>
+                <tbody id="uni-ap-sai-corpo"><tr><td colspan="5" class="py-3 text-domus-texto-suave">carregando...</td></tr></tbody>
+                <tfoot><tr class="font-bold text-domus-azul-escuro"><td class="py-2 border-t-2 border-domus-azul" colspan="4">TOTAL SAÍDAS</td><td id="uni-ap-sai-total" class="py-2 text-right border-t-2 border-domus-azul"></td></tr></tfoot>
+              </table></div>
+            </div>
+            <div id="uni-ap-notas" class="bg-white rounded-2xl p-4 sm:p-6 border-l-4 border-domus-azul mb-6 text-sm text-domus-texto-suave" style="display:none">
+              <p class="font-bold text-domus-azul-escuro mb-2">Notas do fechamento</p>
+              <div id="uni-ap-notas-corpo" class="space-y-1"></div>
             </div>
 
             <!-- ======= AP — HOSTEL ======= -->
@@ -18077,6 +18142,20 @@ html { scroll-behavior: smooth; }
       }
     }
 
+    function ensureChartJs() {
+      return new Promise((res, rej) => {
+        if (window.Chart) return res();
+        if (window._chartJsLoading) { window._chartJsLoading.then(res, rej); return; }
+        window._chartJsLoading = new Promise((r2, j2) => {
+          const sc = document.createElement('script');
+          sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+          sc.onload = r2; sc.onerror = j2;
+          document.head.appendChild(sc);
+        });
+        window._chartJsLoading.then(res, rej);
+      });
+    }
+
     async function carregarUnidade(unidade, mesEscolhido) {
       try {
         const key = unidade.toLowerCase(); // 'rib' ou 'ap'
@@ -18200,6 +18279,60 @@ html { scroll-behavior: smooth; }
             }).join('');
           }
         } catch (e) { console.warn('evolucao:', e); }
+
+        // ===== Fechamento do mês — tabelas + gráficos (espelho do relatório) =====
+        try {
+          const { data: lancFull } = await db.from('lancamentos')
+            .select('tipo, categoria, descricao, valor, data, forma_pagamento, origem')
+            .eq('unidade', unidade)
+            .gte('data', mesRef + '-01')
+            .lt('data', proxMesRef)
+            .order('data', { ascending: true });
+          const recL = (lancFull || []).filter(l => l.tipo === 'receita');
+          const despL = (lancFull || []).filter(l => l.tipo === 'despesa');
+          const dataBr = d => { const p = String(d).slice(0, 10).split('-'); return p[2] + '/' + p[1]; };
+          const fonteLbl = o => o === 'inter_api' ? 'Inter API' : (o === 'ocr' ? 'Nota (OCR)' : (o || 'manual'));
+          const escH = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const pillH = f => {
+            const fl = String(f || '').toLowerCase();
+            const cor = fl.includes('pix') ? 'bg-green-50 text-green-800' : ((fl.includes('débito') || fl.includes('debito')) ? 'bg-orange-50 text-orange-800' : 'bg-domus-creme-claro text-domus-azul-escuro');
+            return '<span class="inline-block text-xs px-2 py-0.5 rounded-full whitespace-nowrap ' + cor + '">' + escH(f || '—') + '</span>';
+          };
+          const linhaT = l => '<tr class="border-b border-domus-creme-claro"><td class="py-2 pr-3 whitespace-nowrap">' + dataBr(l.data) + '</td><td class="py-2 pr-3">' + escH(l.descricao) + '</td><td class="py-2 pr-3">' + pillH(l.forma_pagamento) + '</td><td class="py-2 pr-3 whitespace-nowrap">' + escH(fonteLbl(l.origem)) + '</td><td class="py-2 text-right font-semibold whitespace-nowrap valor-financeiro">' + fmt(Number(l.valor)) + '</td></tr>';
+          const setT = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
+          setT('uni-' + key + '-ent-titulo', 'Entradas — ' + recL.length + (recL.length === 1 ? ' lançamento' : ' lançamentos'));
+          setT('uni-' + key + '-sai-titulo', 'Saídas — ' + despL.length + (despL.length === 1 ? ' lançamento' : ' lançamentos'));
+          setT('uni-' + key + '-ent-corpo', recL.map(linhaT).join('') || '<tr><td colspan="5" class="py-3 text-domus-texto-suave">Sem lançamentos neste mês</td></tr>');
+          setT('uni-' + key + '-sai-corpo', despL.map(linhaT).join('') || '<tr><td colspan="5" class="py-3 text-domus-texto-suave">Sem lançamentos neste mês</td></tr>');
+          setT('uni-' + key + '-ent-total', fmt(rec));
+          setT('uni-' + key + '-sai-total', fmt(desp));
+
+          // notas dinâmicas
+          const nInter = (lancFull || []).filter(l => l.origem === 'inter_api').length;
+          const notasEl = document.getElementById('uni-' + key + '-notas');
+          if (notasEl) {
+            const itensN = [];
+            if (nInter > 0) itensN.push('• ' + nInter + ' de ' + (lancFull || []).length + ' lançamentos conciliados com o extrato do Banco Inter (fonte Inter API).');
+            if (key === 'rib' && despL.length > 0) itensN.push('• Serviço de limpeza: pagamento semanal, toda terça-feira (dia da limpeza) — R$ 150,00 pelo serviço + R$ 10,00 de transporte.');
+            const corpoN = document.getElementById('uni-' + key + '-notas-corpo');
+            if (corpoN) corpoN.innerHTML = itensN.map(i => '<p>' + i + '</p>').join('');
+            notasEl.style.display = itensN.length ? '' : 'none';
+          }
+
+          // gráficos
+          await ensureChartJs();
+          const porCat = {};
+          despL.forEach(l => { const c = l.categoria || 'Outros'; porCat[c] = (porCat[c] || 0) + Number(l.valor); });
+          const catOrd = Object.entries(porCat).sort((a, b) => b[1] - a[1]);
+          const porForma = {};
+          recL.forEach(l => { const f2 = l.forma_pagamento || 'Não informado'; porForma[f2] = (porForma[f2] || 0) + Number(l.valor); });
+          const formaOrd = Object.entries(porForma).sort((a, b) => b[1] - a[1]);
+          window._dgCharts = window._dgCharts || {};
+          const mkChart = (id, cfg) => { const cv = document.getElementById(id); if (!cv) return; if (window._dgCharts[id]) window._dgCharts[id].destroy(); window._dgCharts[id] = new Chart(cv, cfg); };
+          const coresDG = ['#0A6B75', '#1BA8B8', '#5BC4CF', '#8ED8DF', '#C0653A', '#D98E63', '#E8B79A', '#A3692E', '#6b8e94', '#94b8be', '#bfd9dd', '#d9ebee', '#86a8ae'];
+          mkChart('uni-' + key + '-chart-cat', { type: 'doughnut', data: { labels: catOrd.map(c => c[0]), datasets: [{ data: catOrd.map(c => Math.round(c[1] * 100) / 100), backgroundColor: coresDG, borderColor: '#F5EFE6', borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } } });
+          mkChart('uni-' + key + '-chart-forma', { type: 'bar', data: { labels: formaOrd.map(f => f[0]), datasets: [{ data: formaOrd.map(f => Math.round(f[1] * 100) / 100), backgroundColor: ['#0A6B75', '#1BA8B8', '#5BC4CF', '#8ED8DF'], borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => 'R$ ' + (v / 1000) + 'k' } } } } });
+        } catch (e) { console.warn('fechamento unidade:', e); }
 
         // Para AP: carregar dados do hostel
         if (key === 'ap') {
