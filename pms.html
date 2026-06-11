@@ -2931,9 +2931,11 @@
             // ao mesmo tempo (caso real: check-in feito antes da Vivian terminar).
             // Isso faz o card aparecer em AMBOS os filtros (Ocupado + Em limpeza).
             let filterTags = isOccupied ? 'occupied' : 'available';
-            // Cama de quem SAI HOJE (e ninguem entra) e vendavel pra noite — conta como Disponivel tambem.
+            // Cama de quem SAI HOJE e vendavel pra noite — conta como Disponivel tambem,
+            // MAS so se NINGUEM entra hoje nessa mesma cama (senao a noite ja esta vendida).
             // Alinha os cards com o contador "Disponivel" (que e por NOITE).
-            if (isOccupied && isCheckout && !isCheckin) filterTags += ' available';
+            const temEntradaHojeNaCama = (entradaHoje || []).some(r => matchQuarto(r, quarto));
+            if (isOccupied && isCheckout && !isCheckin && !temEntradaHojeNaCama) filterTags += ' available';
             if (isCleaning) filterTags += ' cleaning';
             if (isCheckin) filterTags += ' checkin';
             if (isCheckout) filterTags += ' checkout';
