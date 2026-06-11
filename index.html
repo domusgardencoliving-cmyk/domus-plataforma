@@ -6352,74 +6352,36 @@ html { scroll-behavior: smooth; }
                 <h1 class="font-serif text-2xl sm:text-3xl text-domus-azul-escuro">📢 Comunicados</h1>
                 <p class="text-sm text-domus-texto-suave">Enviados pra todas ou por unidade · aparecem no Portal Dominhas</p>
               </div>
-              <button class="px-4 py-2 rounded-lg bg-domus-azul text-white text-sm">Novo comunicado</button>
+              <button onclick="document.getElementById('com-titulo').focus()" class="px-4 py-2 rounded-lg bg-domus-azul text-white text-sm">Novo comunicado</button>
             </div>
 
-            <div id="comunicados-empty-state" class="hidden text-center py-12 mb-6">
-              <div class="text-5xl mb-4">📢</div>
-              <h3 class="font-serif text-xl text-domus-azul-escuro mb-2">Nenhum comunicado enviado</h3>
-              <p class="text-sm text-domus-texto-suave max-w-md mx-auto">Quando voce criar comunicados, eles aparecem aqui e no Portal Dominhas das moradoras. Por enquanto, veja o layout abaixo.</p>
-              <div class="mt-3 inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">Preview do layout</div>
-            </div>
-
-            <div id="comunicados-preview" class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-              <div class="md:col-span-2 space-y-3">
-                <div class="bg-white rounded-2xl border border-domus-borda p-4 sm:p-5">
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs bg-domus-azul/10 text-domus-azul px-2 py-0.5 rounded-full">Rib</span>
-                    <span class="text-xs text-domus-texto-suave">14/04/2026 · por Gabi</span>
-                  </div>
-                  <h4 class="font-serif text-lg text-domus-azul-escuro">Obras na caixa d'água</h4>
-                  <p class="text-sm text-domus-texto mt-1">Terça, dia 21, das 9h às 12h. Deixem baldes cheios no quarto, por via das dúvidas.</p>
-                  <div class="mt-3 flex gap-3 text-xs text-domus-texto-suave">
-                    <span>👁️ 9 leituras</span><button class="text-domus-azul hover:underline">Editar</button><button class="text-red-600 hover:underline">Excluir</button>
-                  </div>
-                </div>
-                <div class="bg-white rounded-2xl border border-domus-borda p-4 sm:p-5">
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs bg-domus-terra/10 text-domus-terra-escura px-2 py-0.5 rounded-full">Todas</span>
-                    <span class="text-xs text-domus-texto-suave">12/04/2026 · por Gabi</span>
-                  </div>
-                  <h4 class="font-serif text-lg text-domus-azul-escuro">Happy hour sábado no quintal</h4>
-                  <p class="text-sm text-domus-texto mt-1">Jantar colaborativo no quintal da AP. Cada uma traz uma coisinha. Começa às 19h!</p>
-                  <div class="mt-3 flex gap-3 text-xs text-domus-texto-suave">
-                    <span>👁️ 21 leituras</span><button class="text-domus-azul hover:underline">Editar</button><button class="text-red-600 hover:underline">Excluir</button>
-                  </div>
-                </div>
-                <div class="bg-white rounded-2xl border border-domus-borda p-4 sm:p-5">
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs bg-domus-terra/10 text-domus-terra-escura px-2 py-0.5 rounded-full">Todas</span>
-                    <span class="text-xs text-domus-texto-suave">01/04/2026 · por Denilton</span>
-                  </div>
-                  <h4 class="font-serif text-lg text-domus-azul-escuro">Reajuste anual (bem pequeno)</h4>
-                  <p class="text-sm text-domus-texto mt-1">A partir de maio aplicaremos o reajuste anual de 4,2% nos contratos vigentes.</p>
-                  <div class="mt-3 flex gap-3 text-xs text-domus-texto-suave">
-                    <span>👁️ 22 leituras</span><button class="text-domus-azul hover:underline">Editar</button><button class="text-red-600 hover:underline">Excluir</button>
-                  </div>
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+              <div id="comunicados-lista" class="md:col-span-2 space-y-3">
+                <p class="text-sm text-domus-texto-suave">carregando...</p>
               </div>
 
-              <!-- Novo comunicado (preview) -->
+              <!-- Novo comunicado -->
               <div class="bg-white rounded-2xl border border-domus-borda p-4 sm:p-6 h-fit sticky top-16">
-                <h3 class="font-serif text-lg text-domus-azul-escuro mb-4">Novo comunicado</h3>
+                <h3 id="com-form-titulo" class="font-serif text-lg text-domus-azul-escuro mb-4">Novo comunicado</h3>
                 <div class="space-y-3 text-sm">
                   <div>
                     <label class="text-xs uppercase tracking-wider text-domus-texto-suave">Destino</label>
                     <div class="flex gap-1 mt-1">
-                      <button class="flex-1 py-2 rounded-lg border-2 border-domus-azul bg-domus-azul text-white text-xs">Todas</button>
-                      <button class="flex-1 py-2 rounded-lg border border-domus-borda text-xs">Rib</button>
-                      <button class="flex-1 py-2 rounded-lg border border-domus-borda text-xs">AP</button>
+                      <button onclick="setComDestino('todas', this)" class="com-dest-btn flex-1 py-2 rounded-lg border-2 border-domus-azul bg-domus-azul text-white text-xs">Todas</button>
+                      <button onclick="setComDestino('Rib', this)" class="com-dest-btn flex-1 py-2 rounded-lg border border-domus-borda text-xs">Rib</button>
+                      <button onclick="setComDestino('AP', this)" class="com-dest-btn flex-1 py-2 rounded-lg border border-domus-borda text-xs">AP</button>
                     </div>
                   </div>
                   <div>
                     <label class="text-xs uppercase tracking-wider text-domus-texto-suave">Título</label>
-                    <input class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda" placeholder="Um assunto curto" />
+                    <input id="com-titulo" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda" placeholder="Um assunto curto" />
                   </div>
                   <div>
                     <label class="text-xs uppercase tracking-wider text-domus-texto-suave">Mensagem</label>
-                    <textarea rows="4" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda" placeholder="No tom Domus: acolhedor, direto e divertido..."></textarea>
+                    <textarea id="com-mensagem" rows="4" class="w-full mt-1 px-3 py-2 rounded-lg border border-domus-borda" placeholder="No tom Domus: acolhedor, direto e divertido..."></textarea>
                   </div>
-                  <button class="w-full py-2 rounded-lg bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro">Publicar</button>
+                  <button onclick="publicarComunicado()" id="com-btn-publicar" class="w-full py-2.5 rounded-lg bg-domus-azul text-white font-medium hover:bg-domus-azul-escuro">Publicar</button>
+                  <button onclick="cancelarEdicaoComunicado()" id="com-btn-cancelar" class="w-full py-2 rounded-lg border border-domus-borda text-domus-texto-suave hidden">Cancelar edição</button>
                 </div>
               </div>
             </div>
@@ -9217,7 +9179,7 @@ html { scroll-behavior: smooth; }
         .order('criado_em', { ascending: false });
 
       // Filtrar: mostrar comunicados da unidade da moradora ou gerais (sem unidade)
-      const filtrados = (comunicados || []).filter(c => !c.unidade || c.unidade === 'todas' || c.unidade === unidade);
+      const filtrados = (comunicados || []).filter(c => !c.destino || c.destino === 'todas' || c.destino === unidade);
 
       if (filtrados.length === 0) {
         div.innerHTML = '<h2 class="font-serif text-2xl text-domus-azul-escuro mb-6">Comunicados</h2>' +
@@ -9234,8 +9196,8 @@ html { scroll-behavior: smooth; }
               '<h3 class="font-medium text-domus-azul-escuro">' + (c.titulo || 'Comunicado') + '</h3>' +
               '<span class="text-xs text-domus-texto-suave flex-shrink-0">' + data + '</span>' +
             '</div>' +
-            '<p class="text-sm text-domus-texto leading-relaxed">' + (c.conteudo || '') + '</p>' +
-            (c.unidade && c.unidade !== 'todas' ? '<p class="text-xs text-domus-azul mt-3">📍 ' + (c.unidade === 'AP' ? 'Andrade Pertence' : 'Ribeirao Claro') + '</p>' : '') +
+            '<p class="text-sm text-domus-texto leading-relaxed" style="white-space:pre-line">' + (c.mensagem || c.conteudo || '') + '</p>' +
+            (c.destino && c.destino !== 'todas' ? '<p class="text-xs text-domus-azul mt-3">📍 ' + (c.destino === 'AP' ? 'Andrade Pertence' : 'Ribeirao Claro') + '</p>' : '') +
           '</div>';
         }).join('') +
         '</div>';
@@ -12523,6 +12485,19 @@ html { scroll-behavior: smooth; }
       document.getElementById('dg-sidebar-overlay').classList.add('hidden');
     }
 
+    window.addEventListener('popstate', function (e) {
+      if (e.state && e.state.dgTab) {
+        window._dgPop = true;
+        try {
+          const btn = [...document.querySelectorAll('.dg-nav-item')].find(b => (b.getAttribute('onclick') || '').includes("'" + e.state.dgTab + "'")) || document.querySelector('.dg-nav-item');
+          mostrarDgTab(e.state.dgTab, btn);
+        } finally { window._dgPop = false; }
+      } else if (e.state && e.state.dgUnidade) {
+        window._dgPop = true;
+        try { abrirUnidade(e.state.dgUnidade); } finally { window._dgPop = false; }
+      }
+    });
+
     function irPraAba(id) {
       const btn = [...document.querySelectorAll('.dg-nav-item')].find(b => (b.getAttribute('onclick') || '').includes("'" + id + "'")) || document.querySelector('.dg-nav-item');
       mostrarDgTab(id, btn);
@@ -12530,6 +12505,7 @@ html { scroll-behavior: smooth; }
     }
 
     function mostrarDgTab(id, btn) {
+      if (!window._dgPop) { try { history.pushState({ dgTab: id }, '', location.pathname + '?modulo=dg'); } catch (_) {} }
       document.querySelectorAll('.dg-tab').forEach(t => t.classList.add('hidden-mod'));
       document.getElementById(id).classList.remove('hidden-mod');
       document.querySelectorAll('.dg-nav-item').forEach(b => b.classList.remove('active'));
@@ -12537,6 +12513,7 @@ html { scroll-behavior: smooth; }
       fecharSidebarMobile();
       // Carregar dados especificos da aba
       if (id === 'dg-dashboard') carregarDashboard();
+      if (id === 'dg-comunicados') carregarComunicados();
       if (id === 'dg-notas') ocrCarregarHistorico();
       if (id === 'dg-whatsapp') waInicializar();
       if (id === 'dg-fidelidade') fidelidadeInicializar();
@@ -12606,6 +12583,7 @@ html { scroll-behavior: smooth; }
     // NAVEGACAO POR UNIDADE (Dashboard → Rib/AP)
     // ==========================================
     function abrirUnidade(unidade) {
+      if (!window._dgPop) { try { history.pushState({ dgUnidade: unidade }, '', location.pathname + '?modulo=dg'); } catch (_) {} }
       document.querySelectorAll('.dg-tab').forEach(t => t.classList.add('hidden-mod'));
       if (unidade === 'rib') {
         document.getElementById('dg-unidade-rib').classList.remove('hidden-mod');
@@ -13733,6 +13711,7 @@ html { scroll-behavior: smooth; }
 
     function abrirModalLancamento() {
       const modal = document.getElementById('modal-lancamento');
+      if (modal && modal.parentElement !== document.body) document.body.appendChild(modal); // sai de dentro de aba escondida
       if (modal) { modal.classList.remove('hidden-mod'); modal.style.display = 'flex'; }
       // Preenche data de hoje
       const dataInput = document.getElementById('lanc-data');
@@ -13791,16 +13770,12 @@ html { scroll-behavior: smooth; }
       if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
 
       try {
-        const { error } = await db.from('lancamentos').insert({
-          tipo: lancTipo,
-          unidade: lancUnidade,
-          categoria: cat,
-          descricao: desc,
-          valor: valor,
-          data: data,
-          conta_bancaria: conta,
-          forma_pagamento: forma,
-          origem: 'manual'
+        const { error } = await db.rpc('criar_lancamento_admin', {
+          p_token: getCracha(),
+          p_lanc: {
+            tipo: lancTipo, unidade: lancUnidade, categoria: cat, descricao: desc,
+            valor: valor, data: data, conta_bancaria: conta, forma_pagamento: forma, origem: 'manual'
+          }
         });
 
         if (error) throw error;
@@ -16927,8 +16902,9 @@ html { scroll-behavior: smooth; }
           observacoes: 'Nota lida por IA. Arquivo: ' + _ocrArquivoNome
         };
 
-        const { data: lancData, error: lancErr } = await db.from('lancamentos').insert(lancamento).select().single();
+        const { data: lancId, error: lancErr } = await db.rpc('criar_lancamento_admin', { p_token: getCracha(), p_lanc: lancamento });
         if (lancErr) throw lancErr;
+        const lancData = { id: lancId };
 
         // 2. Subir o arquivo original no Storage (pra poder visualizar depois)
         let arquivoUrl = null;
@@ -17103,7 +17079,7 @@ html { scroll-behavior: smooth; }
       if (!confirm('Tem certeza que quer excluir esta nota? Isso tambem remove o lancamento do Financeiro.')) return;
       try {
         if (lancamentoId) {
-          await db.from('lancamentos').delete().eq('id', lancamentoId);
+          await db.rpc('excluir_lancamento_admin', { p_token: getCracha(), p_id: lancamentoId });
         }
         await db.from('notas_ocr').delete().eq('id', notaId);
         const m = document.getElementById('ocr-detalhes-modal');
@@ -17153,7 +17129,7 @@ html { scroll-behavior: smooth; }
         pago: true,
         observacoes: 'NF emitida automaticamente. Reserva: ' + reservaId
       };
-      await db.from('lancamentos').insert(nfData);
+      await db.rpc('criar_lancamento_admin', { p_token: getCracha(), p_lanc: nfData });
 
       // Marcar reserva como NF emitida
       await db.from('reservas').update({ nf_emitida: true, nf_numero: nfNumero }).eq('id', reservaId);
@@ -17869,23 +17845,101 @@ html { scroll-behavior: smooth; }
     }
 
     // ==========================================
-    // COMUNICADOS — Verifica dados e mostra estado
+    // COMUNICADOS — CRUD real (tabela comunicados: titulo, mensagem, destino)
     // ==========================================
+    let _comDestino = 'todas';
+    let _comEditId = null;
+
+    function setComDestino(d, btn) {
+      _comDestino = d;
+      document.querySelectorAll('.com-dest-btn').forEach(b => b.className = 'com-dest-btn flex-1 py-2 rounded-lg border border-domus-borda text-xs');
+      if (btn) btn.className = 'com-dest-btn flex-1 py-2 rounded-lg border-2 border-domus-azul bg-domus-azul text-white text-xs';
+    }
+
     async function carregarComunicados() {
       try {
-        const { data: coms, count } = await db.from('comunicados').select('id', { count: 'exact', head: true });
-        const emptyEl = document.getElementById('comunicados-empty-state');
-        const previewEl = document.getElementById('comunicados-preview');
-        if (count === 0 || count === null) {
-          if (emptyEl) emptyEl.classList.remove('hidden');
-          if (previewEl) previewEl.style.opacity = '0.5';
-        } else {
-          if (emptyEl) emptyEl.classList.add('hidden');
-          if (previewEl) previewEl.style.opacity = '1';
+        const { data: coms, error } = await db.from('comunicados').select('*').order('criado_em', { ascending: false });
+        if (error) throw error;
+        const div = document.getElementById('comunicados-lista');
+        if (!div) return;
+        if (!coms || coms.length === 0) {
+          div.innerHTML = '<div class="bg-white rounded-2xl border border-domus-borda p-8 text-center"><div class="text-4xl mb-3">📢</div><p class="text-sm text-domus-texto-suave">Nenhum comunicado publicado ainda. O primeiro que você publicar aparece aqui e no Portal Dominhas.</p></div>';
+          return;
         }
+        const escC = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        div.innerHTML = coms.map(c => {
+          const dt = c.criado_em ? new Date(c.criado_em).toLocaleDateString('pt-BR') : '';
+          const dest = (c.destino === 'Rib') ? '<span class="text-xs bg-domus-azul/10 text-domus-azul px-2 py-0.5 rounded-full">Rib</span>'
+                     : (c.destino === 'AP') ? '<span class="text-xs bg-domus-azul/10 text-domus-azul px-2 py-0.5 rounded-full">AP</span>'
+                     : '<span class="text-xs bg-domus-terra/10 text-domus-terra-escura px-2 py-0.5 rounded-full">Todas</span>';
+          return '<div class="bg-white rounded-2xl border border-domus-borda p-4 sm:p-5">' +
+            '<div class="flex items-center justify-between mb-2">' + dest +
+              '<span class="text-xs text-domus-texto-suave">' + dt + '</span></div>' +
+            '<h4 class="font-serif text-lg text-domus-azul-escuro">' + escC(c.titulo) + '</h4>' +
+            '<p class="text-sm text-domus-texto mt-1" style="white-space:pre-line">' + escC(c.mensagem) + '</p>' +
+            '<div class="mt-3 flex gap-3 text-xs">' +
+              '<button onclick="editarComunicado(\'' + c.id + '\')" class="text-domus-azul hover:underline">Editar</button>' +
+              '<button onclick="excluirComunicado(\'' + c.id + '\')" class="text-red-600 hover:underline">Excluir</button>' +
+            '</div></div>';
+        }).join('');
+        window._comsCache = coms;
       } catch (err) {
-        console.error('[DG Gestão] Erro ao verificar comunicados:', err);
+        console.error('[DG Gestão] Erro ao carregar comunicados:', err);
       }
+    }
+
+    async function publicarComunicado() {
+      const t = document.getElementById('com-titulo').value.trim();
+      const m = document.getElementById('com-mensagem').value.trim();
+      if (!t || !m) { alert('Preencha título e mensagem.'); return; }
+      const btn = document.getElementById('com-btn-publicar');
+      if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; }
+      try {
+        let error;
+        if (_comEditId) {
+          ({ error } = await db.from('comunicados').update({ titulo: t, mensagem: m, destino: _comDestino }).eq('id', _comEditId));
+        } else {
+          ({ error } = await db.from('comunicados').insert({ titulo: t, mensagem: m, destino: _comDestino, data: new Date().toISOString().slice(0, 10) }));
+        }
+        if (error) throw error;
+        cancelarEdicaoComunicado();
+        await carregarComunicados();
+      } catch (e) {
+        alert('Erro ao publicar: ' + (e.message || e));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = _comEditId ? 'Salvar alterações' : 'Publicar'; }
+      }
+    }
+
+    function editarComunicado(id) {
+      const c = (window._comsCache || []).find(x => String(x.id) === String(id));
+      if (!c) return;
+      _comEditId = id;
+      document.getElementById('com-titulo').value = c.titulo || '';
+      document.getElementById('com-mensagem').value = c.mensagem || '';
+      const ordem = { todas: 0, Rib: 1, AP: 2 };
+      const btns = document.querySelectorAll('.com-dest-btn');
+      setComDestino(c.destino || 'todas', btns[ordem[c.destino] !== undefined ? ordem[c.destino] : 0]);
+      document.getElementById('com-form-titulo').textContent = 'Editar comunicado';
+      document.getElementById('com-btn-publicar').textContent = 'Salvar alterações';
+      document.getElementById('com-btn-cancelar').classList.remove('hidden');
+      document.getElementById('com-titulo').focus();
+    }
+
+    function cancelarEdicaoComunicado() {
+      _comEditId = null;
+      document.getElementById('com-titulo').value = '';
+      document.getElementById('com-mensagem').value = '';
+      document.getElementById('com-form-titulo').textContent = 'Novo comunicado';
+      document.getElementById('com-btn-publicar').textContent = 'Publicar';
+      document.getElementById('com-btn-cancelar').classList.add('hidden');
+    }
+
+    async function excluirComunicado(id) {
+      if (!confirm('Excluir este comunicado? Ele some também do Portal Dominhas.')) return;
+      const { error } = await db.from('comunicados').delete().eq('id', id);
+      if (error) { alert('Erro ao excluir: ' + error.message); return; }
+      carregarComunicados();
     }
 
     // ==========================================
