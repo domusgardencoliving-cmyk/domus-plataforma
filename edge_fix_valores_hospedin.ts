@@ -147,6 +147,17 @@ const CORS = {
 };
 const jOut = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 
+async function aplicar(item: any, z: any, modo: string, sb: any) {
+  if (modo === "apply" && item.valor_proposto && item.valor_proposto > 0 && !item.aplicado) {
+    const upd: any = { valor_total: item.valor_proposto };
+    const d2 = item.daily || (item.daily_cents ? item.daily_cents / 100 : null);
+    if (d2) upd.valor_diaria = d2;
+    const u = await sb(`reservas?id=eq.${z.id}`, { method: "PATCH", body: JSON.stringify(upd) }).then((r: Response) => r.json());
+    item.aplicado = Array.isArray(u) && u.length > 0;
+  }
+  return item;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
@@ -163,8 +174,23 @@ Deno.serve(async (req) => {
     const zeradas: any[] = await sb(`reservas?select=id,hospedin_id,hospede_nome,cama,checkin,checkout,canal_codigo&valor_total=eq.0&hospedin_id=not.is.null&checkout=gte.2026-06-01&status=not.in.(cancelada,rescindida)&order=checkin`).then((r) => r.json());
     if (!Array.isArray(zeradas) || !zeradas.length) return jOut({ ok: true, msg: "nenhuma zerada com hospedin_id", zeradas });
 
-    const cookie = await loginHospedin(EMAIL, PASSWORD);
-    if (!cookie) return jOut({ ok: false, erro: "login falhou" }, 500);
+    // ===== API V2 (pms-api) — JWT =====
+    const V2_BASE = "https://pms-api.hospedin.com/api/v2/23949";
+    let jwt: string | null = null;
+    try {
+      const rAuth = await fetchComTimeout(`${V2_BASE}/authentication/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
+      }, 15000, "auth-v2");
+      const jAuth = await rAuth.json().catch(() => ({}));
+      jwt = jAuth.token || jAuth.jwt || jAuth.access_token || (jAuth.data && (jAuth.data.token || jAuth.data.jwt)) || null;
+      if (!jwt && b.acao === "auth-debug") return jOut({ status: rAuth.status, chaves: Object.keys(jAuth) });
+    } catch (_) {}
+
+    const cookie = jwt ? "" : (await loginHospedin(EMAIL, PASSWORD)) || "";
+    if (!jwt && !cookie) return jOut({ ok: false, erro: "nenhum login funcionou" }, 500);
+    if (b.acao === "auth-debug") return jOut({ ok: true, viaJwt: !!jwt });
 
     // modo sonda: devolve estrutura da pagina de uma reserva pra calibrar parser
     if (b.acao === "sonda" && b.hospedin_id) {
@@ -214,6 +240,27 @@ Deno.serve(async (req) => {
       const noites = Math.max(1, Math.round((new Date(z.checkout).getTime() - new Date(z.checkin).getTime()) / 86400000));
       const item: any = { id: z.id, hospedin_id: z.hospedin_id, nome: z.hospede_nome, cama: z.cama, periodo: `${z.checkin}→${z.checkout}`, noites, canal: z.canal_codigo };
       try {
+        if (jwt) {
+          const rV2 = await fetchComTimeout(`${V2_BASE}/reservations/${z.hospedin_id}`, { headers: { Authorization: `Bearer ${jwt}`, accept: "application/json" } }, 12000, `v2-${z.hospedin_id}`);
+          item.v2Status = rV2.status;
+          if (rV2.ok) {
+            const d = await rV2.json().catch(() => ({}));
+            const h = d.reservation || d.data || d;
+            const num = (v: any) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : null; };
+            item.total_amount = num(h.total_amount);
+            item.total_to_receive = num(h.total_to_receive);
+            item.total_daily_cents = num(h.total_daily_cents);
+            item.daily_cents = num(h.daily_cents);
+            item.total_received = num(h.total_received);
+            item.ota_paga = h.has_payment_coming_from_ota ?? null;
+            item.valor_proposto = item.total_amount || item.total_to_receive
+              || (item.total_daily_cents ? Math.round(item.total_daily_cents) / 100 : null)
+              || (item.daily_cents ? Math.round(item.daily_cents * noites) / 100 : null)
+              || item.total_received || null;
+          }
+        }
+        if (item.valor_proposto) { resultados.push(await aplicar(item, z, modo, sb)); continue; }
+        if (!cookie) { resultados.push(item); continue; }
         const rEdit = await fetchComTimeout(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/${z.hospedin_id}/edit`, { headers: { Cookie: cookie, accept: "text/html" } }, 15000, `edit-${z.hospedin_id}`);
         item.editStatus = rEdit.status;
         if (rEdit.ok) {
@@ -231,13 +278,7 @@ Deno.serve(async (req) => {
         }
       } catch (e: any) { item.erro = String(e.message || e); }
 
-      if (modo === "apply" && item.valor_proposto && item.valor_proposto > 0) {
-        const upd: any = { valor_total: item.valor_proposto };
-        if (item.daily) upd.valor_diaria = item.daily;
-        const u = await sb(`reservas?id=eq.${z.id}`, { method: "PATCH", body: JSON.stringify(upd) }).then((r) => r.json());
-        item.aplicado = Array.isArray(u) && u.length > 0;
-      }
-      resultados.push(item);
+      resultados.push(await aplicar(item, z, modo, sb));
     }
     return jOut({ ok: true, modo, total: resultados.length, resultados });
   } catch (e) {
