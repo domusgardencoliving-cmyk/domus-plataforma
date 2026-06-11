@@ -3036,16 +3036,16 @@ html { scroll-behavior: smooth; }
               <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
                 <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Atalhos</h3>
                 <div class="grid grid-cols-2 gap-2">
-                  <button class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
+                  <button onclick="abrirModalLancamento()" class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
                     <div class="text-lg">💰</div><div class="font-medium">Novo lancamento</div>
                   </button>
-                  <button class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
+                  <button onclick="irPraAba('dg-coliving')" class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
                     <div class="text-lg">👤</div><div class="font-medium">Nova moradora</div>
                   </button>
-                  <button class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
+                  <button onclick="irPraAba('dg-notas')" class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
                     <div class="text-lg">📸</div><div class="font-medium">Nova nota</div>
                   </button>
-                  <button class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
+                  <button onclick="irPraAba('dg-comunicados')" class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
                     <div class="text-lg">📢</div><div class="font-medium">Comunicado</div>
                   </button>
                 </div>
@@ -3154,16 +3154,16 @@ html { scroll-behavior: smooth; }
                 <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
                   <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Atalhos</h3>
                   <div class="grid grid-cols-2 gap-2">
-                    <button class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
+                    <button onclick="irPraAba('dg-notas')" class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
                       <div class="text-lg">📸</div><div class="font-medium">Nova nota</div>
                     </button>
-                    <button class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
+                    <button onclick="abrirModalLancamento()" class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
                       <div class="text-lg">💰</div><div class="font-medium">Novo lancamento</div>
                     </button>
-                    <button class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
+                    <button onclick="irPraAba('dg-coliving')" class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
                       <div class="text-lg">👤</div><div class="font-medium">Nova moradora</div>
                     </button>
-                    <button class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
+                    <button onclick="irPraAba('dg-comunicados')" class="p-3 rounded-xl bg-domus-creme-claro hover:bg-domus-azul hover:text-white transition text-sm text-left">
                       <div class="text-lg">📢</div><div class="font-medium">Comunicado</div>
                     </button>
                   </div>
@@ -12521,6 +12521,12 @@ html { scroll-behavior: smooth; }
     function fecharSidebarMobile() {
       document.getElementById('dg-sidebar').classList.add('-translate-x-full');
       document.getElementById('dg-sidebar-overlay').classList.add('hidden');
+    }
+
+    function irPraAba(id) {
+      const btn = [...document.querySelectorAll('.dg-nav-item')].find(b => (b.getAttribute('onclick') || '').includes("'" + id + "'")) || document.querySelector('.dg-nav-item');
+      mostrarDgTab(id, btn);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function mostrarDgTab(id, btn) {
