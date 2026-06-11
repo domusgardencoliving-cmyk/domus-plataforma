@@ -18279,7 +18279,7 @@ html { scroll-behavior: smooth; }
               const cor = v < 0 ? 'bg-red-400' : (ultimo ? 'bg-domus-azul' : 'bg-domus-azul/60');
               const lbl = mesesCurto[parseInt(m2.slice(5))];
               const tt = m2 + ': ' + fmt(v);
-              return '<div class="flex-1 flex flex-col items-center gap-1" title="' + tt + '"><div class="w-full ' + cor + ' rounded-t" style="height:' + h + '%"></div><span class="text-xs ' + (ultimo ? 'text-domus-azul-escuro font-medium' : 'text-domus-texto-suave') + '">' + lbl + '</span></div>';
+              return '<div class="flex-1 h-full flex flex-col items-center justify-end gap-1" title="' + tt + '"><div class="w-full ' + cor + ' rounded-t" style="height:' + h + '%"></div><span class="text-xs ' + (ultimo ? 'text-domus-azul-escuro font-medium' : 'text-domus-texto-suave') + '">' + lbl + '</span></div>';
             }).join('');
           }
         } catch (e) { console.warn('evolucao:', e); }
