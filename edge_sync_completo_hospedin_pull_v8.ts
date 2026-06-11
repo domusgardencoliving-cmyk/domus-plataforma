@@ -169,6 +169,18 @@ Deno.serve(async (_req) => {
   try {
     ondeParou = "login";
     const cookie = await loginHospedin(EMAIL, PASSWORD);
+
+    // ===== API V2 (JWT) — valores que a listagem nao traz (descoberto 11/06/2026) =====
+    let v2jwt: string | null = null;
+    try {
+      const rA = await fetchComTimeout("https://pms-api.hospedin.com/api/v2/authentication/sessions", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
+      }, 15000, "auth-v2");
+      const jA = await rA.json().catch(() => ({}));
+      v2jwt = jA.token || jA.jwt || jA.access_token || (jA.data && (jA.data.token || jA.data.jwt)) || null;
+      console.log("[sync-pull] auth API V2:", v2jwt ? "ok" : "falhou");
+    } catch (_) { console.warn("[sync-pull] auth V2 indisponivel"); }
     if (!cookie) throw new Error("Login Hospedin falhou");
     console.log(`[main] login concluido em ${Date.now() - inicio}ms`);
 
@@ -294,6 +306,29 @@ Deno.serve(async (_req) => {
           valorTotal = Number(h.daily_total);
         }
 
+        // FALLBACK PRINCIPAL 11/06/2026: API V2 individual tem os totais (em CENTAVOS)
+        if ((valorTotal === null || !Number.isFinite(valorTotal) || valorTotal <= 0) && v2jwt) {
+          try {
+            const rV2 = await fetchComTimeout(`https://pms-api.hospedin.com/api/v2/23949/reservations/${hospedinId}`,
+              { headers: { Authorization: `Bearer ${v2jwt}`, accept: "application/json" } }, 12000, `v2-${hospedinId}`);
+            if (rV2.ok) {
+              const dV2 = await rV2.json().catch(() => ({}));
+              const hh = dV2.reservation || dV2.data || dV2;
+              const cents = (v: any) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n / 100 : null; };
+              valorTotal = cents(hh.total_amount) || cents(hh.total_to_receive) || cents(hh.total_daily_cents) || null;
+              if (!valorTotal && cents(hh.daily_cents)) {
+                const noitesV2 = Math.max(1, Math.round((new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000));
+                valorTotal = Math.round(cents(hh.daily_cents)! * noitesV2 * 100) / 100;
+              }
+              if (valorTotal) console.log(`[sync-pull] valor via API V2 ${hospedinId}: R$ ${valorTotal}`);
+            }
+          } catch (eV2: any) { console.warn(`[sync-pull] V2 falhou ${hospedinId}: ${eV2.message}`); }
+        }
+
+        // diaria praticada (renovacao usa) = total / noites
+        const noitesDiaria = Math.max(1, Math.round((new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000));
+        const diariaCalc = (valorTotal && valorTotal > 0) ? Math.round((valorTotal / noitesDiaria) * 100) / 100 : null;
+
         // FALLBACK 25/05/2026: Booking e Airbnb não retornam total no JSON da lista.
         // Faz fetch /edit/{id} pra pegar o campo input[name="reservation[daily]"].
         // Booking: aplica -13% (comissão). Airbnb: cheio.
@@ -361,6 +396,7 @@ Deno.serve(async (_req) => {
               quarto: cama,
               // Só sobrescreve valor_total se temos valor novo válido
               ...(valorTotal !== null && valorTotal > 0 ? { valor_total: valorTotal } : {}),
+              ...(diariaCalc ? { valor_diaria: diariaCalc } : {}),
               ...(nomeEhReal ? { hospede_nome: nomeReal } : {}),
               hospedin_id: hospedinId,
               codigo_externo: code,
@@ -414,6 +450,7 @@ Deno.serve(async (_req) => {
             status: statusInicial,
             status_hospedin: statusHospedin,
             valor_total: (valorTotal !== null && valorTotal !== undefined) ? valorTotal : 0, // FIX 10/06: API sem valor NAO pode impedir a reserva de existir (caso Nicole Sena)
+            ...(diariaCalc ? { valor_diaria: diariaCalc } : {}),
             plataforma,
             canal_codigo: canal,
             hospedin_id: hospedinId,
