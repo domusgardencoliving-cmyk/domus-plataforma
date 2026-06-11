@@ -183,6 +183,29 @@ Deno.serve(async (req) => {
           reais: (html.match(/.{0,30}R\$\s?[\d.,]+.{0,10}/g) || []).map((x: string) => x.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()).slice(0, 20),
         };
       }
+      // sonda de endpoints JSON
+      out.jsons = {};
+      const rrId = b.rate_id || null;
+      const rotasJson = [
+        `reservations/${b.hospedin_id}.json`,
+        `reservations/${b.hospedin_id}/edit.json`,
+        `reservations/${b.hospedin_id}/payments.json`,
+        `reservations/${b.hospedin_id}/finances.json`,
+        `reservations/${b.hospedin_id}/rate_reservations.json`,
+      ].concat(rrId ? [`rate_reservations/${rrId}.json`] : []);
+      for (const rota of rotasJson) {
+        try {
+          const rr = await fetchComTimeout(`${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/${rota}`, { headers: { Cookie: cookie, accept: "application/json" } }, 10000, rota);
+          const ct = rr.headers.get("content-type") || "";
+          let resumo = "status=" + rr.status + " ct=" + ct.slice(0, 30);
+          if (rr.ok && ct.includes("json")) {
+            const txt = await rr.text();
+            const campos = [...new Set((txt.match(/"[a-z_]*(amount|total|cents|daily|price|value|commission)[a-z_]*"\s*:\s*[^,}]{1,20}/g) || []))].slice(0, 25);
+            resumo += " | " + campos.join(" § ");
+          }
+          out.jsons[rota] = resumo;
+        } catch (e: any) { out.jsons[rota] = "erro " + String(e.message || "").slice(0, 40); }
+      }
       return jOut({ ok: true, sonda: out });
     }
 
