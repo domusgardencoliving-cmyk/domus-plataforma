@@ -17895,12 +17895,9 @@ html { scroll-behavior: smooth; }
       const btn = document.getElementById('com-btn-publicar');
       if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; }
       try {
-        let error;
-        if (_comEditId) {
-          ({ error } = await db.from('comunicados').update({ titulo: t, mensagem: m, destino: _comDestino }).eq('id', _comEditId));
-        } else {
-          ({ error } = await db.from('comunicados').insert({ titulo: t, mensagem: m, destino: _comDestino, data: new Date().toISOString().slice(0, 10) }));
-        }
+        const { error } = await db.rpc('salvar_comunicado_admin', {
+          p_token: getCracha(), p_id: _comEditId || null, p_titulo: t, p_mensagem: m, p_destino: _comDestino
+        });
         if (error) throw error;
         cancelarEdicaoComunicado();
         await carregarComunicados();
@@ -17937,7 +17934,7 @@ html { scroll-behavior: smooth; }
 
     async function excluirComunicado(id) {
       if (!confirm('Excluir este comunicado? Ele some também do Portal Dominhas.')) return;
-      const { error } = await db.from('comunicados').delete().eq('id', id);
+      const { error } = await db.rpc('excluir_comunicado_admin', { p_token: getCracha(), p_id: id });
       if (error) { alert('Erro ao excluir: ' + error.message); return; }
       carregarComunicados();
     }
