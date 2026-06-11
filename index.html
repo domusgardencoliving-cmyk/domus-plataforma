@@ -18112,6 +18112,30 @@ html { scroll-behavior: smooth; }
 
         const receitas = (lanc || []).filter(l => l.tipo === 'receita');
         const despesas = (lanc || []).filter(l => l.tipo === 'despesa');
+
+        // quartos (RPC) + insights de IA (cache) em paralelo
+        let mapaQR = {}; let insightsR = [];
+        try {
+          const [rq, ri] = await Promise.all([
+            db.rpc('mapa_quartos', { p_unidade: unidade }),
+            fetch(SUPABASE_URL + '/functions/v1/insight-fechamento', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY, 'apikey': SUPABASE_KEY },
+              body: JSON.stringify({ unidade: unidade, mes: mesRef })
+            }).then(x => x.json()).catch(() => ({}))
+          ]);
+          mapaQR = rq.data || {};
+          insightsR = (ri && ri.insights) || [];
+        } catch (_) {}
+        const normR = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const achaQuartoR = nome => {
+          const alvo = normR(nome);
+          for (const [n, q] of Object.entries(mapaQR)) {
+            const chave = normR(n).split(/\s+/).slice(0, 2).join(' ');
+            if (chave && alvo.startsWith(chave)) return q || '';
+          }
+          return '';
+        };
         const totR = receitas.reduce((s2, l) => s2 + Number(l.valor), 0);
         const totD = despesas.reduce((s2, l) => s2 + Number(l.valor), 0);
         const res = totR - totD;
@@ -18134,8 +18158,14 @@ html { scroll-behavior: smooth; }
           const cls = fl.includes('pix') ? 'pix' : (fl.includes('débito') || fl.includes('debito') ? 'deb' : '');
           return '<span class="pill ' + cls + '">' + esc(f || '—') + '</span>';
         };
-        const linhasR = receitas.map(l =>
-          '<tr><td>' + dataBr(l.data) + '</td><td>' + esc(l.descricao) + '</td><td>' + pill(l.forma_pagamento) + '</td><td>' + esc(fonteLbl(l.origem)) + '</td><td class="v">' + moeda(l.valor).replace('R$ ', '') + '</td></tr>').join('');
+        const linhasR = receitas.map(l => {
+          const partes = String(l.descricao || '').split(' — ');
+          const quem = partes[0];
+          let oque = partes.slice(1).join(' — ') || 'mensalidade';
+          oque = oque.charAt(0).toUpperCase() + oque.slice(1);
+          const qto = achaQuartoR(quem);
+          return '<tr><td>' + dataBr(l.data) + '</td><td>' + esc(quem) + '</td><td>' + esc(oque) + '</td><td>' + esc(qto || '—') + '</td><td>' + pill(l.forma_pagamento) + '</td><td>' + esc(fonteLbl(l.origem)) + '</td><td class="v">' + moeda(l.valor).replace('R$ ', '') + '</td></tr>';
+        }).join('');
         const linhasD = despesas.map(l =>
           '<tr><td>' + dataBr(l.data) + '</td><td>' + esc(l.descricao) + '</td><td>' + pill(l.forma_pagamento) + '</td><td>' + esc(fonteLbl(l.origem)) + '</td><td class="v">' + moeda(l.valor).replace('R$ ', '') + '</td></tr>').join('');
 
@@ -18180,19 +18210,20 @@ html { scroll-behavior: smooth; }
           + '<div class="kpis">'
           + '<div class="kpi ent"><div class="lbl">Entradas</div><div class="val">' + moeda(totR) + '</div></div>'
           + '<div class="kpi sai"><div class="lbl">Saídas</div><div class="val">' + moeda(totD) + '</div></div>'
-          + '<div class="kpi res"><div class="lbl">Resultado</div><div class="val">' + (res >= 0 ? '+' : '') + moeda(res) + '</div></div>'
+          + '<div class="kpi res"><div class="lbl">Resultado</div><div class="val">' + (res >= 0 ? '+' : '') + moeda(res) + '</div><div style="font-size:.72rem;color:#bfe3e8;margin-top:4px">' + moeda(res / 2) + ' por sócio (50/50)</div></div>'
           + '<div class="kpi"><div class="lbl">Margem</div><div class="val" style="color:var(--tq)">' + margem + '%</div></div>'
           + '</div>'
           + '<div class="grid2"><div class="card"><h3>Saídas por categoria</h3><canvas id="gDesp"></canvas></div>'
           + '<div class="card"><h3>Entradas por forma de pagamento</h3><canvas id="gForma"></canvas></div></div>'
           + '<div class="card"><h3>Entradas — ' + receitas.length + ' lançamentos</h3><table class="ent">'
-          + '<thead><tr><th>Data</th><th>Descrição</th><th>Forma</th><th>Fonte</th><th style="text-align:right">Valor</th></tr></thead>'
-          + '<tbody>' + (linhasR || '<tr><td colspan="5">Sem lançamentos</td></tr>') + '</tbody>'
-          + '<tfoot><tr><td colspan="4">TOTAL ENTRADAS</td><td class="v">' + moeda(totR) + '</td></tr></tfoot></table></div>'
+          + '<thead><tr><th>Data</th><th>Quem</th><th>O quê</th><th>Quarto</th><th>Forma</th><th>Fonte</th><th style="text-align:right">Valor</th></tr></thead>'
+          + '<tbody>' + (linhasR || '<tr><td colspan="7">Sem lançamentos</td></tr>') + '</tbody>'
+          + '<tfoot><tr><td colspan="6">TOTAL ENTRADAS</td><td class="v">' + moeda(totR) + '</td></tr></tfoot></table></div>'
           + '<div class="card"><h3>Saídas — ' + despesas.length + ' lançamentos</h3><table class="sai">'
           + '<thead><tr><th>Data</th><th>Descrição</th><th>Forma</th><th>Fonte</th><th style="text-align:right">Valor</th></tr></thead>'
           + '<tbody>' + (linhasD || '<tr><td colspan="5">Sem lançamentos</td></tr>') + '</tbody>'
           + '<tfoot><tr><td colspan="4">TOTAL SAÍDAS</td><td class="v">' + moeda(totD) + '</td></tr></tfoot></table></div>'
+          + (insightsR.length ? '<div class="card"><h3>✨ Insights do mês</h3>' + insightsR.map(i => '<p style="font-size:.85rem;color:#5d7077;margin:6px 0">💡 ' + esc(i) + '</p>').join('') + '</div>' : '')
           + '<footer>Domus Garden Coliving · gerado em ' + hoje + ' · fonte: DG Gestão</footer></div>'
           + '<scr' + 'ipt>'
           + 'const cores=["#0A6B75","#1BA8B8","#5BC4CF","#8ED8DF","#C0653A","#D98E63","#E8B79A","#A3692E","#6b8e94","#94b8be","#bfd9dd","#d9ebee","#86a8ae"];'
