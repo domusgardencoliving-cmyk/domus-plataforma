@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
     const V2_BASE = "https://pms-api.hospedin.com/api/v2/23949";
     let jwt: string | null = null;
     try {
-      const rAuth = await fetchComTimeout(`${V2_BASE}/authentication/sessions`, {
+      const rAuth = await fetchComTimeout(`https://pms-api.hospedin.com/api/v2/authentication/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
