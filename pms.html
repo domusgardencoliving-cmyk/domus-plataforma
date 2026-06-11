@@ -1913,10 +1913,21 @@
       <div class="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full pointer-events-auto max-h-[90vh] overflow-y-auto">
         <h3 class="text-lg font-semibold text-domus-texto mb-4">Ações da Reserva</h3>
 
-        <!-- Indicador de status atual -->
-        <div id="acaoStatusAtual" class="mb-4 p-3 rounded text-sm bg-gray-50 border border-domus-borda">
-          <span class="text-domus-texto-suave">Status: </span>
-          <span id="acaoStatusBadge" class="font-semibold">—</span>
+        <!-- Cabecalho rico: hospede + origem + valores (pedido Gabi 11/06) -->
+        <div id="acaoStatusAtual" class="mb-4 p-3 rounded-lg text-sm bg-gray-50 border border-domus-borda">
+          <div class="flex items-center justify-between gap-2">
+            <span id="acaoHospedeNome" class="font-semibold text-domus-texto text-base leading-tight">—</span>
+            <span id="acaoStatusBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-200 whitespace-nowrap">—</span>
+          </div>
+          <div id="acaoPlataforma" class="mt-1 text-xs font-semibold">—</div>
+          <div id="acaoDatas" class="mt-1 text-xs text-domus-texto-suave">—</div>
+          <div class="mt-2 flex items-center justify-between text-sm border-t border-domus-borda pt-2">
+            <span>Total: <b id="acaoValorTotal" class="text-domus-azul-escuro">—</b></span>
+            <span class="text-domus-texto-suave">Diária: <b id="acaoValorDiaria">—</b></span>
+          </div>
+          <a id="acaoWhatsLink" href="#" target="_blank" class="hidden mt-2 w-full px-3 py-1.5 bg-green-50 border border-green-300 text-green-800 rounded text-xs font-semibold items-center justify-center gap-1 hover:bg-green-100" style="display:none">
+            💬 <span id="acaoTelefone"></span> · chamar no WhatsApp
+          </a>
         </div>
 
         <div class="space-y-2">
@@ -5658,6 +5669,30 @@
         if (!r) { mostrarToast('Reserva não encontrada', 'error'); return; }
         const badge = document.getElementById('acaoStatusBadge');
         if (badge) badge.textContent = (r.status || '—').toUpperCase();
+
+        // Cabecalho rico
+        const setT = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setT('acaoHospedeNome', r.hospede_nome || 'Sem nome');
+        const plat = r.plataforma || r.canal_codigo || '—';
+        const elPlat = document.getElementById('acaoPlataforma');
+        if (elPlat) {
+          elPlat.textContent = '📍 ' + (r.cama || r.quarto || '?') + ' · via ' + plat;
+          elPlat.style.color = (typeof PLAT_COR !== 'undefined' && PLAT_COR[plat]) ? PLAT_COR[plat] : '#64748b';
+        }
+        const noitesAc = Math.max(1, Math.round((new Date(r.checkout) - new Date(r.checkin)) / 86400000));
+        setT('acaoDatas', fmtDataCurta(r.checkin) + ' → ' + fmtDataCurta(r.checkout) + ' · ' + noitesAc + (noitesAc === 1 ? ' noite' : ' noites'));
+        const fmtRA = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        setT('acaoValorTotal', fmtRA(r.valor_total));
+        setT('acaoValorDiaria', fmtRA(r.valor_diaria || (Number(r.valor_total || 0) / noitesAc)));
+        const telAc = String(r.hospede_contato || '').replace(/\D/g, '');
+        const waLink = document.getElementById('acaoWhatsLink');
+        if (waLink) {
+          if (telAc.length >= 10) {
+            waLink.style.display = 'flex';
+            setT('acaoTelefone', r.hospede_contato);
+            waLink.href = 'https://wa.me/' + (telAc.length <= 11 ? '55' + telAc : telAc);
+          } else { waLink.style.display = 'none'; }
+        }
         // Habilita/desabilita botões conforme status
         const status = (r.status || '').toLowerCase().replace('_','-');
         const setDisabled = (id, disabled) => { const el = document.getElementById(id); if (el) el.disabled = !!disabled; };
