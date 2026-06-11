@@ -150,8 +150,9 @@ const jOut = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: 
 async function aplicar(item: any, z: any, modo: string, sb: any) {
   if (modo === "apply" && item.valor_proposto && item.valor_proposto > 0 && !item.aplicado) {
     const upd: any = { valor_total: item.valor_proposto };
-    const d2 = item.daily || (item.daily_cents ? item.daily_cents / 100 : null);
-    if (d2) upd.valor_diaria = d2;
+    // valor_diaria SEMPRE: do campo daily se houver, senao total / noites (pra renovacao saber o preco praticado)
+    const d2 = item.daily || (item.daily_cents ? item.daily_cents / 100 : null) || Math.round((item.valor_proposto / Math.max(1, item.noites)) * 100) / 100;
+    upd.valor_diaria = d2;
     const u = await sb(`reservas?id=eq.${z.id}`, { method: "PATCH", body: JSON.stringify(upd) }).then((r: Response) => r.json());
     item.aplicado = Array.isArray(u) && u.length > 0;
   }
@@ -247,11 +248,11 @@ Deno.serve(async (req) => {
             const d = await rV2.json().catch(() => ({}));
             const h = d.reservation || d.data || d;
             const num = (v: any) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : null; };
-            item.total_amount = num(h.total_amount);
-            item.total_to_receive = num(h.total_to_receive);
+            item.total_amount = num(h.total_amount) ? num(h.total_amount)! / 100 : null;
+            item.total_to_receive = num(h.total_to_receive) ? num(h.total_to_receive)! / 100 : null;
             item.total_daily_cents = num(h.total_daily_cents);
             item.daily_cents = num(h.daily_cents);
-            item.total_received = num(h.total_received);
+            item.total_received = num(h.total_received) ? num(h.total_received)! / 100 : null;
             item.ota_paga = h.has_payment_coming_from_ota ?? null;
             item.valor_proposto = item.total_amount || item.total_to_receive
               || (item.total_daily_cents ? Math.round(item.total_daily_cents) / 100 : null)
