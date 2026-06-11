@@ -2946,7 +2946,9 @@
             // MAS so se NINGUEM entra hoje nessa mesma cama (senao a noite ja esta vendida).
             // Alinha os cards com o contador "Disponivel" (que e por NOITE).
             const temEntradaHojeNaCama = (entradaHoje || []).some(r => matchQuarto(r, quarto));
-            if (isOccupied && isCheckout && !isCheckin && !temEntradaHojeNaCama) filterTags += ' available';
+            // libera pra noite se o checkout da reserva e HOJE — tanto quem AINDA vai sair quanto quem JA saiu (status check-out)
+            const liberaHoje = reserva && String(reserva.checkout) === hoje;
+            if (isOccupied && liberaHoje && !isCheckin && !temEntradaHojeNaCama) filterTags += ' available';
             if (isCleaning) filterTags += ' cleaning';
             if (isCheckin) filterTags += ' checkin';
             if (isCheckout) filterTags += ' checkout';
