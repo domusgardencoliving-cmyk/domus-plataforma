@@ -166,6 +166,26 @@ Deno.serve(async (req) => {
     const cookie = await loginHospedin(EMAIL, PASSWORD);
     if (!cookie) return jOut({ ok: false, erro: "login falhou" }, 500);
 
+    // modo sonda: devolve estrutura da pagina de uma reserva pra calibrar parser
+    if (b.acao === "sonda" && b.hospedin_id) {
+      const out: any = {};
+      for (const rota of ["edit", ""]) {
+        const url = `${HOSPEDIN_BASE}/${HOSPEDIN_SLUG}/reservations/${b.hospedin_id}${rota ? "/" + rota : ""}`;
+        const rr = await fetchComTimeout(url, { headers: { Cookie: cookie, accept: "text/html" } }, 15000, `sonda-${rota}`);
+        const html = rr.ok ? await rr.text() : "";
+        out[rota || "show"] = {
+          status: rr.status,
+          inputs: (html.match(/<input[^>]*name="[^"]*"[^>]*>/g) || []).map((i: string) => {
+            const n = (i.match(/name="([^"]*)"/) || [])[1];
+            const v = (i.match(/value="([^"]*)"/) || [])[1];
+            return n + "=" + String(v || "").slice(0, 30);
+          }).filter((x: string) => !/token|utf8|method/.test(x)).slice(0, 40),
+          reais: (html.match(/.{0,30}R\$\s?[\d.,]+.{0,10}/g) || []).map((x: string) => x.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()).slice(0, 20),
+        };
+      }
+      return jOut({ ok: true, sonda: out });
+    }
+
     const resultados: any[] = [];
     for (const z of zeradas) {
       const noites = Math.max(1, Math.round((new Date(z.checkout).getTime() - new Date(z.checkin).getTime()) / 86400000));
