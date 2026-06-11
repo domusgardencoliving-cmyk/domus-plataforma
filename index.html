@@ -6367,7 +6367,7 @@ html { scroll-behavior: smooth; }
                   <div>
                     <label class="text-xs uppercase tracking-wider text-domus-texto-suave">Destino</label>
                     <div class="flex gap-1 mt-1">
-                      <button onclick="setComDestino('todas', this)" class="com-dest-btn flex-1 py-2 rounded-lg border-2 border-domus-azul bg-domus-azul text-white text-xs">Todas</button>
+                      <button onclick="setComDestino('Todas', this)" class="com-dest-btn flex-1 py-2 rounded-lg border-2 border-domus-azul bg-domus-azul text-white text-xs">Todas</button>
                       <button onclick="setComDestino('Rib', this)" class="com-dest-btn flex-1 py-2 rounded-lg border border-domus-borda text-xs">Rib</button>
                       <button onclick="setComDestino('AP', this)" class="com-dest-btn flex-1 py-2 rounded-lg border border-domus-borda text-xs">AP</button>
                     </div>
@@ -9179,7 +9179,7 @@ html { scroll-behavior: smooth; }
         .order('criado_em', { ascending: false });
 
       // Filtrar: mostrar comunicados da unidade da moradora ou gerais (sem unidade)
-      const filtrados = (comunicados || []).filter(c => !c.destino || c.destino === 'todas' || c.destino === unidade);
+      const filtrados = (comunicados || []).filter(c => !c.destino || c.destino === 'Todas' || c.destino === unidade);
 
       if (filtrados.length === 0) {
         div.innerHTML = '<h2 class="font-serif text-2xl text-domus-azul-escuro mb-6">Comunicados</h2>' +
@@ -9197,7 +9197,7 @@ html { scroll-behavior: smooth; }
               '<span class="text-xs text-domus-texto-suave flex-shrink-0">' + data + '</span>' +
             '</div>' +
             '<p class="text-sm text-domus-texto leading-relaxed" style="white-space:pre-line">' + (c.mensagem || c.conteudo || '') + '</p>' +
-            (c.destino && c.destino !== 'todas' ? '<p class="text-xs text-domus-azul mt-3">📍 ' + (c.destino === 'AP' ? 'Andrade Pertence' : 'Ribeirao Claro') + '</p>' : '') +
+            (c.destino && c.destino !== 'Todas' ? '<p class="text-xs text-domus-azul mt-3">📍 ' + (c.destino === 'AP' ? 'Andrade Pertence' : 'Ribeirao Claro') + '</p>' : '') +
           '</div>';
         }).join('') +
         '</div>';
@@ -17847,7 +17847,7 @@ html { scroll-behavior: smooth; }
     // ==========================================
     // COMUNICADOS — CRUD real (tabela comunicados: titulo, mensagem, destino)
     // ==========================================
-    let _comDestino = 'todas';
+    let _comDestino = 'Todas';
     let _comEditId = null;
 
     function setComDestino(d, btn) {
@@ -17914,9 +17914,9 @@ html { scroll-behavior: smooth; }
       _comEditId = id;
       document.getElementById('com-titulo').value = c.titulo || '';
       document.getElementById('com-mensagem').value = c.mensagem || '';
-      const ordem = { todas: 0, Rib: 1, AP: 2 };
+      const ordem = { Todas: 0, Rib: 1, AP: 2 };
       const btns = document.querySelectorAll('.com-dest-btn');
-      setComDestino(c.destino || 'todas', btns[ordem[c.destino] !== undefined ? ordem[c.destino] : 0]);
+      setComDestino(c.destino || 'Todas', btns[ordem[c.destino] !== undefined ? ordem[c.destino] : 0]);
       document.getElementById('com-form-titulo').textContent = 'Editar comunicado';
       document.getElementById('com-btn-publicar').textContent = 'Salvar alterações';
       document.getElementById('com-btn-cancelar').classList.remove('hidden');
