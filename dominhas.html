@@ -200,8 +200,6 @@
             <div class="bg-domus-azul-claro/10 rounded-xl p-4 text-center">
               <p class="text-[10px] text-domus-azul uppercase tracking-wider font-semibold mb-1" id="fichas-mes-label">Este mês</p>
               <p class="text-2xl font-bold text-domus-azul-escuro" id="fichas-total-mes">0 fichas</p>
-              <p class="text-sm text-domus-texto-suave" id="fichas-valor-mes">R$ 0,00</p>
-              <p class="text-[10px] text-domus-texto-suave mt-1" id="fichas-preco-unit"></p>
             </div>
 
             <!-- Botoes 1-5 + outra quantidade -->
@@ -1887,8 +1885,7 @@
       if ((_morador.unidade || '').toUpperCase() !== 'AP') { card.classList.add('hidden'); return; }
       card.classList.remove('hidden');
       _fichasPreco = Number(_morador.preco_ficha_omo || 19.90);
-      var labelPreco = document.getElementById('fichas-preco-unit');
-      if (labelPreco) labelPreco.textContent = 'R$ ' + _fichasPreco.toFixed(2).replace('.', ',') + ' por ficha';
+      
       var labelMes = document.getElementById('fichas-mes-label');
       if (labelMes) {
         var d = new Date();
@@ -1914,7 +1911,7 @@
         var totalQtd = 0, totalValor = 0;
         data.forEach(function(f) { totalQtd += Number(f.quantidade); totalValor += Number(f.valor_total); });
         if (totalEl) totalEl.textContent = totalQtd + (totalQtd === 1 ? ' ficha' : ' fichas');
-        if (valorEl) valorEl.textContent = 'R$ ' + totalValor.toFixed(2).replace('.', ',');
+        if (valorEl) valorEl.textContent = '';
         if (extrato) {
           if (data.length === 0) {
             extrato.innerHTML = '<p class="text-[12px] text-domus-texto-suave italic text-center py-3">Nenhuma ficha registrada ainda.</p>';
@@ -1931,7 +1928,6 @@
                 + '<p class="text-[10px] text-domus-texto-suave">' + diaMes + ' as ' + hora + '</p>'
                 + '</div></div>'
                 + '<div class="text-right">'
-                + '<p class="text-[12px] text-domus-azul-escuro font-semibold">R$ ' + Number(f.valor_total).toFixed(2).replace('.', ',') + '</p>'
                 + '<button onclick="cancelarFicha(\'' + f.id + '\')" class="text-[10px] text-red-500 hover:underline">remover</button>'
                 + '</div></div>';
             }).join('');
@@ -1947,7 +1943,7 @@
       var val = document.getElementById('popup-valor-add');
       if (num) num.textContent = qtd;
       if (lbl) lbl.textContent = qtd === 1 ? 'ficha' : 'fichas';
-      if (val) val.textContent = 'R$ ' + (qtd * _fichasPreco).toFixed(2).replace('.', ',');
+      if (val) val.textContent = '';
       var pop = document.getElementById('popup-fichas-confirmar');
       if (pop) pop.classList.remove('hidden');
     }
