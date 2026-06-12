@@ -1917,9 +1917,15 @@
               var diaMes = String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0');
               var hora = String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
               var mesesN = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-              var etiqueta = f.cobranca_mes
-                ? '<span class="text-[10px] bg-domus-azul/10 text-domus-azul px-2 py-0.5 rounded-full whitespace-nowrap">no boleto de ' + mesesN[new Date(f.cobranca_mes + 'T12:00:00').getMonth()] + '</span>'
-                : '<button onclick="cancelarFicha(\'' + f.id + '\')" class="text-[10px] text-red-500 hover:underline">remover</button>';
+              var etiqueta;
+              if (f.cobranca_mes && f.boleto_pago) {
+                etiqueta = '<span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">paga ✓</span>';
+              } else if (f.cobranca_mes) {
+                etiqueta = '<span class="text-[10px] bg-domus-azul/10 text-domus-azul px-2 py-0.5 rounded-full whitespace-nowrap">no boleto de ' + mesesN[new Date(f.cobranca_mes + 'T12:00:00').getMonth()] + '</span>';
+              } else {
+                etiqueta = '<span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full whitespace-nowrap">próxima cobrança</span>'
+                  + '<br><button onclick="cancelarFicha(\'' + f.id + '\')" class="text-[10px] text-red-500 hover:underline">remover</button>';
+              }
               return '<div class="flex items-center justify-between bg-domus-bg/50 rounded-lg px-3 py-2">'
                 + '<div class="flex items-center gap-2">'
                 + '<span class="text-domus-azul">🧺</span>'
