@@ -1909,8 +1909,8 @@
       var valorEl = document.getElementById('fichas-valor-mes');
       if (!_morador || !_morador.morador_id) return;
       try {
-        var resp = await db.from('fichas_omo').select('*').eq('morador_id', _morador.morador_id).eq('mes_referencia', mesRefAtual()).eq('cancelado', false).order('registrado_em', { ascending: false });
-        var data = resp.data || [];
+        var resp = await db.rpc('extrato_fichas_dominha', { p_token: getCrachaDominha() });
+        var data = (resp.data || []).filter(function(f) { return String(f.mes_referencia).slice(0, 7) === mesRefAtual().slice(0, 7); });
         var totalQtd = 0, totalValor = 0;
         data.forEach(function(f) { totalQtd += Number(f.quantidade); totalValor += Number(f.valor_total); });
         if (totalEl) totalEl.textContent = totalQtd + (totalQtd === 1 ? ' ficha' : ' fichas');
@@ -1995,13 +1995,9 @@
       }
       try {
         var qtdSalva = _fichasQtdSelecionada;
-        var ins = await db.from('fichas_omo').insert({
-          morador_id: _morador.morador_id,
-          mes_referencia: mesRefAtual(),
-          quantidade: qtdSalva,
-          preco_unitario: _fichasPreco
-        });
+        var ins = await db.rpc('registrar_ficha_dominha', { p_token: getCrachaDominha(), p_quantidade: qtdSalva });
         if (ins.error) throw ins.error;
+        if (ins.data && ins.data.ok === false) throw new Error(ins.data.erro || 'falha');
         fecharPopupFichas();
         await carregarExtratoFichas();
         try { carregarBoleto(); } catch(e) {}
@@ -2042,7 +2038,7 @@
     async function cancelarFicha(id) {
       if (!confirm('Remover este registro?')) return;
       try {
-        var del = await db.from('fichas_omo').delete().eq('id', id);
+        var del = await db.rpc('cancelar_ficha_dominha', { p_token: getCrachaDominha(), p_id: id });
         if (del.error) throw del.error;
         await carregarExtratoFichas();
         try { carregarBoleto(); } catch(e) {}
