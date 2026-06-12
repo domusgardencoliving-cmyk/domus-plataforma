@@ -1887,11 +1887,7 @@
       _fichasPreco = Number(_morador.preco_ficha_omo || 19.90);
       
       var labelMes = document.getElementById('fichas-mes-label');
-      if (labelMes) {
-        var d = new Date();
-        var meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-        labelMes.textContent = meses[d.getMonth()] + '/' + d.getFullYear();
-      }
+      if (labelMes) labelMes.textContent = 'Pra próxima cobrança';
       carregarExtratoFichas();
     }
 
@@ -1907,9 +1903,9 @@
       if (!_morador || !_morador.morador_id) return;
       try {
         var resp = await db.rpc('extrato_fichas_dominha', { p_token: getCrachaDominha() });
-        var data = (resp.data || []).filter(function(f) { return String(f.mes_referencia).slice(0, 7) === mesRefAtual().slice(0, 7); });
-        var totalQtd = 0, totalValor = 0;
-        data.forEach(function(f) { totalQtd += Number(f.quantidade); totalValor += Number(f.valor_total); });
+        var data = resp.data || [];
+        var totalQtd = 0;
+        data.forEach(function(f) { if (!f.cobranca_mes) totalQtd += Number(f.quantidade); });
         if (totalEl) totalEl.textContent = totalQtd + (totalQtd === 1 ? ' ficha' : ' fichas');
         if (valorEl) valorEl.textContent = '';
         if (extrato) {
@@ -1920,6 +1916,10 @@
               var dt = new Date(f.registrado_em);
               var diaMes = String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0');
               var hora = String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
+              var mesesN = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+              var etiqueta = f.cobranca_mes
+                ? '<span class="text-[10px] bg-domus-azul/10 text-domus-azul px-2 py-0.5 rounded-full whitespace-nowrap">no boleto de ' + mesesN[new Date(f.cobranca_mes + 'T12:00:00').getMonth()] + '</span>'
+                : '<button onclick="cancelarFicha(\'' + f.id + '\')" class="text-[10px] text-red-500 hover:underline">remover</button>';
               return '<div class="flex items-center justify-between bg-domus-bg/50 rounded-lg px-3 py-2">'
                 + '<div class="flex items-center gap-2">'
                 + '<span class="text-domus-azul">🧺</span>'
@@ -1928,7 +1928,7 @@
                 + '<p class="text-[10px] text-domus-texto-suave">' + diaMes + ' as ' + hora + '</p>'
                 + '</div></div>'
                 + '<div class="text-right">'
-                + '<button onclick="cancelarFicha(\'' + f.id + '\')" class="text-[10px] text-red-500 hover:underline">remover</button>'
+                + etiqueta
                 + '</div></div>';
             }).join('');
           }
