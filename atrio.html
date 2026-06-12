@@ -325,8 +325,9 @@
         </button>
       </div>
 
-      <div class="px-5 pt-6 pb-3">
-        <a href="/conectar-canais" class="text-xs text-slate-500 hover:text-slate-700 hover:underline">⚙️ Conectar canais</a>
+      <div class="px-5 pt-6 pb-3 space-y-2">
+        <a href="/conectar-canais" class="block text-xs text-slate-500 hover:text-slate-700 hover:underline">⚙️ Conectar canais</a>
+        <button onclick="abrirContas()" class="block w-full text-left text-sm font-semibold rounded-lg px-3 py-2.5 text-white" style="background:linear-gradient(135deg,#0A6B75,#1BA8B8)">📌 Contas do Mês <span id="badge-contas-atraso" class="hidden ml-1 text-[10px] bg-red-500 rounded-full px-1.5 py-0.5 align-middle">0</span></button>
       </div>
     </nav>
 
@@ -1366,5 +1367,107 @@
   });
 </script>
 
-</body>
+
+<!-- ===== CONTAS DO MÊS (nosso Asana) ===== -->
+<div id="contas-overlay" style="display:none;position:fixed;inset:0;z-index:80;background:rgba(10,49,66,.45)" onclick="if(event.target===this)fecharContas()">
+  <div style="position:absolute;inset:0;margin:auto;max-width:760px;max-height:92vh;background:#FFF8F0;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.35)" class="m-2 lg:m-auto">
+    <div class="flex items-center justify-between px-5 py-4" style="background:linear-gradient(135deg,#0A6B75,#1BA8B8)">
+      <div>
+        <h2 class="text-white font-semibold text-lg leading-tight">📌 Contas do Mês</h2>
+        <p class="text-white/70 text-xs">nosso Asana — sem juros nunca mais</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="mudarMesContas(-1)" class="text-white/90 hover:text-white px-2 py-1 rounded bg-white/15">‹</button>
+        <span id="contas-mes-label" class="text-white text-sm font-medium min-w-[110px] text-center"></span>
+        <button onclick="mudarMesContas(1)" class="text-white/90 hover:text-white px-2 py-1 rounded bg-white/15">›</button>
+        <button onclick="fecharContas()" class="ml-2 text-white/90 hover:text-white text-xl leading-none">×</button>
+      </div>
+    </div>
+    <div id="contas-resumo" class="px-5 py-3 text-xs text-slate-600 border-b border-slate-200 bg-white"></div>
+    <div id="contas-lista" class="flex-1 overflow-y-auto px-4 py-4 space-y-2"></div>
+    <div class="px-5 py-3 bg-white border-t border-slate-200 text-[11px] text-slate-400">
+      Débito automático: o sistema confere se caiu · Manual: alerta antes do vencimento · Pra incluir/ajustar uma conta, fala com o escritório 💛
+    </div>
+  </div>
+</div>
+<script>
+  let _contasMes = new Date(); _contasMes.setDate(1);
+  const MESES_C = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const fmtBRL = v => v == null ? '—' : Number(v).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+
+  function abrirContas(){ document.getElementById('contas-overlay').style.display='block'; carregarContas(); }
+  function fecharContas(){ document.getElementById('contas-overlay').style.display='none'; }
+  function mudarMesContas(d){ _contasMes.setMonth(_contasMes.getMonth()+d); carregarContas(); }
+
+  function mesRefContas(){
+    return _contasMes.getFullYear() + '-' + String(_contasMes.getMonth()+1).padStart(2,'0') + '-01';
+  }
+
+  async function carregarContas(){
+    document.getElementById('contas-mes-label').textContent = MESES_C[_contasMes.getMonth()] + ' ' + _contasMes.getFullYear();
+    const { data, error } = await db.from('contas_mes').select('*').eq('mes_referencia', mesRefContas()).order('vencimento', { ascending: true, nullsFirst: false });
+    if (error) { document.getElementById('contas-lista').innerHTML = '<p class="text-sm text-red-600 px-2">Erro ao carregar: ' + error.message + '</p>'; return; }
+    renderContas(data || []);
+  }
+
+  function renderContas(contas){
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    let html = '', atrasadas = 0, alerta = 0, totalPrev = 0, totalPago = 0;
+    const efetivo = c => {
+      if (c.status === 'pago' || c.status === 'conferido') return c.status;
+      if (c.vencimento && new Date(c.vencimento + 'T12:00') < hoje) return 'atrasado';
+      return 'pendente';
+    };
+    const ordem = { atrasado: 0, pendente: 1, pago: 2, conferido: 2 };
+    contas.sort((a,b) => (ordem[efetivo(a)] - ordem[efetivo(b)]) || String(a.vencimento||'9').localeCompare(String(b.vencimento||'9')));
+    contas.forEach(c => {
+      const st = efetivo(c);
+      if (c.valor) totalPrev += Number(c.valor);
+      if (st === 'pago' || st === 'conferido') { if (c.valor) totalPago += Number(c.valor); }
+      const diasAte = c.vencimento ? Math.round((new Date(c.vencimento + 'T12:00') - hoje) / 86400000) : null;
+      let chip, borda = '#E2E8F0', fundo = 'white', anim = '';
+      if (st === 'atrasado') { atrasadas++; chip = '<span class="text-[10px] font-bold text-white bg-red-600 rounded-full px-2 py-0.5">VENCIDA' + (diasAte != null ? ' há ' + (-diasAte) + 'd' : '') + '</span>'; borda = '#DC2626'; fundo = '#FEF2F2'; anim = 'animation:pulsar 1.2s infinite'; }
+      else if (st === 'pendente' && diasAte != null && diasAte <= 3) { alerta++; chip = '<span class="text-[10px] font-bold text-white bg-amber-500 rounded-full px-2 py-0.5">' + (diasAte === 0 ? 'VENCE HOJE' : 'vence em ' + diasAte + 'd') + '</span>'; borda = '#F59E0B'; fundo = '#FFFBEB'; }
+      else if (st === 'pendente') { chip = '<span class="text-[10px] font-semibold text-slate-600 bg-slate-200 rounded-full px-2 py-0.5">pendente</span>'; }
+      else if (st === 'conferido') { chip = '<span class="text-[10px] font-semibold text-white bg-emerald-600 rounded-full px-2 py-0.5">paga ✓ conferida</span>'; }
+      else { chip = '<span class="text-[10px] font-semibold text-white bg-emerald-500 rounded-full px-2 py-0.5">paga ✓</span>'; }
+      const tipoIco = c.tipo_pagamento === 'debito_automatico' ? '🔄 débito automático' : (c.tipo_pagamento === 'boleto' ? '📄 boleto' : '👆 manual');
+      const venc = c.vencimento ? new Date(c.vencimento + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : 'sem data';
+      const btn = (st === 'pago' || st === 'conferido') ? '' :
+        '<button onclick="marcarContaPaga(\'' + c.id + '\')" class="text-[11px] font-semibold text-white rounded-full px-3 py-1.5" style="background:#0A6B75">marcar paga</button>';
+      html += '<div class="rounded-xl p-3.5 flex items-center justify-between gap-3" style="background:' + fundo + ';border:1.5px solid ' + borda + ';' + anim + '">' +
+        '<div class="min-w-0"><p class="text-sm font-semibold text-slate-800 truncate">' + c.nome + ' <span class="text-[10px] font-normal text-slate-400">' + c.unidade + '</span></p>' +
+        '<p class="text-[11px] text-slate-500 mt-0.5">venc ' + venc + ' · ' + tipoIco + (c.observacoes ? ' · ' + c.observacoes : '') + '</p></div>' +
+        '<div class="text-right flex-shrink-0"><p class="text-sm font-bold text-slate-800">' + fmtBRL(c.valor) + '</p><div class="mt-1 flex items-center gap-2 justify-end">' + chip + btn + '</div></div></div>';
+    });
+    if (!contas.length) html = '<p class="text-sm text-slate-400 text-center py-10">Nenhuma conta neste mês.</p>';
+    document.getElementById('contas-lista').innerHTML = html;
+    document.getElementById('contas-resumo').innerHTML =
+      '<span class="font-semibold text-slate-700">' + contas.length + ' contas</span> · previsto ' + fmtBRL(totalPrev) + ' · pago ' + fmtBRL(totalPago) +
+      (atrasadas ? ' · <span class="font-bold text-red-600">' + atrasadas + ' VENCIDA' + (atrasadas > 1 ? 'S' : '') + ' 🚨</span>' : '') +
+      (alerta ? ' · <span class="font-bold text-amber-600">' + alerta + ' vencendo</span>' : '');
+    const badge = document.getElementById('badge-contas-atraso');
+    if (badge) { const n = atrasadas + alerta; badge.textContent = n; badge.classList.toggle('hidden', n === 0); }
+  }
+
+  async function marcarContaPaga(id){
+    const { error } = await db.rpc('atualizar_conta_mes', { p_id: id, p_status: 'pago' });
+    if (error) { alert('Erro: ' + error.message); return; }
+    carregarContas();
+  }
+
+  // badge ao abrir o Átrio (mês atual)
+  (async () => {
+    try {
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const ref = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-01';
+      const { data } = await db.from('contas_mes').select('status,vencimento').eq('mes_referencia', ref);
+      const n = (data || []).filter(c => c.status !== 'pago' && c.status !== 'conferido' && c.vencimento && (new Date(c.vencimento + 'T12:00') - hoje) / 86400000 <= 3).length;
+      const badge = document.getElementById('badge-contas-atraso');
+      if (badge && n) { badge.textContent = n; badge.classList.remove('hidden'); }
+    } catch(_) {}
+  })();
+</script>
+<style>@keyframes pulsar{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.35)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}</style>
+\n</body>
 </html>
