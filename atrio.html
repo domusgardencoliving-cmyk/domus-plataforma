@@ -327,7 +327,7 @@
 
       <div class="px-5 pt-6 pb-3 space-y-2">
         <a href="/conectar-canais" class="block text-xs text-slate-500 hover:text-slate-700 hover:underline">⚙️ Conectar canais</a>
-        <button onclick="abrirContas()" class="block w-full text-left text-sm font-semibold rounded-lg px-3 py-2.5 text-white" style="background:linear-gradient(135deg,#0A6B75,#1BA8B8)">📌 Contas do Mês <span id="badge-contas-atraso" class="hidden ml-1 text-[10px] bg-red-500 rounded-full px-1.5 py-0.5 align-middle">0</span></button>
+        <button onclick="abrirContas()" class="block w-full text-left text-sm font-semibold rounded-lg px-3 py-2.5" style="background:white;border:1.5px solid #F06A6A;color:#0A3142"><svg viewBox="0 0 24 24" width="16" height="16" style="display:inline-block;vertical-align:-2px;margin-right:6px"><circle cx="12" cy="6.5" r="4.4" fill="#F06A6A"/><circle cx="6" cy="16.5" r="4.4" fill="#F06A6A"/><circle cx="18" cy="16.5" r="4.4" fill="#F06A6A"/></svg>nosso Asana <span id="badge-contas-atraso" class="hidden ml-1 text-[10px] text-white bg-red-500 rounded-full px-1.5 py-0.5 align-middle">0</span></button>
       </div>
     </nav>
 
@@ -1371,10 +1371,10 @@
 <!-- ===== CONTAS DO MÊS (nosso Asana) ===== -->
 <div id="contas-overlay" style="display:none;position:fixed;inset:0;z-index:80;background:rgba(10,49,66,.45)" onclick="if(event.target===this)fecharContas()">
   <div style="position:absolute;inset:0;margin:auto;max-width:760px;max-height:92vh;background:#FFF8F0;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.35)" class="m-2 lg:m-auto">
-    <div class="flex items-center justify-between px-5 py-4" style="background:linear-gradient(135deg,#0A6B75,#1BA8B8)">
+    <div class="flex items-center justify-between px-5 py-4" style="background:linear-gradient(135deg,#E8584F,#F06A6A)">
       <div>
-        <h2 class="text-white font-semibold text-lg leading-tight">📌 Contas do Mês</h2>
-        <p class="text-white/70 text-xs">nosso Asana — sem juros nunca mais</p>
+        <h2 class="text-white font-semibold text-lg leading-tight"><svg viewBox="0 0 24 24" width="20" height="20" style="display:inline-block;vertical-align:-3px;margin-right:7px"><circle cx="12" cy="6.5" r="4.4" fill="#FFFFFF"/><circle cx="6" cy="16.5" r="4.4" fill="#FFFFFF"/><circle cx="18" cy="16.5" r="4.4" fill="#FFFFFF"/></svg>nosso Asana</h2>
+        <p class="text-white/70 text-xs">contas do mês — sem juros nunca mais 🧡</p>
       </div>
       <div class="flex items-center gap-2">
         <button onclick="mudarMesContas(-1)" class="text-white/90 hover:text-white px-2 py-1 rounded bg-white/15">‹</button>
