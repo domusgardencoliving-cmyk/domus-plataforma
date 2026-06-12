@@ -1923,8 +1923,7 @@
               } else if (f.cobranca_mes) {
                 etiqueta = '<span class="text-[10px] bg-domus-azul/10 text-domus-azul px-2 py-0.5 rounded-full whitespace-nowrap">no boleto de ' + mesesN[new Date(f.cobranca_mes + 'T12:00:00').getMonth()] + '</span>';
               } else {
-                etiqueta = '<span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full whitespace-nowrap">próxima cobrança</span>'
-                  + '<br><button onclick="cancelarFicha(\'' + f.id + '\')" class="text-[10px] text-red-500 hover:underline">remover</button>';
+                etiqueta = '<span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full whitespace-nowrap">próxima cobrança</span>';
               }
               return '<div class="flex items-center justify-between bg-domus-bg/50 rounded-lg px-3 py-2">'
                 + '<div class="flex items-center gap-2">'
