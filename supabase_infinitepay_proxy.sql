@@ -1,13 +1,15 @@
 -- =========================================================
--- PROXY INFINITEPAY — Função server-side para gerar links
--- Rodar no SQL Editor do Supabase
+-- PROXY INFINITEPAY — Funções server-side (checkout + webhook)
+-- Atualizado 12/06/2026: webhook_url automático em todo link
+-- + processar_webhook entende o formato NOVO do Checkout
+-- (invoice_slug/paid_amount/transaction_nsu/order_nsu).
+-- Fonte da verdade = banco; este arquivo espelha o deploy.
 -- =========================================================
 
--- 1) Habilitar a extensão HTTP (permite chamadas HTTP do PostgreSQL)
 create extension if not exists http with schema extensions;
 
--- 2) Função que gera link de checkout InfinitePay
--- Chamada pelo frontend via: db.rpc('gerar_checkout_infinitepay', {...})
+-- 1) Gera link de checkout JÁ com webhook_url apontando pro
+--    endpoint webhook-infinitepay (notificação automática de pagamento)
 create or replace function public.gerar_checkout_infinitepay(
   p_handle text,
   p_descricao text,
@@ -21,84 +23,52 @@ create or replace function public.gerar_checkout_infinitepay(
 returns json
 language plpgsql
 security definer
-as $$
+as $fn$
 declare
-  payload json;
+  payload jsonb;
   response extensions.http_response;
   result json;
 begin
-  -- Montar o payload
-  payload := json_build_object(
+  payload := jsonb_build_object(
     'handle', p_handle,
-    'items', json_build_array(
-      json_build_object(
-        'description', p_descricao,
-        'quantity', 1,
-        'price', p_valor_centavos
-      )
+    'webhook_url', 'https://motwhfbpundrhvuwjntw.supabase.co/functions/v1/webhook-infinitepay',
+    'items', jsonb_build_array(
+      jsonb_build_object('description', p_descricao, 'quantity', 1, 'price', p_valor_centavos)
     )
   );
-
-  -- Adicionar campos opcionais
-  if p_order_nsu is not null then
-    payload := (
-      select json_object_agg(key, value)
-      from (
-        select * from json_each(payload)
-        union all
-        select 'order_nsu', to_json(p_order_nsu)
-      ) t
-    );
-  end if;
-
-  if p_redirect_url is not null then
-    payload := (
-      select json_object_agg(key, value)
-      from (
-        select * from json_each(payload)
-        union all
-        select 'redirect_url', to_json(p_redirect_url)
-      ) t
-    );
-  end if;
-
+  if p_order_nsu is not null then payload := payload || jsonb_build_object('order_nsu', p_order_nsu); end if;
+  if p_redirect_url is not null then payload := payload || jsonb_build_object('redirect_url', p_redirect_url); end if;
   if p_cliente_nome is not null then
-    payload := (
-      select json_object_agg(key, value)
-      from (
-        select * from json_each(payload)
-        union all
-        select 'customer', json_build_object(
-          'name', p_cliente_nome,
-          'email', coalesce(p_cliente_email, ''),
-          'phone_number', coalesce(p_cliente_telefone, '')
-        )
-      ) t
-    );
+    payload := payload || jsonb_build_object('customer', jsonb_build_object(
+      'name', p_cliente_nome,
+      'email', coalesce(p_cliente_email, ''),
+      'phone_number', coalesce(p_cliente_telefone, '')
+    ));
   end if;
-
-  -- Fazer a chamada HTTP POST para InfinitePay
   select * into response
   from extensions.http((
     'POST',
-    'https://api.checkout.infinitepay.io/links',  -- URL nova (migração 13/maio/2026, prazo era 01/06)
+    'https://api.checkout.infinitepay.io/links',
     array[extensions.http_header('Content-Type', 'application/json')],
     'application/json',
     payload::text
   )::extensions.http_request);
-
-  -- Retornar a resposta
   begin
     result := response.content::json;
   exception when others then
     result := json_build_object('error', 'Resposta invalida da InfinitePay', 'raw', response.content);
   end;
-
   return result;
 end;
-$$;
+$fn$;
 
--- 3) Permitir que qualquer usuário (anon) chame a função
--- (necessário para o formulário público de pré-reserva)
 grant execute on function public.gerar_checkout_infinitepay to anon;
-grant execute on function public.gerar
+
+-- 2) processar_webhook_infinitepay: extração atualizada no banco em
+--    12/06/2026 pra aceitar formato novo do Checkout:
+--    v_evento  += CASE WHEN payload ? 'invoice_slug' THEN 'checkout.paid'
+--    v_status  += CASE WHEN invoice_slug e paid_amount/amount > 0 THEN 'paid'
+--    v_valor   += paid_amount (prioridade) / 100
+--    v_transaction_id += transaction_nsu
+--    Vínculo de reserva continua por order_nsu 'RES-<uuid>' (reservar.html linha ~2863).
+--    Definição completa: pg_get_functiondef no banco.
