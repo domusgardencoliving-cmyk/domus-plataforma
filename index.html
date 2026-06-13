@@ -3215,7 +3215,7 @@ html { scroll-behavior: smooth; }
               <!-- KPIs principais - linha 1 -->
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div class="bg-domus-azul/10 rounded-xl p-5">
-                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Hóspedes (ultimos 30 dias)</p>
+                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Hóspedes (mês)</p>
                   <p id="uni-ap-hostel-hospedes" class="font-serif text-2xl text-domus-azul-escuro mt-1">...</p>
                   <p class="text-xs text-domus-azul mt-1"></p>
                 </div>
@@ -18510,11 +18510,12 @@ html { scroll-behavior: smooth; }
           } else if (cardIns) { cardIns.style.display = 'none'; }
         } catch (e) { console.warn('fechamento unidade:', e); }
 
-        // Para AP: carregar dados do hostel
+        // Para AP: carregar dados do hostel — pelo MÊS selecionado (consistente com Coliving/Resumo)
         if (key === 'ap') {
           const { data: reservas } = await db.from('reservas')
             .select('checkin, checkout, noites, valor_total, valor_diaria, status, plataforma')
-            .gte('checkin', ha30dias);
+            .gte('checkin', mesRef + '-01')
+            .lt('checkin', proxMesRef);
 
           const total = (reservas||[]).length;
           const canceladas = (reservas||[]).filter(r=>r.status==='cancelada').length;
