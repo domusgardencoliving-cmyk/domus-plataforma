@@ -12619,6 +12619,17 @@ html { scroll-behavior: smooth; }
       document.querySelectorAll('.ap-sub-btn').forEach(b => b.className = inativo);
       if (btn) btn.className = ativo;
       else document.querySelector('.ap-sub-btn').className = ativo;
+      // Carrega dados reais da aba Obra ao abrir
+      if (secao === 'ap-obra') { carregarObraAP(); }
+    }
+
+    async function carregarObraAP() {
+      try {
+        const { data, error } = await db.rpc('obra_ap_resumo');
+        if (error || !data) { console.warn('obra_ap_resumo', error); return; }
+        const pgs = (data.pagamentos || []).map(p => ({ mes: p.mes, valor: Number(p.valor) }));
+        carregarObra(Number(data.valor_total), pgs);
+      } catch (e) { console.warn('carregarObraAP', e); }
     }
 
     // ==========================================
