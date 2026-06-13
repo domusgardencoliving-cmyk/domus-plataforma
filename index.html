@@ -18231,7 +18231,7 @@ html { scroll-behavior: smooth; }
           + '<div class="kpis">'
           + '<div class="kpi ent"><div class="lbl">Entradas</div><div class="val">' + moeda(totR) + '</div></div>'
           + '<div class="kpi sai"><div class="lbl">Saídas</div><div class="val">' + moeda(totD) + '</div></div>'
-          + '<div class="kpi res"><div class="lbl">Resultado</div><div class="val">' + (res >= 0 ? '+' : '') + moeda(res) + '</div><div style="font-size:.72rem;color:#bfe3e8;margin-top:4px">' + (String(unidade).toUpperCase().startsWith('A') ? 'pró-labore ' + moeda(totR * 0.125) : moeda(res / 2) + ' por sócio (50/50)') + '</div></div>'
+          + '<div class="kpi res"><div class="lbl">Resultado</div><div class="val">' + (res >= 0 ? '+' : '') + moeda(res) + '</div><div style="font-size:.72rem;color:#bfe3e8;margin-top:4px">' + (String(unidade).toUpperCase().startsWith('A') ? 'margem ' + margem + '%' : moeda(res / 2) + ' por sócio (50/50)') + '</div></div>'
           + '<div class="kpi"><div class="lbl">Margem</div><div class="val" style="color:var(--tq)">' + margem + '%</div></div>'
           + '</div>'
           + '<div class="grid2"><div class="card"><h3>Saídas por categoria</h3><div style="text-align:center"><canvas id="gDesp" width="520" height="280"></canvas></div></div>'
@@ -18334,9 +18334,8 @@ html { scroll-behavior: smooth; }
         if (elSoc) {
           const margem = rec > 0 ? Math.round((resultado / rec) * 100) : 0;
           if (key === 'ap') {
-            // AP: sem divisão por sócio. Pró-labore Gabi = 12,5% do faturamento.
-            const proLabore = rec * 0.125;
-            elSoc.innerHTML = (rec > 0 ? 'margem ' + margem + '%' : '') + ' · pró-labore <span class="valor-financeiro">' + fmt(proLabore) + '</span>';
+            // AP: sem divisão por sócio — só margem. Pró-labore entra como linha nas saídas.
+            elSoc.innerHTML = (rec > 0 ? 'margem ' + margem + '%' : '');
           } else {
             elSoc.innerHTML = '<span class="valor-financeiro">' + fmt(resultado / 2) + '</span> por sócio (50/50)' + (rec > 0 ? ' · margem ' + margem + '%' : '');
           }
