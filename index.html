@@ -3111,33 +3111,34 @@ html { scroll-behavior: smooth; }
             <div class="flex flex-wrap gap-2 mb-4 sm:mb-8 border-b border-domus-borda pb-3">
               <button onclick="mostrarSubAP('ap-coliving', this)" class="ap-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-domus-azul text-white transition">Coliving</button>
               <button onclick="mostrarSubAP('ap-hostel', this)" class="ap-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Hostel</button>
+              <button onclick="mostrarSubAP('ap-mercadinho', this)" class="ap-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Mercadinho</button>
               <button onclick="mostrarSubAP('ap-obra', this)" class="ap-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Obra</button>
               <button onclick="mostrarSubAP('ap-resumo', this)" class="ap-sub-btn px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition">Resumo</button>
             </div>
 
             <!-- ======= AP — COLIVING ======= -->
             <div id="ap-coliving" class="ap-sub-section fade-in">
+              <p class="text-xs text-domus-texto-suave mb-4 italic">Só o coliving (moradoras). As despesas da casa e o resultado consolidado ficam na aba Resumo.</p>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
                 <div class="bg-domus-azul/10 rounded-xl p-5">
-                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Receitas</p>
-                  <p id="uni-ap-receita" class="font-serif text-2xl text-domus-azul-escuro mt-1">carregando...</p>
-                  <p id="uni-ap-receita-delta" class="text-xs text-domus-azul mt-1"></p>
+                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Receita coliving</p>
+                  <p id="uni-ap-col-receita" class="font-serif text-2xl text-domus-azul-escuro mt-1">carregando...</p>
+                  <p class="text-xs text-domus-azul mt-1">mensalidades do mês</p>
                 </div>
-                <div class="bg-domus-terra/10 rounded-xl p-5">
-                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Despesas</p>
-                  <p id="uni-ap-despesa" class="font-serif text-2xl text-domus-terra-escura mt-1">carregando...</p>
-                  <p id="uni-ap-despesa-delta" class="text-xs text-domus-terra-escura mt-1"></p>
-                </div>
-                <div class="bg-domus-azul-claro/20 rounded-xl p-5">
-                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Resultado</p>
-                  <p id="uni-ap-resultado" class="font-serif text-2xl text-domus-azul mt-1">carregando...</p>
-                <p id="uni-ap-socios" class="text-xs text-domus-texto-suave mt-1"></p>
-                  <p id="uni-ap-resultado-delta" class="text-xs text-domus-azul mt-1"></p>
+                <div class="bg-domus-azul/10 rounded-xl p-5">
+                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Moradoras ativas</p>
+                  <p id="uni-ap-col-moradoras" class="font-serif text-2xl text-domus-azul-escuro mt-1">...</p>
+                  <p class="text-xs text-domus-texto-suave mt-1">no coliving</p>
                 </div>
                 <div class="bg-domus-areia rounded-xl p-5">
                   <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Vagas disponiveis</p>
                   <p id="uni-ap-vagas" class="font-serif text-2xl text-domus-azul-escuro mt-1">...</p>
                   <p id="uni-ap-vagas-detail" class="text-xs text-domus-texto-suave mt-1">de 15 quartos</p>
+                </div>
+                <div class="bg-domus-terra/10 rounded-xl p-5">
+                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Pendências</p>
+                  <p id="uni-ap-col-pend" class="font-serif text-2xl text-domus-terra-escura mt-1">...</p>
+                  <p class="text-xs text-domus-terra-escura mt-1">a receber</p>
                 </div>
               </div>
 
@@ -3219,461 +3220,38 @@ html { scroll-behavior: smooth; }
                 <div class="bg-domus-areia/60 rounded-xl p-5">
                   <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Avaliações</p>
                   <div class="flex items-baseline gap-2 mt-1">
-                    <span class="font-serif text-2xl text-domus-azul-escuro">4,7</span>
-                    <span class="text-[10px] text-domus-texto-suave">media</span>
+                    <span id="uni-ap-hostel-nota" class="font-serif text-2xl text-domus-texto-suave">—</span>
                   </div>
-                  <div class="flex gap-2 mt-2">
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#003580]/10 text-[#003580] font-medium">B. 4,6</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#FF5A5F]/10 text-[#FF5A5F] font-medium">A. 4,8</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#4285F4]/10 text-[#4285F4] font-medium">G. 4,7</span>
-                  </div>
+                  <p class="text-[10px] text-domus-texto-suave mt-2">conectar Google · Booking · Airbnb</p>
                 </div>
               </div>
 
-              <!-- Canais + Ocupação -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
-                <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
-                  <h3 class="font-serif text-lg text-domus-azul-escuro mb-4">Canais de reserva</h3>
-                  <div class="space-y-3">
-                    <div>
-                      <div class="flex justify-between text-sm mb-1"><span>Direto (WhatsApp/site)</span><span class="font-medium">40%</span></div>
-                      <div class="w-full bg-domus-creme rounded-full h-2.5"><div class="bg-domus-azul h-2.5 rounded-full" style="width: 40%;"></div></div>
-                    </div>
-                    <div>
-                      <div class="flex justify-between text-sm mb-1"><span>Booking.com</span><span class="font-medium">35%</span></div>
-                      <div class="w-full bg-domus-creme rounded-full h-2.5"><div class="bg-domus-azul-escuro h-2.5 rounded-full" style="width: 35%;"></div></div>
-                    </div>
-                    <div>
-                      <div class="flex justify-between text-sm mb-1"><span>Airbnb</span><span class="font-medium">15%</span></div>
-                      <div class="w-full bg-domus-creme rounded-full h-2.5"><div class="bg-domus-terra h-2.5 rounded-full" style="width: 15%;"></div></div>
-                    </div>
-                    <div>
-                      <div class="flex justify-between text-sm mb-1"><span>Outros</span><span class="font-medium">10%</span></div>
-                      <div class="w-full bg-domus-creme rounded-full h-2.5"><div class="bg-domus-bege h-2.5 rounded-full" style="width: 10%;"></div></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
-                  <h3 class="font-serif text-lg text-domus-azul-escuro mb-4">Ocupação (ultimos 6 meses)</h3>
-                  <div class="h-40 flex items-end gap-2">
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul/40 rounded-t" style="height: 28%;"></div>
-                      <span class="text-xs text-domus-texto-suave">nov</span>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul/40 rounded-t" style="height: 42%;"></div>
-                      <span class="text-xs text-domus-texto-suave">dez</span>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul/40 rounded-t" style="height: 50%;"></div>
-                      <span class="text-xs text-domus-texto-suave">jan</span>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul/40 rounded-t" style="height: 35%;"></div>
-                      <span class="text-xs text-domus-texto-suave">fev</span>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul/40 rounded-t" style="height: 32%;"></div>
-                      <span class="text-xs text-domus-texto-suave">mar</span>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                      <div class="w-full bg-domus-azul rounded-t" style="height: 38%;"></div>
-                      <span class="text-xs text-domus-azul-escuro font-medium">abr</span>
-                    </div>
-                  </div>
-                  <p class="text-xs text-domus-texto-suave mt-3">Taxa de ocupacao mensal — Hostel AP</p>
-                </div>
-              </div>
-
-              <!-- Perfil dos hospedes -->
-              <h3 class="font-serif text-xl text-domus-azul-escuro mb-4 mt-2">Perfil dos hospedes</h3>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
-
-                <!-- Motivo da hospedagem -->
-                <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
-                  <h4 class="font-serif text-base text-domus-azul-escuro mb-4">Motivo da hospedagem</h4>
-                  <div class="space-y-3">
-                    <div>
-                      <div class="flex justify-between text-sm mb-1"><span>Turismo/Passeio</span><span class="font-medium text-domus-azul-escuro">45%</span></div>
-                      <div class="w-full bg-domus-creme rounded-full h-3"><div class="bg-domus-azul h-3 rounded-full" style="width: 45%;"></div></div>
-                    </div>
-                    <div>
-                      <div class="flex justify-between text-sm mb-1"><span>Trabalho/Negocios</span><span class="font-medium text-domus-azul-escuro">28%</span></div>
-                      <div class="w-full bg-domus-creme rounded-full h-3"><div class="bg-domus-azul-escuro h-3 rounded-full" style="width: 28%;"></div></div>
-                    </div>
-                    <div>
-                      <div class="flex justify-between text-sm mb-1"><span>Evento/Feira</span><span class="font-medium text-domus-azul-escuro">12%</span></div>
-                      <div class="w-full bg-domus-creme rounded-full h-3"><div class="bg-domus-terra h-3 rounded-full" style="width: 12%;"></div></div>
-                    </div>
-                    <div>
-                      <div class="flex justify-between text-sm mb-1"><span>Intercambio/Estudo</span><span class="font-medium text-domus-azul-escuro">7%</span></div>
-                      <div class="w-full bg-domus-creme rounded-full h-3"><div class="bg-domus-azul-claro h-3 rounded-full" style="width: 7%;"></div></div>
-                    </div>
-                    <div>
-                      <div class="flex justify-between text-sm mb-1"><span class="text-domus-texto-suave italic">Não informado</span><span class="font-medium text-gray-400">8%</span></div>
-                      <div class="w-full bg-domus-creme rounded-full h-3"><div class="bg-domus-bege h-3 rounded-full" style="width: 8%;"></div></div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Faixa etaria -->
-                <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
-                  <h4 class="font-serif text-base text-domus-azul-escuro mb-4">Faixa etaria</h4>
-                  <div class="space-y-2">
-                    <div class="flex items-center gap-3">
-                      <span class="text-xs text-domus-texto-suave w-16 text-right">18-24</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-4 overflow-hidden"><div class="bg-domus-azul-claro h-4 rounded-full flex items-center justify-end pr-2" style="width: 32%;"><span class="text-[10px] text-white font-medium">32%</span></div></div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <span class="text-xs text-domus-texto-suave w-16 text-right">25-34</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-4 overflow-hidden"><div class="bg-domus-azul h-4 rounded-full flex items-center justify-end pr-2" style="width: 41%;"><span class="text-[10px] text-white font-medium">41%</span></div></div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <span class="text-xs text-domus-texto-suave w-16 text-right">35-44</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-4 overflow-hidden"><div class="bg-domus-azul-escuro h-4 rounded-full flex items-center justify-end pr-2" style="width: 15%;"><span class="text-[10px] text-white font-medium">15%</span></div></div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <span class="text-xs text-domus-texto-suave w-16 text-right">45+</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-4 overflow-hidden"><div class="bg-domus-terra h-4 rounded-full" style="width: 6%;"></div></div>
-                      <span class="text-xs text-domus-texto-suave">6%</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <span class="text-xs text-domus-texto-suave w-16 text-right italic">N/I</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-4 overflow-hidden"><div class="bg-domus-bege h-4 rounded-full" style="width: 6%;"></div></div>
-                      <span class="text-xs text-gray-400">6%</span>
-                    </div>
-                  </div>
-                  <p class="text-xs text-domus-texto-suave mt-3 italic">Publico principal: 25-34 anos</p>
-                </div>
-
-                <!-- Sexo -->
-                <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
-                  <h4 class="font-serif text-base text-domus-azul-escuro mb-4">Sexo dos hospedes</h4>
-                  <div class="w-full h-8 rounded-full overflow-hidden flex mb-4">
-                    <div class="bg-domus-azul h-full flex items-center justify-center" style="width: 58%;"><span class="text-xs text-white font-medium">58%</span></div>
-                    <div class="bg-domus-terra h-full flex items-center justify-center" style="width: 35%;"><span class="text-xs text-white font-medium">35%</span></div>
-                    <div class="bg-domus-bege h-full flex items-center justify-center" style="width: 7%;"></div>
-                  </div>
-                  <div class="space-y-2">
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-domus-azul"></div>
-                      <span class="text-sm">Feminino</span>
-                      <span class="text-sm font-medium ml-auto">58%</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-domus-terra"></div>
-                      <span class="text-sm">Masculino</span>
-                      <span class="text-sm font-medium ml-auto">35%</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-domus-bege"></div>
-                      <span class="text-sm text-domus-texto-suave italic">Não informado</span>
-                      <span class="text-sm font-medium ml-auto text-gray-400">7%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Origem + Avaliação + Dias da semana -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
-
-                <!-- Origem dos hospedes -->
-                <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
-                  <h4 class="font-serif text-base text-domus-azul-escuro mb-4">De onde vem os hospedes</h4>
-                  <div class="space-y-2">
-                    <div class="flex justify-between items-center py-1.5 border-b border-domus-creme">
-                      <span class="text-sm">São Paulo (capital)</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">—</span>
-                    </div>
-                    <div class="flex justify-between items-center py-1.5 border-b border-domus-creme">
-                      <span class="text-sm">Interior de SP</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">—</span>
-                    </div>
-                    <div class="flex justify-between items-center py-1.5 border-b border-domus-creme">
-                      <span class="text-sm">Outros estados</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">—</span>
-                    </div>
-                    <div class="flex justify-between items-center py-1.5 border-b border-domus-creme">
-                      <span class="text-sm">Internacional</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">—</span>
-                    </div>
-                    <div class="flex justify-between items-center py-1.5">
-                      <span class="text-sm italic text-domus-texto-suave">Não informado</span>
-                      <span class="text-sm text-gray-400">—</span>
-                    </div>
-                  </div>
-                  <p class="text-xs text-domus-texto-suave mt-3 italic">Dados serao preenchidos conforme reservas</p>
-                </div>
-
-                <!-- Avaliação por plataforma -->
-                <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
-                  <h4 class="font-serif text-base text-domus-azul-escuro mb-5">Avaliação dos hospedes</h4>
-
-                  <!-- Media geral -->
-                  <div class="text-center pb-5 mb-5 border-b border-domus-borda">
-                    <p class="font-serif text-5xl text-domus-azul-escuro">4,7</p>
-                    <div class="flex items-center justify-center gap-1 mt-2">
-                      <span class="text-domus-terra text-lg">&#9733;&#9733;&#9733;&#9733;</span><span class="text-domus-areia text-lg">&#9733;</span>
-                    </div>
-                    <p class="text-xs text-domus-texto-suave mt-2">media geral das 3 plataformas</p>
-                  </div>
-
-                  <!-- 3 plataformas lado a lado -->
-                  <div class="grid grid-cols-3 gap-4 mb-5">
-                    <!-- Booking -->
-                    <div class="text-center">
-                      <div class="w-10 h-10 mx-auto mb-2 rounded-lg bg-[#003580] flex items-center justify-center">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none"><path d="M4 18V6h5.5c1.93 0 3.5 1.57 3.5 3.5 0 1.03-.45 1.96-1.16 2.6.99.72 1.66 1.85 1.66 3.15 0 2.07-1.68 3.75-3.75 3.75H4zm3-7h2.5c.83 0 1.5-.67 1.5-1.5S10.33 8 9.5 8H7v3zm0 5h2.75c.97 0 1.75-.78 1.75-1.75S10.72 12.5 9.75 12.5H7V16z" fill="white"/><circle cx="17" cy="15" r="3.5" stroke="white" stroke-width="2" fill="none"/><path d="M20 18.5V21" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
-                      </div>
-                      <p class="font-serif text-2xl text-domus-azul-escuro">4,6</p>
-                      <p class="text-[10px] text-domus-texto-suave mt-0.5">Booking</p>
-                    </div>
-                    <!-- Airbnb -->
-                    <div class="text-center">
-                      <div class="w-10 h-10 mx-auto mb-2 rounded-lg bg-[#FF5A5F] flex items-center justify-center">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="white"><path d="M12 2.5c-1.3 0-2.5.8-3.1 2L3.4 16.3c-.7 1.3-.7 2.8 0 4 .7 1.3 2 2 3.4 2 1 0 1.9-.3 2.7-1 .7-.6 1.4-1.4 2-2.4.2-.3.3-.5.5-.8.2.3.3.5.5.8.6 1 1.3 1.8 2 2.4.8.7 1.7 1 2.7 1 1.4 0 2.7-.8 3.4-2 .7-1.3.7-2.8 0-4L15.1 4.5c-.6-1.2-1.8-2-3.1-2zm0 2c.5 0 1 .3 1.2.8l5.4 11.5c.4.8.4 1.6 0 2.3-.3.7-1 1.1-1.7 1.1-.5 0-.9-.2-1.4-.6-.5-.4-1-1.1-1.6-2-.5-.9-1-1.8-1.4-2.6l-.5-1-.5 1c-.4.8-.9 1.7-1.4 2.6-.6.9-1.1 1.6-1.6 2-.5.4-.9.6-1.4.6-.7 0-1.3-.4-1.7-1.1-.4-.7-.4-1.5 0-2.3l5.4-11.5c.2-.5.7-.8 1.2-.8z"/></svg>
-                      </div>
-                      <p class="font-serif text-2xl text-domus-azul-escuro">4,8</p>
-                      <p class="text-[10px] text-domus-texto-suave mt-0.5">Airbnb</p>
-                    </div>
-                    <!-- Google -->
-                    <div class="text-center">
-                      <div class="w-10 h-10 mx-auto mb-2 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                      </div>
-                      <p class="font-serif text-2xl text-domus-azul-escuro">4,7</p>
-                      <p class="text-[10px] text-domus-texto-suave mt-0.5">Google</p>
-                    </div>
-                  </div>
-
-                  <!-- Subcategorias por plataforma -->
-                  <div class="space-y-4">
-                    <!-- Booking detalhes -->
-                    <div class="bg-domus-creme/50 rounded-xl p-4">
-                      <div class="flex items-center gap-2 mb-3">
-                        <div class="w-5 h-5 rounded bg-[#003580] flex items-center justify-center">
-                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><path d="M4 18V6h5.5c1.93 0 3.5 1.57 3.5 3.5 0 1.03-.45 1.96-1.16 2.6.99.72 1.66 1.85 1.66 3.15 0 2.07-1.68 3.75-3.75 3.75H4zm3-7h2.5c.83 0 1.5-.67 1.5-1.5S10.33 8 9.5 8H7v3zm0 5h2.75c.97 0 1.75-.78 1.75-1.75S10.72 12.5 9.75 12.5H7V16z" fill="white"/><circle cx="17" cy="15" r="3.5" stroke="white" stroke-width="2" fill="none"/><path d="M20 18.5V21" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
-                        </div>
-                        <p class="text-xs font-medium text-domus-azul-escuro">Booking — 4,6</p>
-                      </div>
-                      <div class="space-y-1.5">
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Limpeza</span><span class="font-medium">4,7</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Localizacao</span><span class="font-medium">4,9</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Conforto</span><span class="font-medium">4,4</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Custo-beneficio</span><span class="font-medium">4,5</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Equipe</span><span class="font-medium">4,8</span></div>
-                      </div>
-                    </div>
-
-                    <!-- Airbnb detalhes -->
-                    <div class="bg-domus-creme/50 rounded-xl p-4">
-                      <div class="flex items-center gap-2 mb-3">
-                        <div class="w-5 h-5 rounded bg-[#FF5A5F] flex items-center justify-center">
-                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="white"><path d="M12 2.5c-1.3 0-2.5.8-3.1 2L3.4 16.3c-.7 1.3-.7 2.8 0 4 .7 1.3 2 2 3.4 2 1 0 1.9-.3 2.7-1 .7-.6 1.4-1.4 2-2.4.2-.3.3-.5.5-.8.2.3.3.5.5.8.6 1 1.3 1.8 2 2.4.8.7 1.7 1 2.7 1 1.4 0 2.7-.8 3.4-2 .7-1.3.7-2.8 0-4L15.1 4.5c-.6-1.2-1.8-2-3.1-2z"/></svg>
-                        </div>
-                        <p class="text-xs font-medium text-domus-azul-escuro">Airbnb — 4,8</p>
-                      </div>
-                      <div class="space-y-1.5">
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Limpeza</span><span class="font-medium">4,9</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Localizacao</span><span class="font-medium">5,0</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Comunicacao</span><span class="font-medium">4,9</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Check-in</span><span class="font-medium">4,8</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Precisão do anúncio</span><span class="font-medium">4,7</span></div>
-                      </div>
-                    </div>
-
-                    <!-- Google detalhes -->
-                    <div class="bg-domus-creme/50 rounded-xl p-4">
-                      <div class="flex items-center gap-2 mb-3">
-                        <div class="w-5 h-5 rounded bg-white border border-gray-200 flex items-center justify-center">
-                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                        </div>
-                        <p class="text-xs font-medium text-domus-azul-escuro">Google — 4,7</p>
-                      </div>
-                      <div class="space-y-1.5">
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Nota geral</span><span class="font-medium">4,7</span></div>
-                        <div class="flex justify-between text-xs"><span class="text-domus-texto-suave">Total de avaliacoes</span><span class="font-medium">38</span></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <p class="text-[10px] text-domus-texto-suave mt-4 text-center italic">Dados de exemplo — serao atualizados com integracoes</p>
-                </div>
-
-                <!-- Dias mais movimentados -->
-                <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
-                  <h4 class="font-serif text-base text-domus-azul-escuro mb-4">Check-ins por dia da semana</h4>
-                  <div class="space-y-2">
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs w-10 text-domus-texto-suave">Seg</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-3"><div class="bg-domus-azul/30 h-3 rounded-full" style="width: 12%;"></div></div>
-                      <span class="text-xs w-6 text-right text-domus-texto-suave">3</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs w-10 text-domus-texto-suave">Ter</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-3"><div class="bg-domus-azul/30 h-3 rounded-full" style="width: 10%;"></div></div>
-                      <span class="text-xs w-6 text-right text-domus-texto-suave">2</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs w-10 text-domus-texto-suave">Qua</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-3"><div class="bg-domus-azul/40 h-3 rounded-full" style="width: 14%;"></div></div>
-                      <span class="text-xs w-6 text-right text-domus-texto-suave">4</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs w-10 text-domus-texto-suave">Qui</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-3"><div class="bg-domus-azul/50 h-3 rounded-full" style="width: 18%;"></div></div>
-                      <span class="text-xs w-6 text-right text-domus-texto-suave">5</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs w-10 text-domus-azul-escuro font-medium">Sex</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-3"><div class="bg-domus-azul h-3 rounded-full" style="width: 28%;"></div></div>
-                      <span class="text-xs w-6 text-right text-domus-azul-escuro font-medium">8</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs w-10 text-domus-texto-suave">Sab</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-3"><div class="bg-domus-azul/60 h-3 rounded-full" style="width: 22%;"></div></div>
-                      <span class="text-xs w-6 text-right text-domus-texto-suave">6</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs w-10 text-domus-texto-suave">Dom</span>
-                      <div class="flex-1 bg-domus-creme rounded-full h-3"><div class="bg-domus-azul/25 h-3 rounded-full" style="width: 8%;"></div></div>
-                      <span class="text-xs w-6 text-right text-domus-texto-suave">1</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Nacionalidades -->
+              <!-- Canais de reserva (real) -->
               <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
-                <h4 class="font-serif text-base text-domus-azul-escuro mb-4">Nacionalidades mais frequentes</h4>
-                <div class="flex flex-wrap gap-2">
-                  <span class="px-3 py-1.5 bg-domus-azul/10 rounded-full text-sm text-domus-azul-escuro">Brasil <span class="font-medium">62%</span></span>
-                  <span class="px-3 py-1.5 bg-domus-azul/10 rounded-full text-sm text-domus-azul-escuro">Argentina <span class="font-medium">8%</span></span>
-                  <span class="px-3 py-1.5 bg-domus-azul/10 rounded-full text-sm text-domus-azul-escuro">EUA <span class="font-medium">6%</span></span>
-                  <span class="px-3 py-1.5 bg-domus-azul/10 rounded-full text-sm text-domus-azul-escuro">Chile <span class="font-medium">4%</span></span>
-                  <span class="px-3 py-1.5 bg-domus-azul/10 rounded-full text-sm text-domus-azul-escuro">Alemanha <span class="font-medium">3%</span></span>
-                  <span class="px-3 py-1.5 bg-domus-azul/10 rounded-full text-sm text-domus-azul-escuro">Franca <span class="font-medium">3%</span></span>
-                  <span class="px-3 py-1.5 bg-domus-areia rounded-full text-sm text-domus-texto-suave">Outros <span class="font-medium">14%</span></span>
-                </div>
-                <p class="text-xs text-domus-texto-suave mt-3 italic">Baseado nos dados do Hospedin. Dados de reserva direta serao integrados em breve.</p>
+                <h3 class="font-serif text-lg text-domus-azul-escuro mb-4">Canais de reserva (mês)</h3>
+                <div id="uni-ap-hostel-canais" class="space-y-3"><p class="text-sm text-domus-texto-suave">carregando...</p></div>
               </div>
 
-              <!-- Hóspedes recorrentes -->
-              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
-                <div class="flex items-center justify-between mb-4">
-                  <h4 class="font-serif text-base text-domus-azul-escuro">Hóspedes recorrentes</h4>
-                  <span class="text-xs text-domus-azul bg-domus-azul/10 px-2 py-1 rounded-full">fidelizacao</span>
+              <!-- ======= AP — MERCADINHO ======= -->
+            <div id="ap-mercadinho" class="ap-sub-section hidden-mod fade-in">
+              <p class="text-xs text-domus-texto-suave mb-4 italic">Mini mercado da AP — vendas registradas como receita no mês.</p>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-6">
+                <div class="bg-domus-azul/10 rounded-xl p-5">
+                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Receita do mês</p>
+                  <p id="uni-ap-merc-receita" class="font-serif text-2xl text-domus-azul-escuro mt-1">carregando...</p>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div class="bg-domus-creme-claro rounded-xl p-4 text-center">
-                    <p class="font-serif text-2xl text-domus-azul-escuro">12%</p>
-                    <p class="text-xs text-domus-texto-suave mt-1">dos hóspedes já voltaram</p>
-                  </div>
-                  <div class="bg-domus-creme-claro rounded-xl p-4 text-center">
-                    <p class="font-serif text-2xl text-domus-azul-escuro">2,3x</p>
-                    <p class="text-xs text-domus-texto-suave mt-1">media de visitas por recorrente</p>
-                  </div>
-                  <div class="bg-domus-creme-claro rounded-xl p-4 text-center">
-                    <p class="font-serif text-2xl text-domus-azul-escuro">3</p>
-                    <p class="text-xs text-domus-texto-suave mt-1">hospedes com estadia mensal</p>
-                  </div>
+                <div class="bg-domus-azul/10 rounded-xl p-5">
+                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Vendas</p>
+                  <p id="uni-ap-merc-vendas" class="font-serif text-2xl text-domus-azul-escuro mt-1">...</p>
                 </div>
-                <div class="border-t border-domus-borda pt-4">
-                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider mb-3">Hóspedes frequentes</p>
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <div>
-                        <span class="text-sm font-medium text-domus-azul-escuro">Hóspede #142</span>
-                        <span class="text-xs text-domus-texto-suave ml-2">4 estadias desde jan/2025</span>
-                      </div>
-                      <span class="text-xs text-domus-azul bg-domus-azul/10 px-2 py-0.5 rounded">mensal recorrente</span>
-                    </div>
-                    <div class="flex items-center justify-between py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <div>
-                        <span class="text-sm font-medium text-domus-azul-escuro">Hóspede #087</span>
-                        <span class="text-xs text-domus-texto-suave ml-2">3 estadias desde mar/2025</span>
-                      </div>
-                      <span class="text-xs text-domus-azul bg-domus-azul/10 px-2 py-0.5 rounded">trabalho/viagem</span>
-                    </div>
-                    <div class="flex items-center justify-between py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <div>
-                        <span class="text-sm font-medium text-domus-azul-escuro">Hóspede #201</span>
-                        <span class="text-xs text-domus-texto-suave ml-2">2 estadias desde abr/2025</span>
-                      </div>
-                      <span class="text-xs text-domus-azul bg-domus-azul/10 px-2 py-0.5 rounded">turismo</span>
-                    </div>
-                  </div>
-                  <p class="text-xs text-domus-texto-suave mt-3 italic">Dados anonimizados. Nomes completos disponiveis no PMS.</p>
+                <div class="bg-domus-areia rounded-xl p-5">
+                  <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Conta</p>
+                  <p class="font-serif text-lg text-domus-azul-escuro mt-1">InfinitePay</p>
+                  <p class="text-xs text-domus-texto-suave mt-1">$mercadinho_domus-garden</p>
                 </div>
               </div>
-
-              <!-- Painel IA — Insights automaticos -->
-              <div class="bg-gradient-to-br from-domus-azul-escuro to-domus-azul rounded-2xl p-4 sm:p-6 mb-6 text-white relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
-                <div class="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/3"></div>
-                <div class="relative">
-                  <div class="flex items-center gap-3 mb-5">
-                    <svg class="w-7 h-7 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>
-                    <div>
-                      <h4 class="font-serif text-lg">Insights da IA</h4>
-                      <p class="text-xs text-white/60">Análise automatica dos dados do hostel · Atualizado agora</p>
-                    </div>
-                  </div>
-
-                  <div class="space-y-4">
-                    <div class="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                      <div class="flex items-start gap-3">
-                        <span class="text-lg mt-0.5">📈</span>
-                        <div>
-                          <p class="font-medium text-sm">Sexta-feira concentra 28% dos check-ins</p>
-                          <p class="text-xs text-white/70 mt-1">Considere preço dinâmico: aumentar a diária nas sextas e sábados em 15-20% e oferecer desconto nas terça e quarta para equilibrar a demanda ao longo da semana.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                      <div class="flex items-start gap-3">
-                        <span class="text-lg mt-0.5">🔄</span>
-                        <div>
-                          <p class="font-medium text-sm">12% dos hospedes voltam — oportunidade de fidelizacao</p>
-                          <p class="text-xs text-white/70 mt-1">Crie um programa simples: a partir da 2a estadia, oferecer 10% de desconto na reserva direta. Isso incentiva o canal proprio (sem comissao) e aumenta a recorrencia.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                      <div class="flex items-start gap-3">
-                        <span class="text-lg mt-0.5">💼</span>
-                        <div>
-                          <p class="font-medium text-sm">28% dos hóspedes vêm a trabalho — público de alto valor</p>
-                          <p class="text-xs text-white/70 mt-1">Hóspedes a trabalho ficam mais noites em média e são menos sensíveis a preço. Considere criar um pacote "Estadia Corporativa" com desconto semanal e WiFi destacado na descrição do anúncio.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                      <div class="flex items-start gap-3">
-                        <span class="text-lg mt-0.5">🎯</span>
-                        <div>
-                          <p class="font-medium text-sm">40% das reservas sao diretas — excelente margem</p>
-                          <p class="text-xs text-white/70 mt-1">Sua taxa de reserva direta esta acima da media do mercado (~25%). Para ampliar, adicione um botao de WhatsApp com mensagem pre-preenchida no site e promova o desconto de reserva direta na hora do checkout.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                      <div class="flex items-start gap-3">
-                        <span class="text-lg mt-0.5">⚠️</span>
-                        <div>
-                          <p class="font-medium text-sm">Ocupação de 38% esta abaixo do potencial</p>
-                          <p class="text-xs text-white/70 mt-1">A média de hostels em Vila Olímpia gira em torno de 55%. Oportunidades: revisar preços na baixa temporada, ativar promoções em plataformas nos dias de menor movimento (terça, quarta), e investir em fotos profissionais dos quartos.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <p class="text-xs text-white/40 mt-4 text-center">Insights gerados automaticamente com base nos dados atuais. Novos insights aparecem conforme mais dados sao adicionados.</p>
-                </div>
+              <div class="bg-white rounded-2xl p-4 sm:p-6 border-l-4 border-domus-azul text-sm text-domus-texto-suave">
+                <p>As vendas do mini mercado entram como lançamentos de receita (categoria <strong>Mercadinho</strong>) e estão somadas no total da aba Resumo. Gestão de catálogo e estoque fica no módulo <strong>Mini mercado</strong> da barra lateral.</p>
               </div>
             </div>
 
@@ -18119,12 +17697,20 @@ html { scroll-behavior: smooth; }
 
         // Financeiro do mês
         const { data: lanc } = await db.from('lancamentos')
-          .select('tipo, valor')
+          .select('tipo, valor, categoria')
           .eq('unidade', unidade)
           .gte('data', mesRef + '-01')
           .lt('data', proxMesRef);
 
         const rec = (lanc||[]).filter(l=>l.tipo==='receita').reduce((s,l)=>s+Number(l.valor),0);
+        // Receita por fonte (coliving = Mensalidades; mercadinho = Mercadinho; hostel = Hostel)
+        const recReceitas = (lanc||[]).filter(l=>l.tipo==='receita');
+        const colReceita = recReceitas.filter(l=>String(l.categoria||'').toLowerCase().startsWith('mensalidade')).reduce((s,l)=>s+Number(l.valor),0);
+        const mercReceita = recReceitas.filter(l=>String(l.categoria||'').toLowerCase().startsWith('mercadinho')).reduce((s,l)=>s+Number(l.valor),0);
+        const mercVendasN = recReceitas.filter(l=>String(l.categoria||'').toLowerCase().startsWith('mercadinho')).length;
+        (function(){ var e1=document.getElementById('uni-'+key+'-col-receita'); if(e1) e1.textContent=fmt(colReceita);
+          var e2=document.getElementById('uni-'+key+'-merc-receita'); if(e2) e2.textContent=fmt(mercReceita);
+          var e3=document.getElementById('uni-'+key+'-merc-vendas'); if(e3) e3.textContent=mercVendasN+(mercVendasN===1?' venda no mês':' vendas no mês'); })();
         const desp = (lanc||[]).filter(l=>l.tipo==='despesa').reduce((s,l)=>s+Number(l.valor),0);
         const resultado = rec - desp;
 
@@ -18166,6 +17752,7 @@ html { scroll-behavior: smooth; }
         const elVagD = document.getElementById('uni-'+key+'-vagas-detail');
         if (elVag) elVag.textContent = vagas;
         if (elVagD) elVagD.textContent = nMor + ' moradoras de ' + (capacidade[key]||0);
+        (function(){ var em=document.getElementById('uni-'+key+'-col-moradoras'); if(em) em.textContent=nMor; })();
 
         // Pendencias REAIS (RPC pendencias_unidade)
         try {
@@ -18180,6 +17767,7 @@ html { scroll-behavior: smooth; }
               itens.push('<li class="flex justify-between p-2 rounded-lg bg-yellow-50"><span>' + pend.notas_pendentes + (pend.notas_pendentes > 1 ? ' notas pendentes' : ' nota pendente') + ' de revisão</span><button onclick="mostrarDgTab(\'dg-notas\', document.querySelectorAll(\'.dg-nav-item\')[4] || document.querySelector(\'.dg-nav-item\'))" class="text-yellow-800 hover:underline">Ver</button></li>');
             }
             ulPend.innerHTML = itens.length ? itens.join('') : '<li class="p-2 rounded-lg bg-green-50 text-green-800">Nenhuma pendência 🎉</li>';
+            (function(){ var ep=document.getElementById('uni-'+key+'-col-pend'); if(ep) ep.textContent = (pend.valor_vencido>0? fmt(pend.valor_vencido) : 'R$ 0,00'); })();
           }
         } catch (e) { console.warn('pendencias:', e); }
 
@@ -18335,6 +17923,19 @@ html { scroll-behavior: smooth; }
           setEl('uni-ap-hostel-diaria', fmt(diariaMedia));
           setEl('uni-ap-hostel-revpar', fmt(revpar));
           setEl('uni-ap-hostel-estadia', estadiaMedia.toFixed(1) + ' noites');
+          // Canais de reserva REAL (por plataforma, % de reservas ativas do mês)
+          (function(){
+            const cont = document.getElementById('uni-ap-hostel-canais'); if(!cont) return;
+            const porPlat = {};
+            ativas.forEach(r=>{ const p=(r.plataforma||'Outros'); porPlat[p]=(porPlat[p]||0)+1; });
+            const totalAt = ativas.length || 1;
+            const ordem = Object.entries(porPlat).sort((a,b)=>b[1]-a[1]);
+            const cor = { 'Direto':'bg-domus-azul', 'Booking':'bg-domus-azul-escuro', 'Airbnb':'bg-domus-terra', 'Hospedin':'bg-domus-bege', 'Outros':'bg-domus-bege' };
+            cont.innerHTML = ordem.length ? ordem.map(([plat,n])=>{
+              const pct = Math.round((n/totalAt)*100);
+              return '<div><div class="flex justify-between text-sm mb-1"><span>'+plat+'</span><span class="font-medium">'+pct+'% ('+n+')</span></div><div class="w-full bg-domus-creme rounded-full h-2.5"><div class="'+(cor[plat]||'bg-domus-azul')+' h-2.5 rounded-full" style="width:'+pct+'%"></div></div></div>';
+            }).join('') : '<p class="text-sm text-domus-texto-suave">Sem reservas neste mês.</p>';
+          })();
         }
 
       } catch (err) {
