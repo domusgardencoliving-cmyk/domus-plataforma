@@ -3174,42 +3174,6 @@ html { scroll-behavior: smooth; }
             </div>
 
             
-            <!-- ===== Fechamento do mês (dinâmico — espelho do relatório) ===== -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
-              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
-                <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Saídas por categoria</h3>
-                <div class="relative h-64"><canvas id="uni-ap-chart-cat"></canvas></div>
-              </div>
-              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
-                <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Entradas por forma de pagamento</h3>
-                <div class="relative h-64"><canvas id="uni-ap-chart-forma"></canvas></div>
-              </div>
-            </div>
-            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
-              <h3 id="uni-ap-ent-titulo" class="font-serif text-lg text-domus-azul-escuro mb-3">Entradas</h3>
-              <div class="overflow-x-auto"><table class="w-full text-sm">
-                <thead><tr class="text-left text-xs uppercase tracking-wider text-domus-texto-suave border-b border-domus-borda"><th class="py-2 pr-3">Data</th><th class="py-2 pr-3">Quem</th><th class="py-2 pr-3">O quê</th><th class="py-2 pr-3">Quarto</th><th class="py-2 pr-3">Forma</th><th class="py-2 pr-3">Fonte</th><th class="py-2 text-right">Valor</th></tr></thead>
-                <tbody id="uni-ap-ent-corpo"><tr><td colspan="7" class="py-3 text-domus-texto-suave">carregando...</td></tr></tbody>
-                <tfoot><tr class="font-bold text-domus-azul-escuro"><td class="py-2 border-t-2 border-domus-azul" colspan="6">TOTAL ENTRADAS</td><td id="uni-ap-ent-total" class="py-2 text-right border-t-2 border-domus-azul"></td></tr></tfoot>
-              </table></div>
-            </div>
-            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
-              <h3 id="uni-ap-sai-titulo" class="font-serif text-lg text-domus-azul-escuro mb-3">Saídas</h3>
-              <div class="overflow-x-auto"><table class="w-full text-sm">
-                <thead><tr class="text-left text-xs uppercase tracking-wider text-domus-texto-suave border-b border-domus-borda"><th class="py-2 pr-3">Data</th><th class="py-2 pr-3">O quê</th><th class="py-2 pr-3">Forma</th><th class="py-2 pr-3">Fonte</th><th class="py-2 text-right">Valor</th></tr></thead>
-                <tbody id="uni-ap-sai-corpo"><tr><td colspan="5" class="py-3 text-domus-texto-suave">carregando...</td></tr></tbody>
-                <tfoot><tr class="font-bold text-domus-azul-escuro"><td class="py-2 border-t-2 border-domus-azul" colspan="4">TOTAL SAÍDAS</td><td id="uni-ap-sai-total" class="py-2 text-right border-t-2 border-domus-azul"></td></tr></tfoot>
-              </table></div>
-            </div>
-            <div id="uni-ap-notas" class="bg-white rounded-2xl p-4 sm:p-6 border-l-4 border-domus-azul mb-6 text-sm text-domus-texto-suave" style="display:none">
-              <p class="font-bold text-domus-azul-escuro mb-2">Notas do fechamento</p>
-              <div id="uni-ap-notas-corpo" class="space-y-1"></div>
-            </div>
-            <div id="uni-ap-insights" class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6" style="display:none">
-              <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">✨ Insights do mês</h3>
-              <div id="uni-ap-insights-corpo" class="space-y-2 text-sm text-domus-texto-suave"></div>
-            </div>
-
             <!-- ======= AP — HOSTEL ======= -->
             <div id="ap-hostel" class="ap-sub-section hidden-mod fade-in">
               <!-- KPIs principais - linha 1 -->
@@ -3784,214 +3748,44 @@ html { scroll-behavior: smooth; }
 
             <!-- ======= AP — RESUMO GERAL ======= -->
             <div id="ap-resumo" class="ap-sub-section hidden-mod fade-in">
-
-              <!-- Titulo -->
               <div class="mb-6">
-                <p class="text-sm text-domus-texto-suave">Visao consolidada da Andrade Pertence — todas as fontes de receita, despesas totais e impacto na obra.</p>
+                <p class="text-sm text-domus-texto-suave">Visão consolidada da Andrade Pertence — todas as fontes de receita, todas as despesas, resultado e impacto na obra.</p>
               </div>
-
-              <!-- Receitas por fonte -->
-              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
-                <h4 class="font-serif text-lg text-domus-azul-escuro mb-4">Receitas do mes</h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div class="bg-domus-azul/10 rounded-xl p-5">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Coliving</p>
-                    <p id="resumo-receita-coliving" class="font-serif text-2xl text-domus-azul-escuro mt-1">R$ 19.160</p>
-                    <p class="text-xs text-domus-azul mt-1">12 moradoras ativas</p>
-                  </div>
-                  <div class="bg-domus-azul/10 rounded-xl p-5">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Hostel</p>
-                    <p id="resumo-receita-hostel" class="font-serif text-2xl text-domus-azul-escuro mt-1">R$ 5.120</p>
-                    <p class="text-xs text-domus-azul mt-1">23 hospedes · 14 reservas</p>
-                  </div>
-                  <div class="bg-domus-azul/15 rounded-xl p-5 border-2 border-domus-azul/30">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Total de entradas</p>
-                    <p id="resumo-receita-total" class="font-serif text-2xl text-domus-azul mt-1">R$ 24.280</p>
-                    <p class="text-xs text-domus-texto-suave mt-1">coliving 79% · hostel 21%</p>
-                  </div>
-                </div>
+<!-- ===== Fechamento do mês (dinâmico — espelho do relatório) ===== -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
+              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
+                <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Saídas por categoria</h3>
+                <div class="relative h-64"><canvas id="uni-ap-chart-cat"></canvas></div>
               </div>
-
-              <!-- Despesas (unificadas) -->
-              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
-                <h4 class="font-serif text-lg text-domus-azul-escuro mb-4">Despesas do mes</h4>
-                <p class="text-xs text-domus-texto-suave mb-4 italic">Despesas do endereco inteiro (coliving + hostel compartilham o mesmo espaco)</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div class="space-y-2">
-                    <div class="flex justify-between items-center py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <span class="text-sm">Aluguel</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">R$ 5.500</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <span class="text-sm">Energia</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">R$ 1.280</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <span class="text-sm">Agua</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">R$ 680</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <span class="text-sm">Internet/TV</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">R$ 350</span>
-                    </div>
-                  </div>
-                  <div class="space-y-2">
-                    <div class="flex justify-between items-center py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <span class="text-sm">Limpeza</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">R$ 1.800</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <span class="text-sm">Manutencao</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">R$ 420</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <span class="text-sm">Lavanderia/Amenities</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">R$ 590</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2 px-3 bg-domus-creme-claro rounded-lg">
-                      <span class="text-sm">Pro-labore</span>
-                      <span class="text-sm font-medium text-domus-azul-escuro">R$ 1.300</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="bg-domus-terra/10 rounded-xl p-4 border border-domus-terra/20">
-                  <div class="flex justify-between items-center">
-                    <p class="text-sm font-medium text-domus-terra-escura">Total de despesas</p>
-                    <p id="resumo-despesa-total" class="font-serif text-xl text-domus-terra-escura">R$ 11.920</p>
-                  </div>
-                </div>
+              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda">
+                <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">Entradas por forma de pagamento</h3>
+                <div class="relative h-64"><canvas id="uni-ap-chart-forma"></canvas></div>
               </div>
-
-              <!-- Resultado do mes -->
-              <div class="bg-white rounded-2xl p-4 sm:p-6 border-2 border-domus-azul/30 mb-6">
-                <h4 class="font-serif text-lg text-domus-azul-escuro mb-4">Resultado do mes</h4>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div class="bg-domus-azul/10 rounded-xl p-4 text-center">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Entradas</p>
-                    <p class="font-serif text-xl text-domus-azul-escuro mt-1">R$ 24.280</p>
-                  </div>
-                  <div class="bg-domus-terra/10 rounded-xl p-4 text-center">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Despesas</p>
-                    <p class="font-serif text-xl text-domus-terra-escura mt-1">R$ 11.920</p>
-                  </div>
-                  <div class="bg-domus-azul-claro/20 rounded-xl p-4 text-center border-2 border-domus-azul/20">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Lucro do mes</p>
-                    <p id="resumo-lucro" class="font-serif text-xl text-domus-azul mt-1">R$ 12.360</p>
-                  </div>
-                  <div class="bg-domus-areia rounded-xl p-4 text-center">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Margem</p>
-                    <p class="font-serif text-xl text-domus-azul-escuro mt-1">50,9%</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Impacto na obra -->
-              <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 sm:p-6 mb-6 border-2 border-amber-300/60">
-                <div class="flex items-center gap-3 mb-4">
-                  <span class="text-xl sm:text-2xl">🏗️</span>
-                  <h4 class="font-serif text-lg text-domus-azul-escuro">Impacto na obra este mes</h4>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div class="bg-white/80 rounded-xl p-4 text-center border border-amber-200">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Divida total</p>
-                    <p id="resumo-obra-total" class="font-serif text-xl text-domus-azul-escuro mt-1">—</p>
-                    <p class="text-xs text-domus-texto-suave">aguardando dados</p>
-                  </div>
-                  <div class="bg-white/80 rounded-xl p-4 text-center border border-amber-200">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Saldo anterior</p>
-                    <p id="resumo-obra-antes" class="font-serif text-xl text-domus-azul-escuro mt-1">—</p>
-                    <p class="text-xs text-domus-texto-suave">inicio do mes</p>
-                  </div>
-                  <div class="bg-white/80 rounded-xl p-4 text-center border border-amber-200">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Lucro aplicado</p>
-                    <p id="resumo-obra-aplicado" class="font-serif text-xl text-domus-azul mt-1">—</p>
-                    <p class="text-xs text-domus-azul">abatido da obra</p>
-                  </div>
-                  <div class="bg-white/80 rounded-xl p-4 text-center border border-amber-200">
-                    <p class="text-xs text-domus-texto-suave uppercase tracking-wider">Saldo restante</p>
-                    <p id="resumo-obra-depois" class="font-serif text-xl text-domus-azul-escuro mt-1">—</p>
-                    <p class="text-xs text-domus-texto-suave">fim do mes</p>
-                  </div>
-                </div>
-                <p class="text-xs text-domus-texto-suave mt-4 italic">O lucro mensal abate automaticamente do saldo devedor da obra. Quando a obra estiver quitada, o lucro fica 100% disponivel.</p>
-              </div>
-
-              <!-- Evolucao mensal -->
-              <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
-                <h4 class="font-serif text-lg text-domus-azul-escuro mb-4">Evolucao mensal (ultimos 6 meses)</h4>
-                <div class="overflow-x-auto">
-                  <table class="w-full text-xs sm:text-sm">
-                    <thead>
-                      <tr class="border-b border-domus-borda">
-                        <th class="text-left py-3 text-xs uppercase tracking-wider text-domus-texto-suave">Mes</th>
-                        <th class="text-right py-3 text-xs uppercase tracking-wider text-domus-texto-suave">Coliving</th>
-                        <th class="text-right py-3 text-xs uppercase tracking-wider text-domus-texto-suave">Hostel</th>
-                        <th class="text-right py-3 text-xs uppercase tracking-wider text-domus-texto-suave">Total entradas</th>
-                        <th class="text-right py-3 text-xs uppercase tracking-wider text-domus-texto-suave">Despesas</th>
-                        <th class="text-right py-3 text-xs uppercase tracking-wider text-domus-azul font-medium">Lucro</th>
-                        <th class="text-right py-3 text-xs uppercase tracking-wider text-domus-texto-suave">Saldo obra</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr class="border-b border-domus-creme">
-                        <td class="py-2.5 text-domus-texto-suave">nov/25</td>
-                        <td class="py-2.5 text-right">R$ 17.800</td>
-                        <td class="py-2.5 text-right">R$ 3.200</td>
-                        <td class="py-2.5 text-right font-medium">R$ 21.000</td>
-                        <td class="py-2.5 text-right text-domus-terra-escura">R$ 10.500</td>
-                        <td class="py-2.5 text-right text-domus-azul font-medium">R$ 10.500</td>
-                        <td class="py-2.5 text-right text-domus-texto-suave">—</td>
-                      </tr>
-                      <tr class="border-b border-domus-creme">
-                        <td class="py-2.5 text-domus-texto-suave">dez/25</td>
-                        <td class="py-2.5 text-right">R$ 18.200</td>
-                        <td class="py-2.5 text-right">R$ 4.800</td>
-                        <td class="py-2.5 text-right font-medium">R$ 23.000</td>
-                        <td class="py-2.5 text-right text-domus-terra-escura">R$ 11.200</td>
-                        <td class="py-2.5 text-right text-domus-azul font-medium">R$ 11.800</td>
-                        <td class="py-2.5 text-right text-domus-texto-suave">—</td>
-                      </tr>
-                      <tr class="border-b border-domus-creme">
-                        <td class="py-2.5 text-domus-texto-suave">jan/26</td>
-                        <td class="py-2.5 text-right">R$ 18.500</td>
-                        <td class="py-2.5 text-right">R$ 5.500</td>
-                        <td class="py-2.5 text-right font-medium">R$ 24.000</td>
-                        <td class="py-2.5 text-right text-domus-terra-escura">R$ 12.100</td>
-                        <td class="py-2.5 text-right text-domus-azul font-medium">R$ 11.900</td>
-                        <td class="py-2.5 text-right text-domus-texto-suave">—</td>
-                      </tr>
-                      <tr class="border-b border-domus-creme">
-                        <td class="py-2.5 text-domus-texto-suave">fev/26</td>
-                        <td class="py-2.5 text-right">R$ 18.900</td>
-                        <td class="py-2.5 text-right">R$ 4.100</td>
-                        <td class="py-2.5 text-right font-medium">R$ 23.000</td>
-                        <td class="py-2.5 text-right text-domus-terra-escura">R$ 11.400</td>
-                        <td class="py-2.5 text-right text-domus-azul font-medium">R$ 11.600</td>
-                        <td class="py-2.5 text-right text-domus-texto-suave">—</td>
-                      </tr>
-                      <tr class="border-b border-domus-creme">
-                        <td class="py-2.5 text-domus-texto-suave">mar/26</td>
-                        <td class="py-2.5 text-right">R$ 19.000</td>
-                        <td class="py-2.5 text-right">R$ 4.600</td>
-                        <td class="py-2.5 text-right font-medium">R$ 23.600</td>
-                        <td class="py-2.5 text-right text-domus-terra-escura">R$ 11.700</td>
-                        <td class="py-2.5 text-right text-domus-azul font-medium">R$ 11.900</td>
-                        <td class="py-2.5 text-right text-domus-texto-suave">—</td>
-                      </tr>
-                      <tr class="bg-domus-azul/5 rounded">
-                        <td class="py-2.5 font-medium text-domus-azul-escuro">abr/26</td>
-                        <td class="py-2.5 text-right font-medium">R$ 19.160</td>
-                        <td class="py-2.5 text-right font-medium">R$ 5.120</td>
-                        <td class="py-2.5 text-right font-medium text-domus-azul-escuro">R$ 24.280</td>
-                        <td class="py-2.5 text-right font-medium text-domus-terra-escura">R$ 11.920</td>
-                        <td class="py-2.5 text-right font-medium text-domus-azul">R$ 12.360</td>
-                        <td class="py-2.5 text-right font-medium text-domus-texto-suave">—</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p class="text-xs text-domus-texto-suave mt-3 italic">Coluna "Saldo obra" sera preenchida quando os dados da obra forem inseridos. O lucro de cada mes abate automaticamente do saldo devedor.</p>
-              </div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
+              <h3 id="uni-ap-ent-titulo" class="font-serif text-lg text-domus-azul-escuro mb-3">Entradas</h3>
+              <div class="overflow-x-auto"><table class="w-full text-sm">
+                <thead><tr class="text-left text-xs uppercase tracking-wider text-domus-texto-suave border-b border-domus-borda"><th class="py-2 pr-3">Data</th><th class="py-2 pr-3">Quem</th><th class="py-2 pr-3">O quê</th><th class="py-2 pr-3">Quarto</th><th class="py-2 pr-3">Forma</th><th class="py-2 pr-3">Fonte</th><th class="py-2 text-right">Valor</th></tr></thead>
+                <tbody id="uni-ap-ent-corpo"><tr><td colspan="7" class="py-3 text-domus-texto-suave">carregando...</td></tr></tbody>
+                <tfoot><tr class="font-bold text-domus-azul-escuro"><td class="py-2 border-t-2 border-domus-azul" colspan="6">TOTAL ENTRADAS</td><td id="uni-ap-ent-total" class="py-2 text-right border-t-2 border-domus-azul"></td></tr></tfoot>
+              </table></div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6">
+              <h3 id="uni-ap-sai-titulo" class="font-serif text-lg text-domus-azul-escuro mb-3">Saídas</h3>
+              <div class="overflow-x-auto"><table class="w-full text-sm">
+                <thead><tr class="text-left text-xs uppercase tracking-wider text-domus-texto-suave border-b border-domus-borda"><th class="py-2 pr-3">Data</th><th class="py-2 pr-3">O quê</th><th class="py-2 pr-3">Forma</th><th class="py-2 pr-3">Fonte</th><th class="py-2 text-right">Valor</th></tr></thead>
+                <tbody id="uni-ap-sai-corpo"><tr><td colspan="5" class="py-3 text-domus-texto-suave">carregando...</td></tr></tbody>
+                <tfoot><tr class="font-bold text-domus-azul-escuro"><td class="py-2 border-t-2 border-domus-azul" colspan="4">TOTAL SAÍDAS</td><td id="uni-ap-sai-total" class="py-2 text-right border-t-2 border-domus-azul"></td></tr></tfoot>
+              </table></div>
+            </div>
+            <div id="uni-ap-notas" class="bg-white rounded-2xl p-4 sm:p-6 border-l-4 border-domus-azul mb-6 text-sm text-domus-texto-suave" style="display:none">
+              <p class="font-bold text-domus-azul-escuro mb-2">Notas do fechamento</p>
+              <div id="uni-ap-notas-corpo" class="space-y-1"></div>
+            </div>
+            <div id="uni-ap-insights" class="bg-white rounded-2xl p-4 sm:p-6 border border-domus-borda mb-6" style="display:none">
+              <h3 class="font-serif text-lg text-domus-azul-escuro mb-3">✨ Insights do mês</h3>
+              <div id="uni-ap-insights-corpo" class="space-y-2 text-sm text-domus-texto-suave"></div>
+            </div>
             </div>
           </div>
 
@@ -12622,6 +12416,7 @@ html { scroll-behavior: smooth; }
       else document.querySelector('.ap-sub-btn').className = ativo;
       // Carrega dados reais da aba Obra ao abrir
       if (secao === 'ap-obra') { carregarObraAP(); }
+      if (secao === 'ap-resumo') { setTimeout(function(){ try { Object.values(window._dgCharts||{}).forEach(function(c){ if(c && c.resize) c.resize(); }); } catch(e){} }, 60); }
     }
 
     async function carregarObraAP() {
