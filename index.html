@@ -12609,10 +12609,11 @@ html { scroll-behavior: smooth; }
     }
 
     function mostrarSubAP(secao, btn) {
-      // Esconde todas as sub-secoes
-      document.querySelectorAll('.ap-sub-section').forEach(s => s.classList.add('hidden-mod'));
+      // Esconde todas as sub-secoes (classe + estilo inline à prova de CSS)
+      document.querySelectorAll('.ap-sub-section').forEach(s => { s.classList.add('hidden-mod'); s.style.display = 'none'; });
       // Mostra a selecionada
-      document.getElementById(secao).classList.remove('hidden-mod');
+      var alvo = document.getElementById(secao);
+      if (alvo) { alvo.classList.remove('hidden-mod'); alvo.style.display = 'block'; }
       // Atualiza botoes
       var inativo = 'ap-sub-btn px-5 py-2.5 rounded-lg text-sm font-medium bg-white text-domus-texto border border-domus-borda hover:bg-domus-azul/10 transition';
       var ativo = 'ap-sub-btn px-5 py-2.5 rounded-lg text-sm font-medium bg-domus-azul text-white transition';
